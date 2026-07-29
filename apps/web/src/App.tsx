@@ -25,6 +25,7 @@ import { NotificationsPage } from './pages/admin/notifications';
 import { AuditPage } from './pages/admin/audit';
 import { HealthPage } from './pages/admin/health';
 import { SettingsPage } from './pages/admin/settings';
+import { AdminSupportPage } from './pages/admin/support';
 import { useNavigationStore } from './store/useNavigationStore';
 import { useMiningStore } from './store/useMiningStore';
 import { useWalletStore } from './store/useWalletStore';
@@ -33,13 +34,38 @@ import { useTreasuryStore } from './store/useTreasuryStore';
 import { useAuthStore, detectUserCountry } from './store/useAuthStore';
 import { useCountryStore, SUPPORTED_COUNTRIES } from './store/useCountryStore';
 import { useSettingsStore } from './store/useSettingsStore';
-import { TelegramLoginScreen } from './components/TelegramLoginScreen';
+import { AuthGate } from './components/AuthGate';
 import { OnboardingOverlay } from './components/OnboardingOverlay';
 import { CountrySelector } from './components/CountrySelector';
 
-import { AdminSupportPage } from './pages/admin/support';
+// ─── Admin Routes (accessible without user auth) ─────────────────────────────
 
-// ─── Main App (authenticated, onboarded, country selected) ──────────────────
+function AdminRoutes() {
+  return (
+    <Routes>
+      <Route path="/admin" element={<AdminLayout />}>
+        <Route index element={<OverviewPage />} />
+        <Route path="orders" element={<OrdersPage />} />
+        <Route path="operations" element={<OperationsPage />} />
+        <Route path="liquidity" element={<LiquidityPage />} />
+        <Route path="treasury" element={<TreasuryPage />} />
+        <Route path="payment-rails" element={<PaymentRailsPage />} />
+        <Route path="withdrawals" element={<WithdrawalsPage />} />
+        <Route path="users" element={<UsersPage />} />
+        <Route path="support" element={<AdminSupportPage />} />
+        <Route path="risk" element={<RiskPage />} />
+        <Route path="automation" element={<AutomationPage />} />
+        <Route path="revenue" element={<RevenuePage />} />
+        <Route path="notifications" element={<NotificationsPage />} />
+        <Route path="audit" element={<AuditPage />} />
+        <Route path="health" element={<HealthPage />} />
+        <Route path="settings" element={<SettingsPage />} />
+      </Route>
+    </Routes>
+  );
+}
+
+// ─── Main App (fully authenticated + onboarded) ───────────────────────────────
 
 function MainApp() {
   const { activeTab } = useNavigationStore();
@@ -98,14 +124,13 @@ function MainApp() {
   );
 }
 
-// ─── App Shell — Orchestrates the full auth/onboarding/country flow ─────────
+// ─── App Shell ────────────────────────────────────────────────────────────────
 
 export function App() {
   const [showSplash, setShowSplash] = useState(true);
 
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isSessionExpired = useAuthStore((s) => s.isSessionExpired);
-  const isAuthLoading = useAuthStore((s) => s.isAuthLoading);
   const onboardingComplete = useAuthStore((s) => s.onboardingComplete);
   const countrySelected = useAuthStore((s) => s.countrySelected);
   const setDetectedCountry = useAuthStore((s) => s.setDetectedCountry);
@@ -122,115 +147,72 @@ export function App() {
     }
   }, [isAuthenticated, isSessionExpired, clearSession]);
 
-  // Precise IP-based country detection on first auth
+  // IP-based country detection on first auth
   useEffect(() => {
     if (isAuthenticated && !countrySelected) {
       detectUserCountry().then((code) => {
         if (code) {
           setDetectedCountry(code);
-          // Auto-select if we have this country in our supported list
-          const match = SUPPORTED_COUNTRIES.find(
-            (c) => c.code === code || (code === 'EU' && c.code === 'EU')
-          );
+          const match = SUPPORTED_COUNTRIES.find((c) => c.code === code || (code === 'EU' && c.code === 'EU'));
           if (match) {
-            // Pre-select but still show the country selector for confirmation
             selectCountry(match.code);
-            setCurrencyPreference(
-              match.code !== 'US',
-              match.name,
-              match.currencyCode,
-              match.currencySymbol,
-              match.exchangeRate
-            );
+            setCurrencyPreference(match.code !== 'US', match.name, match.currencyCode, match.currencySymbol, match.exchangeRate);
           }
         }
       });
     }
   }, [isAuthenticated, countrySelected, setDetectedCountry, selectCountry, setCurrencyPreference]);
 
-  // 1. Splash screen
+  // 1. Splash screen (always first)
   if (showSplash) {
     return <SplashScreen onFinish={() => setShowSplash(false)} />;
   }
 
-  // 2. Auth loading — backend verification in progress (Mini App auto-auth)
-  if (isAuthLoading) {
-    return (
-      <div className="fixed inset-0 z-50 bg-[#06070b] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-8 h-8 border-2 border-usdt-green/40 border-t-usdt-green rounded-full animate-spin" />
-          <p className="text-text-secondary text-sm">Verifying your identity...</p>
-        </div>
-      </div>
-    );
+  // 2. Admin routes bypass AuthGate entirely (operator access)
+  if (window.location.pathname.startsWith('/admin')) {
+    return <AdminRoutes />;
   }
 
-  // 3. Auth gate — not authenticated or session expired
-  if (!isAuthenticated) {
-    return (
-      <Routes>
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<OverviewPage />} />
-          <Route path="orders" element={<OrdersPage />} />
-          <Route path="operations" element={<OperationsPage />} />
-          <Route path="liquidity" element={<LiquidityPage />} />
-          <Route path="treasury" element={<TreasuryPage />} />
-          <Route path="payment-rails" element={<PaymentRailsPage />} />
-          <Route path="withdrawals" element={<WithdrawalsPage />} />
-          <Route path="users" element={<UsersPage />} />
-          <Route path="support" element={<AdminSupportPage />} />
-          <Route path="risk" element={<RiskPage />} />
-          <Route path="automation" element={<AutomationPage />} />
-          <Route path="revenue" element={<RevenuePage />} />
-          <Route path="notifications" element={<NotificationsPage />} />
-          <Route path="audit" element={<AuditPage />} />
-          <Route path="health" element={<HealthPage />} />
-          <Route path="settings" element={<SettingsPage />} />
-        </Route>
-        <Route path="*" element={<TelegramLoginScreen />} />
-      </Routes>
-    );
-  }
-
-  // 4. First-time welcome journey (5 cards)
-  if (!onboardingComplete) {
-    return <OnboardingOverlay />;
-  }
-
-  // 5. Country selection (shown once after onboarding)
-  if (!countrySelected) {
-    return (
-      <CountrySelector
-        onComplete={() => {
-          markCountrySelected();
-          localStorage.setItem('has_chosen_currency', 'true');
-        }}
-      />
-    );
-  }
-
-  // 6. Authenticated, onboarded, country set → full app
+  // 3. AuthGate wraps the entire authenticated experience.
+  //    It handles: loading, error, web widget, mini app auth.
+  //    Only renders children when auth is confirmed.
   return (
-    <Routes>
-      <Route path="/admin" element={<AdminLayout />}>
-        <Route index element={<OverviewPage />} />
-        <Route path="orders" element={<OrdersPage />} />
-        <Route path="operations" element={<OperationsPage />} />
-        <Route path="liquidity" element={<LiquidityPage />} />
-        <Route path="treasury" element={<TreasuryPage />} />
-        <Route path="payment-rails" element={<PaymentRailsPage />} />
-        <Route path="withdrawals" element={<WithdrawalsPage />} />
-        <Route path="users" element={<UsersPage />} />
-        <Route path="support" element={<AdminSupportPage />} />
-        <Route path="risk" element={<RiskPage />} />
-        <Route path="automation" element={<AutomationPage />} />
-        <Route path="revenue" element={<RevenuePage />} />
-        <Route path="notifications" element={<NotificationsPage />} />
-        <Route path="audit" element={<AuditPage />} />
-        <Route path="health" element={<HealthPage />} />
-        <Route path="settings" element={<SettingsPage />} />
-      </Route>
-      <Route path="*" element={<MainApp />} />
-    </Routes>
+    <AuthGate>
+      {/* 4. Onboarding overlay (new users) */}
+      {!onboardingComplete ? (
+        <OnboardingOverlay />
+      ) : !countrySelected ? (
+        /* 5. Country selection (once after onboarding) */
+        <CountrySelector
+          onComplete={() => {
+            markCountrySelected();
+            localStorage.setItem('has_chosen_currency', 'true');
+          }}
+        />
+      ) : (
+        /* 6. Fully authenticated, onboarded, country set → full app */
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<OverviewPage />} />
+            <Route path="orders" element={<OrdersPage />} />
+            <Route path="operations" element={<OperationsPage />} />
+            <Route path="liquidity" element={<LiquidityPage />} />
+            <Route path="treasury" element={<TreasuryPage />} />
+            <Route path="payment-rails" element={<PaymentRailsPage />} />
+            <Route path="withdrawals" element={<WithdrawalsPage />} />
+            <Route path="users" element={<UsersPage />} />
+            <Route path="support" element={<AdminSupportPage />} />
+            <Route path="risk" element={<RiskPage />} />
+            <Route path="automation" element={<AutomationPage />} />
+            <Route path="revenue" element={<RevenuePage />} />
+            <Route path="notifications" element={<NotificationsPage />} />
+            <Route path="audit" element={<AuditPage />} />
+            <Route path="health" element={<HealthPage />} />
+            <Route path="settings" element={<SettingsPage />} />
+          </Route>
+          <Route path="*" element={<MainApp />} />
+        </Routes>
+      )}
+    </AuthGate>
   );
 }

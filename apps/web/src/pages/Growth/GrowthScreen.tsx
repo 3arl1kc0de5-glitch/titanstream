@@ -31,7 +31,7 @@ import { showToast } from '../../components/Toast';
 
 export const GrowthScreen: React.FC = () => {
   const { profile, referrals, rewards, qualification, isLoading, fetchGrowthProfile, fetchReferrals, fetchRewards, fetchQualification } = useGrowthStore();
-  const { hapticFeedback, telegram } = useTelegram();
+  const { hapticFeedback, webApp } = useTelegram();
   const [activeTab, setActiveTab] = useState<'trust' | 'referrals' | 'rewards'>('trust');
   const [copied, setCopied] = useState(false);
   const [showPayoutHistory, setShowPayoutHistory] = useState(false);
@@ -125,8 +125,8 @@ export const GrowthScreen: React.FC = () => {
       `Join me on TitanStream to earn and settle USDT instantly with zero friction! Use my referral code: ${profile.referrals.code}`,
     );
     const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(profile.referrals.link)}&text=${text}`;
-    if (telegram?.openTelegramLink) {
-      telegram.openTelegramLink(shareUrl);
+    if (webApp?.openTelegramLink) {
+      webApp.openTelegramLink(shareUrl);
     } else {
       window.open(shareUrl, '_blank');
     }

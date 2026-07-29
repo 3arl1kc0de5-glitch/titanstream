@@ -1,25 +1,44 @@
-import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
-import { useAuthStore, handleSessionExpiry } from '../store/useAuthStore';
-import { CurrencyPreferenceModal } from '../components/CurrencyPreferenceModal';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { useAuthStore } from '../store/useAuthStore';
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export interface TelegramUser {
+  id: number;
+  first_name: string;
+  last_name?: string;
+  username?: string;
+  language_code?: string;
+}
 
 interface TelegramContextType {
-  webApp: Window['Telegram'] extends { WebApp?: infer T } ? T | null : null;
-  user: { id: number; first_name: string; last_name?: string; username?: string; language_code?: string } | null;
+  /** Raw Telegram WebApp object, only available inside Mini App */
+  webApp: any | null;
+  /** Telegram user profile from initDataUnsafe */
+  user: TelegramUser | null;
+  /** Whether the Telegram SDK has been initialized */
   isReady: boolean;
+  /** Detected platform */
   platform: 'telegram' | 'web';
+  /** Whether app is running inside Telegram Mini App */
+  isMiniApp: boolean;
   hapticFeedback: {
     impactOccurred: (style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft') => void;
     notificationOccurred: (type: 'error' | 'success' | 'warning') => void;
     selectionChanged: () => void;
   };
+  /** Clears the session and logs the user out */
   logout: () => void;
 }
+
+// ─── Context ──────────────────────────────────────────────────────────────────
 
 const TelegramContext = createContext<TelegramContextType>({
   webApp: null,
   user: null,
   isReady: false,
   platform: 'web',
+  isMiniApp: false,
   hapticFeedback: {
     impactOccurred: () => {},
     notificationOccurred: () => {},
@@ -28,116 +47,68 @@ const TelegramContext = createContext<TelegramContextType>({
   logout: () => {},
 });
 
+// ─── Provider ─────────────────────────────────────────────────────────────────
+
 export const TelegramProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [webApp, setWebApp] = useState<unknown>(null);
-  const [tgUser, setTgUser] = useState<{ id: number; first_name: string; last_name?: string; username?: string; language_code?: string } | null>(null);
+  const [webApp, setWebApp] = useState<any | null>(null);
+  const [user, setUser] = useState<TelegramUser | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [platform, setPlatform] = useState<'telegram' | 'web'>('web');
-  const [showCurrencyModal, setShowCurrencyModal] = useState(false);
-  const authAttempted = useRef(false);
-
-  const {
-    clearSession,
-    isSessionExpired,
-    setLocationAndCurrency,
-    markOnboardingComplete,
-  } = useAuthStore();
-
-  useEffect(() => {
-    if (authAttempted.current) return;
-    authAttempted.current = true;
-
-    // 1. Check for existing valid session first
-    const authState = useAuthStore.getState();
-    if (!authState.isSessionExpired() && authState.session) {
-      console.info(`[AUTH_TRACE:session_restore] session.reused user=${authState.session.user.telegramUserId}`);
-      const existing = authState.session;
-      setTgUser({
-        id: existing.user.telegramUserId,
-        first_name: existing.user.firstName,
-        last_name: existing.user.lastName || undefined,
-        username: existing.user.telegramUsername || undefined,
-      });
-      setPlatform(existing.platform);
-      setIsReady(true);
-      return;
-    }
-
-    // Clear expired session
-    if (authState.isSessionExpired()) {
-      console.info('[AUTH_TRACE:session_restore] session.expired clearing local session');
-      clearSession();
-    }
-
-    // 2. Mini App Context - initialize Telegram SDK only. Auth gate performs backend authentication.
-    const tg = window.Telegram?.WebApp;
-    const isTgApp = !!(tg && (tg.initData || tg.initDataUnsafe?.user));
-    console.info(`[AUTH_TRACE:telegram_context] telegram.detected ${isTgApp ? 'yes' : 'no'}`);
-
-    if (isTgApp) {
-      tg.ready?.();
-      tg.expand?.();
-      setWebApp(tg);
-      setPlatform('telegram');
-
-      const telegramUser = tg.initDataUnsafe?.user;
-      if (telegramUser) {
-        setTgUser(telegramUser);
-      }
-
-      console.info(`[AUTH_TRACE:telegram_context] init_data_present ${tg.initData ? 'yes' : 'no'} length=${tg.initData?.length || 0}`);
-      setIsReady(true);
-    } else {
-      // 3. Web App Context — no Telegram session available
-      console.info('[AUTH_TRACE:telegram_context] browser.detected showing Telegram Login Widget');
-      setPlatform('web');
-      setTgUser(null);
-      setIsReady(true);
-    }
-  }, [clearSession, isSessionExpired]);
-
-  // Periodic session check
-  useEffect(() => {
-    const checkInterval = setInterval(() => {
-      if (handleSessionExpiry()) {
-        setTgUser(null);
-      }
-    }, 60000);
-
-    return () => clearInterval(checkInterval);
-  }, []);
+  const clearSession = useAuthStore((s) => s.clearSession);
 
   const logout = useCallback(() => {
     clearSession();
-    setTgUser(null);
+    setUser(null);
   }, [clearSession]);
 
-  const handleCurrencySelection = (currency: 'USDT' | 'UGX') => {
-    setLocationAndCurrency('UG', currency);
-    markOnboardingComplete();
-    setShowCurrencyModal(false);
-  };
+  useEffect(() => {
+    // Give the Telegram SDK a tick to mount on window
+    const initialize = () => {
+      const tg = (window as any).Telegram?.WebApp;
+      const isTgApp = !!(tg && (tg.initData || tg.initDataUnsafe?.user));
+
+      console.info(`[SDK_INIT] telegram.detected=${isTgApp} initData.length=${tg?.initData?.length ?? 0}`);
+
+      if (isTgApp) {
+        tg.ready?.();
+        tg.expand?.();
+        setWebApp(tg);
+        setPlatform('telegram');
+        const tgUser = tg.initDataUnsafe?.user;
+        if (tgUser) setUser(tgUser);
+      } else {
+        setPlatform('web');
+      }
+
+      setIsReady(true);
+    };
+
+    // Small delay to ensure window.Telegram is populated after script load
+    if ((window as any).Telegram?.WebApp) {
+      initialize();
+    } else {
+      const timer = setTimeout(initialize, 100);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const isMiniApp = platform === 'telegram';
 
   const hapticFeedback = {
-    impactOccurred: (style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft') => {
-      window.Telegram?.WebApp?.HapticFeedback?.impactOccurred(style);
-    },
-    notificationOccurred: (type: 'error' | 'success' | 'warning') => {
-      window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred(type);
-    },
-    selectionChanged: () => {
-      window.Telegram?.WebApp?.HapticFeedback?.selectionChanged();
-    },
+    impactOccurred: useCallback((style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft') => {
+      (window as any).Telegram?.WebApp?.HapticFeedback?.impactOccurred(style);
+    }, []),
+    notificationOccurred: useCallback((type: 'error' | 'success' | 'warning') => {
+      (window as any).Telegram?.WebApp?.HapticFeedback?.notificationOccurred(type);
+    }, []),
+    selectionChanged: useCallback(() => {
+      (window as any).Telegram?.WebApp?.HapticFeedback?.selectionChanged();
+    }, []),
   };
 
   return (
-    <TelegramContext.Provider value={{ webApp: webApp as any, user: tgUser, isReady, platform, hapticFeedback, logout }}>
+    <TelegramContext.Provider value={{ webApp, user, isReady, platform, isMiniApp, hapticFeedback, logout }}>
       {children}
-      <CurrencyPreferenceModal
-        isOpen={showCurrencyModal}
-        onClose={() => setShowCurrencyModal(false)}
-        onSelectCurrency={handleCurrencySelection}
-      />
     </TelegramContext.Provider>
   );
 };
