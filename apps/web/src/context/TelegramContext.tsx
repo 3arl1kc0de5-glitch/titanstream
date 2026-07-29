@@ -1,14 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
-import { useAuthStore, handleSessionExpiry, detectUserCountry } from '../store/useAuthStore';
-import type { AuthResponse, SessionData } from '../store/useAuthStore';
-import { api } from '../services/api';
+import { useAuthStore, handleSessionExpiry } from '../store/useAuthStore';
 import { CurrencyPreferenceModal } from '../components/CurrencyPreferenceModal';
-
-interface BackendApiEnvelope<T> {
-  success: boolean;
-  data?: T;
-  error?: { code: string; message: string };
-}
 
 interface TelegramContextType {
   webApp: Window['Telegram'] extends { WebApp?: infer T } ? T | null : null;
@@ -36,8 +28,6 @@ const TelegramContext = createContext<TelegramContextType>({
   logout: () => {},
 });
 
-const SESSION_DURATION = 30 * 24 * 60 * 60 * 1000;
-
 export const TelegramProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [webApp, setWebApp] = useState<unknown>(null);
   const [tgUser, setTgUser] = useState<{ id: number; first_name: string; last_name?: string; username?: string; language_code?: string } | null>(null);
@@ -47,83 +37,11 @@ export const TelegramProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const authAttempted = useRef(false);
 
   const {
-    setSession,
     clearSession,
     isSessionExpired,
-    onboardingComplete,
-    locationDetected,
     setLocationAndCurrency,
     markOnboardingComplete,
-    setAuthLoading,
-    setAuthError,
   } = useAuthStore();
-
-  const authenticateWithBackend = useCallback(async (initData: string, tgPlatform: 'telegram' | 'web') => {
-    console.log(`[TELEGRAM_AUTH_TELEMETRY] 3. Backend Request Sent -> POST /api/auth/telegram (initData len: ${initData.length})`);
-    setAuthLoading(true);
-    try {
-      const response = await api.post<BackendApiEnvelope<AuthResponse>>('/auth/telegram', { initData });
-
-      const body = response.data;
-      if (!body.success || !body.data) {
-        console.error('[TELEGRAM_AUTH_TELEMETRY] 4. Signature Validation: FAILED — Server response unsuccessful');
-        throw new Error(body.error?.message || 'Unexpected server response');
-      }
-
-      const authData = body.data;
-      console.log(`[TELEGRAM_AUTH_TELEMETRY] 4. Signature Validation: SUCCESS`);
-      console.log(`[TELEGRAM_AUTH_TELEMETRY] 5. User Lookup: ${authData.isNewUser ? 'NEW USER CREATED' : 'EXISTING USER FOUND'} (ID: ${authData.user.telegramUserId})`);
-      console.log(`[TELEGRAM_AUTH_TELEMETRY] 6. JWT Issued: YES`);
-
-      const sessionData: SessionData = {
-        accessToken: authData.accessToken,
-        refreshToken: authData.refreshToken,
-        user: authData.user,
-        onboarding: authData.onboarding,
-        isNewUser: authData.isNewUser,
-        expiresAt: Date.now() + SESSION_DURATION,
-        platform: tgPlatform,
-      };
-
-      setSession(sessionData);
-      console.log(`[TELEGRAM_AUTH_TELEMETRY] 7. Session Stored: YES`);
-      console.log(`[TELEGRAM_AUTH_TELEMETRY] 8. Dashboard Loaded: SUCCESS`);
-      return sessionData;
-    } catch (err: any) {
-      const message = err.response?.data?.error?.message || err.message || 'Authentication failed';
-      console.error(`[TELEGRAM_AUTH_TELEMETRY] AUTHENTICATION FAILURE: ${message}`);
-
-      // Graceful fallback for Telegram Mini App context when server is cold-starting or offline
-      const tgUserLocal = window.Telegram?.WebApp?.initDataUnsafe?.user;
-      const fallbackUser = {
-        telegramUserId: tgUserLocal?.id || 987654321,
-        telegramUsername: tgUserLocal?.username || 'operator',
-        firstName: tgUserLocal?.first_name || 'Stream Operator',
-        lastName: tgUserLocal?.last_name || null,
-        photoUrl: null,
-        languageCode: 'en',
-        state: 'ACTIVE',
-        isReady: true,
-        createdAt: new Date().toISOString(),
-      };
-
-      const fallbackSession: SessionData = {
-        accessToken: 'fallback_token_' + Date.now(),
-        refreshToken: 'fallback_refresh_' + Date.now(),
-        user: fallbackUser,
-        onboarding: { currentStep: 'fleet', isCompleted: true },
-        isNewUser: false,
-        expiresAt: Date.now() + SESSION_DURATION,
-        platform: tgPlatform,
-      };
-
-      console.warn('[TELEGRAM_AUTH_TELEMETRY] Creating fallback session for seamless UX');
-      setSession(fallbackSession);
-      return fallbackSession;
-    } finally {
-      setAuthLoading(false);
-    }
-  }, [setSession, setAuthLoading]);
 
   useEffect(() => {
     if (authAttempted.current) return;
@@ -132,7 +50,7 @@ export const TelegramProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     // 1. Check for existing valid session first
     const authState = useAuthStore.getState();
     if (!authState.isSessionExpired() && authState.session) {
-      console.log(`[TELEGRAM_AUTH_TELEMETRY] 1. Session Reused: YES (User ID: ${authState.session.user.telegramUserId})`);
+      console.info(`[AUTH_TRACE:session_restore] session.reused user=${authState.session.user.telegramUserId}`);
       const existing = authState.session;
       setTgUser({
         id: existing.user.telegramUserId,
@@ -147,18 +65,18 @@ export const TelegramProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     // Clear expired session
     if (authState.isSessionExpired()) {
-      console.log('[TELEGRAM_AUTH_TELEMETRY] Session Expired -> Clearing local session');
+      console.info('[AUTH_TRACE:session_restore] session.expired clearing local session');
       clearSession();
     }
 
-    // 2. Mini App Context — auto-authenticate via backend
+    // 2. Mini App Context - initialize Telegram SDK only. Auth gate performs backend authentication.
     const tg = window.Telegram?.WebApp;
     const isTgApp = !!(tg && (tg.initData || tg.initDataUnsafe?.user));
-    console.log(`[TELEGRAM_AUTH_TELEMETRY] 1. Telegram WebApp Detected: ${isTgApp ? 'YES' : 'NO'}`);
+    console.info(`[AUTH_TRACE:telegram_context] telegram.detected ${isTgApp ? 'yes' : 'no'}`);
 
     if (isTgApp) {
-      tg.ready();
-      tg.expand();
+      tg.ready?.();
+      tg.expand?.();
       setWebApp(tg);
       setPlatform('telegram');
 
@@ -167,46 +85,16 @@ export const TelegramProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setTgUser(telegramUser);
       }
 
-      // Extract or construct initData string
-      let rawInitData = tg.initData;
-      if (!rawInitData && telegramUser) {
-        // Fallback query construction for dev/testing when initData is unpopulated
-        const userJson = encodeURIComponent(JSON.stringify(telegramUser));
-        rawInitData = `user=${userJson}&auth_date=${Math.floor(Date.now() / 1000)}&hash=dev_preview_hash`;
-      }
-
-      console.log(`[TELEGRAM_AUTH_TELEMETRY] 2. initData Present: ${rawInitData ? 'YES' : 'NO'} (len: ${rawInitData?.length || 0})`);
-
-      if (rawInitData) {
-        authenticateWithBackend(rawInitData, 'telegram').then((session) => {
-          if (!session) {
-            setIsReady(true);
-            return;
-          }
-
-          if (!onboardingComplete && !locationDetected) {
-            detectUserCountry().then((countryCode) => {
-              if (countryCode === 'UG' || countryCode === 'RW') {
-                setShowCurrencyModal(true);
-              } else {
-                setLocationAndCurrency('US', 'USDT');
-                markOnboardingComplete();
-              }
-            });
-          }
-          setIsReady(true);
-        });
-      } else {
-        setIsReady(true);
-      }
+      console.info(`[AUTH_TRACE:telegram_context] init_data_present ${tg.initData ? 'yes' : 'no'} length=${tg.initData?.length || 0}`);
+      setIsReady(true);
     } else {
       // 3. Web App Context — no Telegram session available
-      console.log('[TELEGRAM_AUTH_TELEMETRY] External Browser Mode -> Showing Telegram Login Entry');
+      console.info('[AUTH_TRACE:telegram_context] browser.detected showing Telegram Login Widget');
       setPlatform('web');
       setTgUser(null);
       setIsReady(true);
     }
-  }, [setSession, clearSession, isSessionExpired, onboardingComplete, locationDetected, setLocationAndCurrency, markOnboardingComplete, authenticateWithBackend]);
+  }, [clearSession, isSessionExpired]);
 
   // Periodic session check
   useEffect(() => {

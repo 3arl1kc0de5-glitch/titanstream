@@ -1,93 +1,64 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Server, Sparkles, ShieldCheck, Users, AlertCircle, Loader2 } from 'lucide-react';
-import { useAuthStore, type SessionData } from '../store/useAuthStore';
-import { api } from '../services/api';
-
-const authenticateWithApi = async () => {
-  const tg = (window as any).Telegram?.WebApp;
-  if (!tg?.initData) return null;
-  const response = await api.post('/auth/telegram', { initData: tg.initData });
-  const body = response.data;
-  if (!body.success || !body.data) {
-    throw new Error(body.error?.message || 'Unexpected server response');
-  }
-  return body.data;
-};
-
-const createSessionFromAuth = (data: { accessToken: string; refreshToken: string; user: any; onboarding: any; isNewUser: boolean }, platform: 'telegram' | 'web'): SessionData => ({
-  accessToken: data.accessToken,
-  refreshToken: data.refreshToken,
-  user: data.user,
-  onboarding: data.onboarding,
-  isNewUser: data.isNewUser,
-  expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
-  platform,
-});
+import { useAuthStore } from '../store/useAuthStore';
+import { authService, type TelegramLoginWidgetPayload } from '../services/auth.service';
 
 export const TelegramLoginScreen: React.FC = () => {
   const { isAuthLoading, authError, setAuthLoading, setAuthError, setSession } = useAuthStore();
   const authStarted = useRef(false);
   const widgetContainerRef = useRef<HTMLDivElement>(null);
 
-  const isMiniApp = !!((window as any).Telegram?.WebApp?.initData || (window as any).Telegram?.WebApp?.initDataUnsafe?.user);
+  const isMiniApp = authService.isTelegramMiniApp();
+
+  const runMiniAppAuthentication = useCallback(async () => {
+    setAuthError(null);
+    setAuthLoading(true);
+    try {
+      const session = await authService.authenticateMiniApp();
+      setSession(session);
+      authService.trace('dashboard', 'mini_app.dashboard_loaded', `user=${session.user.telegramUserId}`);
+    } catch (err: any) {
+      const message = err.response?.data?.error?.message || err.message || 'Unable to verify your Telegram identity. Please try again.';
+      console.error(`[AUTH_TRACE:mini_app] authentication.failed ${message}`);
+      setAuthError(message);
+    } finally {
+      setAuthLoading(false);
+    }
+  }, [setAuthError, setAuthLoading, setSession]);
 
   // Auto-initiate auth for Mini App context on mount
   useEffect(() => {
     if (!isMiniApp || authStarted.current) return;
     authStarted.current = true;
-
-    setAuthError(null);
-    setAuthLoading(true);
-
-    authenticateWithApi()
-      .then((data) => {
-        if (data?.accessToken && data?.user) {
-          setSession(createSessionFromAuth(data, 'telegram'));
-        }
-      })
-      .catch((err: any) => {
-        const message = err.response?.data?.error?.message || err.message || 'Authentication failed';
-        setAuthError(message);
-      });
-  }, [isMiniApp, setAuthLoading, setAuthError, setSession]);
+    runMiniAppAuthentication();
+  }, [isMiniApp, runMiniAppAuthentication]);
 
   const handleRetry = () => {
     authStarted.current = false;
-    setAuthError(null);
-    setAuthLoading(true);
-    authenticateWithApi()
-      .then((data) => {
-        if (data?.accessToken && data?.user) {
-          setSession(createSessionFromAuth(data, 'telegram'));
-        }
-      })
-      .catch((err: any) => {
-        const message = err.response?.data?.error?.message || err.message || 'Authentication failed';
-        setAuthError(message);
-      });
+    runMiniAppAuthentication();
   };
 
-  const handleTelegramWidgetLogin = async (userPayload: any) => {
+  const handleTelegramWidgetLogin = useCallback(async (userPayload: TelegramLoginWidgetPayload) => {
     setAuthError(null);
     setAuthLoading(true);
     try {
-      const response = await api.post('/auth/telegram-login', userPayload);
-      const body = response.data;
-      if (body.success && body.data) {
-        setSession(createSessionFromAuth(body.data, 'web'));
-      } else {
-        throw new Error(body.error?.message || 'Web authentication failed');
-      }
+      const session = await authService.authenticateWebLogin(userPayload);
+      setSession(session);
+      authService.trace('dashboard', 'web.dashboard_loaded', `user=${session.user.telegramUserId}`);
     } catch (err: any) {
-      const message = err.response?.data?.error?.message || err.message || 'Telegram login failed';
+      const message = err.response?.data?.error?.message || err.message || 'Telegram login failed. Please try again.';
+      console.error(`[AUTH_TRACE:web] authentication.failed ${message}`);
       setAuthError(message);
+    } finally {
+      setAuthLoading(false);
     }
-  };
+  }, [setAuthError, setAuthLoading, setSession]);
 
   // Attach global callback and inject Telegram Login Widget for standalone Web context
   useEffect(() => {
     if (isMiniApp) return;
+    authService.trace('web_widget', 'browser.detected');
 
     (window as any).onTelegramAuth = (user: any) => {
       handleTelegramWidgetLogin(user);
@@ -105,16 +76,12 @@ export const TelegramLoginScreen: React.FC = () => {
       script.setAttribute('data-radius', '14');
       script.setAttribute('data-onauth', 'onTelegramAuth(user)');
       script.setAttribute('data-request-access', 'write');
+      script.onload = () => authService.trace('web_widget', 'rendered');
+      script.onerror = () => setAuthError('Unable to load Telegram Login. Please refresh the page and try again.');
 
       widgetContainerRef.current.appendChild(script);
     }
-  }, [isMiniApp]);
-
-  const handleWebLogin = () => {
-    const botUsername = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'titanstream_bot';
-    const tgAppUrl = `https://t.me/${botUsername}/app`;
-    window.open(tgAppUrl, '_blank');
-  };
+  }, [handleTelegramWidgetLogin, isMiniApp, setAuthError]);
 
   // ── Mini App states: loading, error, or fallback (never shows a bot-redirect button) ──
 
@@ -238,15 +205,21 @@ export const TelegramLoginScreen: React.FC = () => {
         transition={{ duration: 0.7, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
         className="relative z-10 w-full max-w-sm px-8 pb-10 flex flex-col items-center gap-4"
       >
-        {/* Telegram Web Login Widget container */}
         <div ref={widgetContainerRef} className="flex justify-center w-full min-h-[48px]" />
 
-        <button
-          onClick={handleWebLogin}
-          className="text-xs text-text-tertiary hover:text-text-secondary transition-colors py-1 font-medium"
-        >
-          Or open in Telegram Mini App
-        </button>
+        {isAuthLoading && (
+          <div className="flex items-center gap-2 text-xs text-text-secondary">
+            <Loader2 size={14} className="animate-spin" />
+            <span>Creating secure session...</span>
+          </div>
+        )}
+
+        {authError && (
+          <div className="flex items-start gap-2 text-xs text-red-300 text-center leading-snug">
+            <AlertCircle size={14} className="mt-0.5 shrink-0" />
+            <span>{authError}</span>
+          </div>
+        )}
 
         <div className="flex items-center justify-center gap-2 text-[10px] text-text-tertiary font-medium">
           <ShieldCheck size={12} className="text-usdt-green/50" />

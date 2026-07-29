@@ -33,9 +33,8 @@ describe('TelegramAuthService', () => {
   });
 
   describe('parseInitData', () => {
-    it('should return null for invalid initData', () => {
-      const result = service.parseInitData('invalid');
-      expect(result).toBeNull();
+    it('should throw for invalid initData', () => {
+      expect(() => service.parseInitData('invalid')).toThrow();
     });
   });
 });

@@ -8,6 +8,7 @@ import { AuditModule } from '../audit/audit.module';
 @Module({
   imports: [
     JwtModule.register({
+      global: true,
       secret: process.env.JWT_SECRET || 'super-secret-jwt-key',
       signOptions: { expiresIn: '15m' },
     }),
@@ -24,6 +25,6 @@ import { AuditModule } from '../audit/audit.module';
       },
     },
   ],
-  exports: [AuthService],
+  exports: [AuthService, JwtModule],
 })
 export class AuthModule {}

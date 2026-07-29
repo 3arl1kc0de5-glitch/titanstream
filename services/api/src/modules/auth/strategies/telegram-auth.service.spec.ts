@@ -1,4 +1,4 @@
-import { createHmac } from 'crypto';
+import { createHash, createHmac } from 'crypto';
 import { TelegramAuthService } from './telegram-auth.service';
 
 function signInitData(params: Record<string, string>, botToken = 'test_bot_token') {
@@ -9,6 +9,16 @@ function signInitData(params: Record<string, string>, botToken = 'test_bot_token
   const secretKey = createHmac('sha256', 'WebAppData').update(botToken).digest();
   const hash = createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
   return new URLSearchParams({ ...params, hash }).toString();
+}
+
+function signWebLoginPayload(payload: Record<string, string | number>, botToken = 'test_bot_token') {
+  const dataCheckString = Object.keys(payload)
+    .sort()
+    .map((key) => `${key}=${payload[key]}`)
+    .join('\n');
+  const secretKey = createHash('sha256').update(botToken).digest();
+  const hash = createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
+  return { ...payload, hash };
 }
 
 describe('TelegramAuthService', () => {
@@ -48,6 +58,35 @@ describe('TelegramAuthService', () => {
     });
 
     expect(service.verifyInitData(initData.replace('Original', 'Changed')).isValid).toBe(false);
-    expect(service.parseInitData(initData.replace('Original', 'Changed'))).toBeNull();
+    expect(() => service.parseInitData(initData.replace('Original', 'Changed'))).toThrow();
+  });
+
+  it('validates and parses Telegram Login Widget payloads', () => {
+    const payload = signWebLoginPayload({
+      id: 123456789,
+      first_name: 'Wendy',
+      last_name: 'Doe',
+      username: 'wendy',
+      auth_date: Math.floor(Date.now() / 1000),
+    });
+
+    expect(service.parseWebLoginPayload(payload as any)).toEqual({
+      telegramUserId: '123456789',
+      firstName: 'Wendy',
+      lastName: 'Doe',
+      username: 'wendy',
+      languageCode: 'en',
+      photoUrl: undefined,
+    });
+  });
+
+  it('rejects tampered Telegram Login Widget payloads', () => {
+    const payload = signWebLoginPayload({
+      id: 123456789,
+      first_name: 'Wendy',
+      auth_date: Math.floor(Date.now() / 1000),
+    });
+
+    expect(() => service.parseWebLoginPayload({ ...payload, first_name: 'Mallory' } as any)).toThrow();
   });
 });

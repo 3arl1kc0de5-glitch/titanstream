@@ -8,6 +8,7 @@ export interface TelegramInitDataUser {
   username?: string;
   languageCode?: string;
   photoUrl?: string;
+  startParam?: string;
 }
 
 export interface TelegramWebLoginPayload {
@@ -37,10 +38,11 @@ export class TelegramAuthService {
   }
 
   parseInitData(initData: string): TelegramInitDataUser | null {
+    this.assertValid(initData);
     try {
-      this.assertValid(initData);
       const params = new URLSearchParams(initData);
       const rawUser = params.get('user');
+      const startParam = params.get('start_param') || undefined;
 
       if (rawUser) {
         const user = JSON.parse(rawUser);
@@ -51,6 +53,7 @@ export class TelegramAuthService {
           username: user.username,
           languageCode: user.language_code || 'en',
           photoUrl: user.photo_url,
+          startParam,
         };
       }
 
@@ -64,9 +67,10 @@ export class TelegramAuthService {
         username: params.get('username') || undefined,
         languageCode: params.get('language_code') || 'en',
         photoUrl: params.get('photo_url') || undefined,
+        startParam,
       };
     } catch {
-      return null;
+      throw new BadRequestException('MALFORMED_INIT_DATA_USER');
     }
   }
 
@@ -96,6 +100,10 @@ export class TelegramAuthService {
   }
 
   private assertValid(initData: string) {
+    if (!this.botToken) {
+      throw new UnauthorizedException('TELEGRAM_BOT_TOKEN_NOT_CONFIGURED');
+    }
+
     if (!initData || initData.length > this.maxInitDataSize) {
       throw new BadRequestException('MALFORMED_INIT_DATA');
     }
@@ -127,7 +135,11 @@ export class TelegramAuthService {
     const secretKey = createHmac('sha256', 'WebAppData').update(this.botToken).digest();
     const calculatedHash = createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
 
-    return calculatedHash.length === hash.length && timingSafeEqual(Buffer.from(calculatedHash), Buffer.from(hash));
+    try {
+      return calculatedHash.length === hash.length && timingSafeEqual(Buffer.from(calculatedHash), Buffer.from(hash));
+    } catch {
+      return false;
+    }
   }
 
   private verifyWebLoginSignature(payload: TelegramWebLoginPayload): boolean {
@@ -141,6 +153,10 @@ export class TelegramAuthService {
     const secretKey = createHash('sha256').update(this.botToken).digest();
     const calculatedHash = createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
 
-    return calculatedHash.length === hash.length && timingSafeEqual(Buffer.from(calculatedHash), Buffer.from(hash));
+    try {
+      return calculatedHash.length === hash.length && timingSafeEqual(Buffer.from(calculatedHash), Buffer.from(hash));
+    } catch {
+      return false;
+    }
   }
 }

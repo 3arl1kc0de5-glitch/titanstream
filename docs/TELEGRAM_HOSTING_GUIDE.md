@@ -111,3 +111,50 @@ curl -s "https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/getWebhookInfo" | jq .
 | **Direct Web Access Gate** | ✅ Enforced | Unauthenticated web visits block dashboard & render `Continue with Telegram` |
 | **Deep Link Routing** | ✅ Active | `/start ref_123` correctly parses referral parameter |
 | **Notifications Push** | ✅ Active | Telegram Bot API delivers instant event alerts to chat |
+
+---
+
+## 6. Authentication Configuration
+
+Production authentication is configured for the live bot, frontend, and backend. Use this section as the repeatable setup record when migrating servers or deploying a new environment.
+
+| Setting | Production Value / Location | Notes |
+| :--- | :--- | :--- |
+| **Bot Username** | `titanstream_bot` | Must match `TELEGRAM_BOT_USERNAME` and the Telegram Login Widget `data-telegram-login` value. |
+| **Authorized Domains** | `titanstream.app`, `titanstream.netlify.app`, production API domain | Configure the web app domain in BotFather for Telegram Login Widget authorization. Keep CORS aligned with these origins. |
+| **Mini App URL** | `https://titanstream.app` | Configured in BotFather as the Mini App menu/app URL. |
+| **Backend API URL** | Railway production API, `/api/v1` prefix | Frontend reads this from `VITE_API_BASE_URL`; production fallback points to the Railway API. |
+| **Bot Token Location** | Backend environment variable `TELEGRAM_BOT_TOKEN` | Never commit or document the token value. Used for Mini App HMAC and Login Widget signature verification. |
+| **JWT Secret Location** | Backend environment variable `JWT_SECRET` | Used for access tokens. Must be high entropy and environment-specific. |
+| **Refresh Secret Location** | Backend environment variable `JWT_REFRESH_SECRET` | Used for refresh token rotation. Must differ from `JWT_SECRET`. |
+| **Session Lifetime** | Access: `15m`; Refresh: `30d` | Access tokens are short-lived. Refresh tokens rotate through `/auth/refresh`. |
+| **Frontend Token Store** | Zustand persisted session plus `localStorage.auth_token` | Page refresh restores the session; failed refresh clears it. |
+
+### Web Login Callback Flow
+
+```text
+Browser opens https://titanstream.app
+  -> Frontend detects no Telegram WebApp initData
+  -> Official Telegram Login Widget renders
+  -> Telegram returns signed user payload to onTelegramAuth(user)
+  -> Frontend POSTs payload to /api/v1/auth/telegram-login
+  -> Backend verifies signature with TELEGRAM_BOT_TOKEN
+  -> Backend resolves users.telegram_user_id
+  -> Backend issues Titan Stream JWT pair
+  -> Frontend stores session and loads dashboard
+```
+
+### Mini App Signature Verification
+
+```text
+Telegram injects window.Telegram.WebApp.initData
+  -> Frontend POSTs initData to /api/v1/auth/telegram
+  -> Backend sorts all fields except hash
+  -> Backend derives secret with HMAC-SHA256("WebAppData", TELEGRAM_BOT_TOKEN)
+  -> Backend computes HMAC-SHA256(dataCheckString, secret)
+  -> Backend rejects missing, expired, modified, or invalid payloads
+```
+
+### Refresh Token Policy
+
+The frontend keeps the existing authenticated session across page refreshes. If a protected API request returns `401`, the client attempts one refresh request through `/api/v1/auth/refresh`. A successful refresh rotates both tokens and retries the original request. A failed refresh clears the session and returns the user to Mini App auto-auth or the web Login Widget, depending on runtime context.

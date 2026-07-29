@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
+import { Injectable, UnauthorizedException, Logger, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../database/prisma.service';
 import { TelegramAuthService } from './strategies/telegram-auth.service';
@@ -17,26 +17,34 @@ export class AuthService {
   ) {}
 
   async authenticate(initData: string, ipAddress?: string, userAgent?: string) {
-    this.logger.log(`[TELEGRAM_AUTH_TELEMETRY] 1. InitData Payload Received (len: ${initData?.length ?? 0})`);
-    const parsed = this.telegramAuth.parseInitData(initData);
-    if (!parsed) {
-      this.logger.error(`[TELEGRAM_AUTH_TELEMETRY] 2. Signature Validation: FAILED — INVALID_INIT_DATA`);
-      throw new UnauthorizedException('INVALID_INIT_DATA');
+    const traceId = this.createTraceId();
+    this.logAuth(traceId, 'mini_app.request_received', `initData length=${initData?.length ?? 0}`);
+    try {
+      const parsed = this.telegramAuth.parseInitData(initData);
+      if (!parsed) throw new UnauthorizedException('INVALID_INIT_DATA');
+      this.logAuth(traceId, 'mini_app.signature_verified', `telegramUserId=${parsed.telegramUserId}`);
+      return this.authenticateTelegramIdentity(parsed, 'telegram_mini_app', traceId, ipAddress, userAgent);
+    } catch (error: any) {
+      this.logAuthFailure(traceId, 'mini_app.failed', error);
+      throw error;
     }
-
-    this.logger.log(`[TELEGRAM_AUTH_TELEMETRY] 2. Signature Validation: SUCCESS — User ID ${parsed.telegramUserId}`);
-    return this.processUserAuthentication(parsed, ipAddress, userAgent);
   }
 
   async authenticateWebLogin(payload: any, ipAddress?: string, userAgent?: string) {
-    this.logger.log(`[TELEGRAM_AUTH_TELEMETRY] 1. Web Login Payload Received for ID ${payload?.id}`);
-    const parsed = this.telegramAuth.parseWebLoginPayload(payload);
-    this.logger.log(`[TELEGRAM_AUTH_TELEMETRY] 2. Web Login Signature Validation: SUCCESS — User ID ${parsed.telegramUserId}`);
-    return this.processUserAuthentication(parsed, ipAddress, userAgent);
+    const traceId = this.createTraceId();
+    this.logAuth(traceId, 'web_login.request_received', `telegramPayloadId=${payload?.id ?? 'missing'}`);
+    try {
+      const parsed = this.telegramAuth.parseWebLoginPayload(payload);
+      this.logAuth(traceId, 'web_login.signature_verified', `telegramUserId=${parsed.telegramUserId}`);
+      return this.authenticateTelegramIdentity(parsed, 'telegram_login_widget', traceId, ipAddress, userAgent);
+    } catch (error: any) {
+      this.logAuthFailure(traceId, 'web_login.failed', error);
+      throw error;
+    }
   }
 
-  private async processUserAuthentication(parsed: any, ipAddress?: string, userAgent?: string) {
-    const { telegramUserId, firstName, lastName, username, languageCode, photoUrl } = parsed;
+  private async authenticateTelegramIdentity(parsed: any, provider: string, traceId: string, ipAddress?: string, userAgent?: string) {
+    const { telegramUserId, firstName, lastName, username, languageCode, photoUrl, startParam } = parsed;
     const telegramUserIdBig = BigInt(telegramUserId);
 
     let user = await this.prisma.user.findUnique({
@@ -45,7 +53,7 @@ export class AuthService {
 
     let isNewUser = false;
     if (!user) {
-      this.logger.log(`[TELEGRAM_AUTH_TELEMETRY] 3. User Lookup: NEW USER — Creating record for ID ${telegramUserId}`);
+      this.logAuth(traceId, 'identity.user_lookup', `status=new telegramUserId=${telegramUserId}`);
       user = await this.prisma.$transaction(async (tx) => {
         const newUser = await tx.user.create({
           data: {
@@ -79,11 +87,10 @@ export class AuthService {
           },
         });
 
-        const referralCode = `TS${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
         await tx.referralCode.create({
           data: {
             telegramUserId: telegramUserIdBig,
-            code: referralCode,
+            code: await this.generateUniqueReferralCode(tx),
             metadata: { generatedAt: new Date().toISOString() },
           },
         });
@@ -116,13 +123,15 @@ export class AuthService {
           },
         });
 
+        await this.attachReferralIfPresent(tx, telegramUserIdBig, startParam, traceId);
+
         await this.auditService.createWithClient(tx, {
           telegramUserId: telegramUserIdBig,
           eventType: AuditEventType.USER_CREATED,
-          description: 'New user registered via Telegram Mini App',
+          description: `New user registered via ${provider}`,
           ipAddress,
           userAgent,
-          metadata: { username, firstName },
+          metadata: { provider, username, firstName, traceId },
         });
 
         return newUser;
@@ -130,6 +139,7 @@ export class AuthService {
 
       isNewUser = true;
     } else {
+      this.logAuth(traceId, 'identity.user_lookup', `status=existing telegramUserId=${telegramUserId}`);
       const updateData: any = {
         lastActiveAt: new Date(),
         lastLoginAt: new Date(),
@@ -147,6 +157,8 @@ export class AuthService {
         where: { telegramUserId: telegramUserIdBig },
         data: updateData,
       });
+
+      await this.ensureIdentityResources(telegramUserIdBig, traceId);
     }
 
     await this.auditService.create({
@@ -155,10 +167,14 @@ export class AuthService {
       description: isNewUser ? 'First time authentication' : 'Returning user authentication',
       ipAddress,
       userAgent,
-      metadata: { isNewUser },
+      metadata: { isNewUser, provider, traceId },
     });
 
     const { isReady, readiness } = await this.evaluateReadiness(telegramUserIdBig);
+
+    if (user.state === UserState.NEW) {
+      user = await this.transitionUserState(telegramUserIdBig, UserState.AUTHENTICATED, 'Auto-transition on auth');
+    }
 
     const payload = {
       sub: String(telegramUserId),
@@ -167,15 +183,14 @@ export class AuthService {
       role: 'USER',
     };
 
-    if (user.state === UserState.NEW) {
-      user = await this.transitionUserState(telegramUserIdBig, UserState.AUTHENTICATED, 'Auto-transition on auth');
-    }
-
     const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
     const refreshToken = this.jwtService.sign(
       { sub: String(telegramUserId), type: 'refresh' },
       { expiresIn: '30d', secret: process.env.JWT_REFRESH_SECRET || 'refresh-secret' },
     );
+
+    this.logAuth(traceId, 'jwt.issued', `telegramUserId=${telegramUserId}`);
+    this.logAuth(traceId, 'auth.completed', `provider=${provider} isNewUser=${isNewUser}`);
 
     return {
       accessToken,
@@ -187,14 +202,104 @@ export class AuthService {
       },
       readiness,
       isNewUser,
+      traceId,
     };
   }
 
+  private async ensureIdentityResources(telegramUserId: bigint, traceId: string) {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.onboardingProgress.upsert({
+        where: { telegramUserId },
+        update: {},
+        create: { telegramUserId, currentStep: 'welcome', stepsCompleted: [] },
+      });
+      await tx.financialAccount.upsert({
+        where: { telegramUserId },
+        update: {},
+        create: { telegramUserId, status: 'ACTIVE', activatedAt: new Date() },
+      });
+      await tx.referralCode.upsert({
+        where: { telegramUserId },
+        update: {},
+        create: {
+          telegramUserId,
+          code: await this.generateUniqueReferralCode(tx),
+          metadata: { generatedAt: new Date().toISOString(), traceId },
+        },
+      });
+      await tx.userTrustProfile.upsert({
+        where: { telegramUserId },
+        update: {},
+        create: {
+          telegramUserId,
+          trustScore: 50,
+          completedSettlements: 0,
+          failedSettlements: 0,
+          successRate: 100.0,
+          accountAgeDays: 0,
+          verificationStatus: 'UNVERIFIED',
+        },
+      });
+      await tx.userLevelRecord.upsert({
+        where: { telegramUserId },
+        update: {},
+        create: { telegramUserId, currentLevel: 'NEW' },
+      });
+      await tx.notificationPreference.upsert({
+        where: { telegramUserId },
+        update: {},
+        create: { telegramUserId, telegramEnabled: true, inAppEnabled: true, marketingEnabled: false },
+      });
+    });
+    this.logAuth(traceId, 'identity.resources_verified', `telegramUserId=${telegramUserId.toString()}`);
+  }
+
+  private async attachReferralIfPresent(tx: any, telegramUserId: bigint, startParam: string | undefined, traceId: string) {
+    if (!startParam) return;
+
+    const referralCode = startParam.startsWith('ref_') ? startParam.replace('ref_', '') : startParam;
+    const codeRecord = await tx.referralCode.findUnique({ where: { code: referralCode } });
+    if (!codeRecord) {
+      this.logAuth(traceId, 'referral.skipped', `reason=code_not_found code=${referralCode}`);
+      return;
+    }
+
+    if (codeRecord.telegramUserId === telegramUserId) {
+      this.logAuth(traceId, 'referral.skipped', 'reason=self_referral');
+      return;
+    }
+
+    await tx.referralRelationship.upsert({
+      where: { refereeId: telegramUserId },
+      update: {},
+      create: {
+        referrerId: codeRecord.telegramUserId,
+        refereeId: telegramUserId,
+        referralCodeId: codeRecord.id,
+        status: 'CREATED',
+        metadata: { source: 'auth', referralCode, traceId },
+      },
+    });
+    this.logAuth(traceId, 'referral.attached', `refereeId=${telegramUserId.toString()} code=${referralCode}`);
+  }
+
+  private async generateUniqueReferralCode(tx: any): Promise<string> {
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      const code = `TS${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      const existing = await tx.referralCode.findUnique({ where: { code } });
+      if (!existing) return code;
+    }
+    throw new BadRequestException('REFERRAL_CODE_GENERATION_FAILED');
+  }
+
   async refreshTokens(refreshToken: string) {
+    const traceId = this.createTraceId();
+    this.logAuth(traceId, 'refresh.request_received', 'refresh token submitted');
     try {
       const payload = this.jwtService.verify(refreshToken, {
         secret: process.env.JWT_REFRESH_SECRET || 'refresh-secret',
       });
+      if (payload.type !== 'refresh') throw new UnauthorizedException('INVALID_REFRESH_TOKEN');
       const telegramUserId = BigInt(payload.sub);
 
       const user = await this.prisma.user.findUnique({
@@ -215,8 +320,10 @@ export class AuthService {
         { expiresIn: '30d', secret: process.env.JWT_REFRESH_SECRET || 'refresh-secret' },
       );
 
-      return { accessToken: newAccessToken, refreshToken: newRefreshToken };
-    } catch {
+      this.logAuth(traceId, 'refresh.completed', `telegramUserId=${telegramUserId.toString()}`);
+      return { accessToken: newAccessToken, refreshToken: newRefreshToken, traceId };
+    } catch (error: any) {
+      this.logAuthFailure(traceId, 'refresh.failed', error);
       throw new UnauthorizedException('TOKEN_EXPIRED');
     }
   }
@@ -299,5 +406,18 @@ export class AuthService {
       isReady: user.isReady,
       createdAt: user.createdAt,
     };
+  }
+
+  private createTraceId() {
+    return `auth_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+  }
+
+  private logAuth(traceId: string, stage: string, detail: string) {
+    this.logger.log(`[AUTH_TRACE:${traceId}] ${stage} ${detail}`);
+  }
+
+  private logAuthFailure(traceId: string, stage: string, error: any) {
+    const code = error?.response?.code || error?.message || 'AUTHENTICATION_FAILED';
+    this.logger.error(`[AUTH_TRACE:${traceId}] ${stage} code=${code}`);
   }
 }

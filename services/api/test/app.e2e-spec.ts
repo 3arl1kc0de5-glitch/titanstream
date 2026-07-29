@@ -1,11 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/database/prisma.service';
 import { TelegramAuthService } from '../src/modules/auth/strategies/telegram-auth.service';
 import { TransformInterceptor } from '../src/common/interceptors/transform.interceptor';
 import { HttpExceptionFilter } from '../src/common/filters/http-exception.filter';
+
+const request = require('supertest');
 
 describe('TitanStream API (e2e)', () => {
   let app: INestApplication;
@@ -39,6 +40,19 @@ describe('TitanStream API (e2e)', () => {
             };
           }
           return null;
+        },
+        parseWebLoginPayload: (payload: any) => {
+          if (payload?.hash !== 'valid_widget_hash') {
+            throw new Error('INVALID_WEB_LOGIN_SIGNATURE');
+          }
+          return {
+            telegramUserId: payload.id,
+            firstName: payload.first_name || 'Widget',
+            lastName: payload.last_name,
+            username: payload.username,
+            languageCode: 'en',
+            photoUrl: payload.photo_url,
+          };
         },
       })
       .compile();
@@ -98,6 +112,12 @@ describe('TitanStream API (e2e)', () => {
     await prisma.readinessHistory.deleteMany({});
     await prisma.userStateTransition.deleteMany({});
     await prisma.auditEvent.deleteMany({});
+    await prisma.notificationPreference.deleteMany({});
+    await prisma.userLevelRecord.deleteMany({});
+    await prisma.userTrustProfile.deleteMany({});
+    await prisma.referralRelationship.deleteMany({});
+    await prisma.referralCode.deleteMany({});
+    await prisma.financialAccount.deleteMany({});
     await prisma.user.deleteMany({});
     await prisma.educationModule.deleteMany({});
     await app.close();
@@ -124,6 +144,30 @@ describe('TitanStream API (e2e)', () => {
 
       expect(res.body.success).toBe(true);
       expect(res.body.data.user.telegramUserId).toBe(987654321);
+    });
+
+    it('POST /api/v1/auth/telegram-login - should authenticate via Telegram Login Widget', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/v1/auth/telegram-login')
+        .send({
+          id: 123456789,
+          first_name: 'Test',
+          last_name: 'User',
+          username: 'testuser',
+          auth_date: Math.floor(Date.now() / 1000),
+          hash: 'valid_widget_hash',
+        })
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.accessToken).toBeDefined();
+      expect(res.body.data.user.telegramUserId).toBe(123456789);
+      expect(res.body.data.isNewUser).toBe(false);
+
+      const userCount = await prisma.user.count({ where: { telegramUserId: 123456789n } });
+      const financialAccountCount = await prisma.financialAccount.count({ where: { telegramUserId: 123456789n } });
+      expect(userCount).toBe(1);
+      expect(financialAccountCount).toBe(1);
     });
 
     it('POST /api/v1/auth/telegram - should reject invalid initData', async () => {

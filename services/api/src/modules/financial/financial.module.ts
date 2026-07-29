@@ -24,7 +24,7 @@ import { ExchangeRateController } from './exchange-rate.controller';
     PrismaModule,
     AuditModule,
     forwardRef(() => FinancialOrchestrationModule),
-    AdminModule,
+    forwardRef(() => AdminModule),
     GrowthModule,
   ],
   controllers: [FinancialController, FinancialAccountController, WithdrawalController, ExchangeRateController],

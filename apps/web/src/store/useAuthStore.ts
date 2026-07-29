@@ -27,7 +27,7 @@ export interface AuthResponse {
   isNewUser: boolean;
 }
 
-interface SessionData {
+export interface SessionData {
   accessToken: string;
   refreshToken: string;
   user: AuthUser;
@@ -54,6 +54,7 @@ interface AuthState {
   clearSession: () => void;
   isSessionExpired: () => boolean;
   refreshSession: (newExpiresAt: number) => void;
+  updateTokens: (accessToken: string, refreshToken: string, expiresAt: number) => void;
   setAuthLoading: (loading: boolean) => void;
   setAuthError: (error: string | null) => void;
   markOnboardingComplete: () => void;
@@ -108,6 +109,22 @@ export const useAuthStore = create<AuthState>()(
             session: {
               ...session,
               expiresAt: newExpiresAt,
+            },
+          });
+        }
+      },
+
+      updateTokens: (accessToken, refreshToken, expiresAt) => {
+        const { session } = get();
+        localStorage.setItem('auth_token', accessToken);
+        if (session) {
+          set({
+            isAuthenticated: true,
+            session: {
+              ...session,
+              accessToken,
+              refreshToken,
+              expiresAt,
             },
           });
         }
