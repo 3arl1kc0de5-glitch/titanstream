@@ -1,0 +1,1 @@
+export { WalletSummary } from './WalletSummary';

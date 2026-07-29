@@ -1,0 +1,19 @@
+{
+  "name": "@tetherstream/worker",
+  "version": "1.0.0",
+  "description": "TetherStream Background Queue Worker & Operations Sweeper Engine",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "dev": "ts-node src/main.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.0.0",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}

@@ -1,0 +1,8 @@
+*
+!/pnpm-lock.yaml
+!/pnpm-workspace.yaml
+!/package.json
+!/services
+/services/*
+!/services/api
+!/services/api/**

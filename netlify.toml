@@ -1,0 +1,15 @@
+[build]
+  base = "apps/web"
+  command = "pnpm build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+  PNPM_FLAGS = "--no-frozen-lockfile"
+  VITE_API_BASE_URL = "https://tetherstream-production.up.railway.app/api/v1"
+
+# SPA Fallback Redirects for React Router
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
