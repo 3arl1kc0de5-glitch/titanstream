@@ -18,6 +18,7 @@ import { BalanceService } from '../financial/balance.service';
 import { UserLevelService } from '../growth/user-level.service';
 import { SupportService } from '../admin/services/support.service';
 import { WithdrawalService } from '../financial/withdrawal.service';
+import { FinancialOrchestratorService } from '../financial-orchestration/financial-orchestrator.service';
 
 describe('Telegram Host Bot Production Suite', () => {
   let gateService: BotGateService;
@@ -192,6 +193,11 @@ describe('Telegram Host Bot Production Suite', () => {
     getUserWithdrawalHistory: jest.fn(),
   };
 
+  const mockOrchestratorService = {
+    executeOperation: jest.fn().mockResolvedValue({ status: 'COMPLETED', operationId: 'op_1' }),
+    requestOperation: jest.fn().mockResolvedValue({ status: 'COMPLETED', operationId: 'op_1' }),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -214,6 +220,7 @@ describe('Telegram Host Bot Production Suite', () => {
         { provide: BalanceService, useValue: mockBalanceService },
         { provide: UserLevelService, useValue: mockUserLevelService },
         { provide: SupportService, useValue: mockSupportService },
+        { provide: FinancialOrchestratorService, useValue: mockOrchestratorService },
       ],
     }).compile();
 

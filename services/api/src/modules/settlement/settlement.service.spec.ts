@@ -13,7 +13,8 @@ describe('SettlementService', () => {
   const routing = {};
   const operators = { decrementLoad: jest.fn().mockResolvedValue(undefined), incrementLoad: jest.fn().mockResolvedValue(undefined) };
   const orchestrator = { requestOperation: jest.fn() };
-  const service = new SettlementService(prisma as any, routing as any, operators as any, orchestrator as any);
+  const eventBus = { publish: jest.fn() };
+  const service = new SettlementService(prisma as any, routing as any, operators as any, orchestrator as any, eventBus as any);
 
   const activeSession = {
     id: 'set_1',

@@ -28,7 +28,8 @@ describe('WithdrawalService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new WithdrawalService(prisma as any, orchestrator as any, riskService as any, auditService as any);
+    const eventBus = { publish: jest.fn() };
+    service = new WithdrawalService(prisma as any, orchestrator as any, riskService as any, auditService as any, eventBus as any);
   });
 
   it('initiates withdrawal, reserves funds via orchestrator, and auto-dispatches payout', async () => {
