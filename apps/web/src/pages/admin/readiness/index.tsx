@@ -67,7 +67,7 @@ export const ReadinessPage: React.FC = () => {
             </div>
             <div>
               <span className="text-xs font-bold text-usdt-green uppercase tracking-widest">Official Sign-Off</span>
-              <h2 className="text-lg font-black text-text-primary">TetherStream Financial Platform Certified Production Ready</h2>
+              <h2 className="text-lg font-black text-text-primary">TitanStream Financial Platform Certified Production Ready</h2>
             </div>
           </div>
           <button

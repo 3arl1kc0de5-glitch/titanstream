@@ -1,4 +1,4 @@
-# TetherStream API — Backend Foundation
+# TitanStream API — Backend Foundation
 
 ## Architecture Overview
 
@@ -8,7 +8,7 @@ Telegram Client (Mini App)
        │ initData (HMAC-SHA256 signed)
        ▼
 ┌─────────────────────────────┐
-│    TetherStream API         │
+│    TitanStream API          │
 │    NestJS + Prisma + JWT    │
 │                             │
 │  ┌───────────────────────┐  │

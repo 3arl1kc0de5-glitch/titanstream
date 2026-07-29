@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 console.log('====================================================');
-console.log('🚀 TetherStream Operations & Queue Worker Active');
+console.log('🚀 TitanStream Operations & Queue Worker Active');
 console.log('====================================================');
 
 async function runSweeperCycle() {

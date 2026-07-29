@@ -110,7 +110,7 @@ export const TreasuryPage: React.FC = () => {
           <div>
             <span className="text-xs text-text-tertiary font-bold uppercase tracking-wider">Treasury Operations HQ</span>
             <div className="flex items-center gap-2 mt-0.5">
-              <h3 className="text-lg font-extrabold text-text-primary">TetherStream Escrow Engine</h3>
+              <h3 className="text-lg font-extrabold text-text-primary">TitanStream Escrow Engine</h3>
               <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded border ${statusColors[displayMetrics.healthStatus]}`}>
                 {displayMetrics.healthStatus}
               </span>

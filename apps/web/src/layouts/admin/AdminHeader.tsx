@@ -100,7 +100,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({ title, onMenuToggle })
           </div>
           <div className="hidden sm:block min-w-0">
             <p className="text-sm font-semibold text-text-primary truncate">Admin (Founder)</p>
-            <p className="text-xs text-text-tertiary truncate">admin@tetherstream.io</p>
+            <p className="text-xs text-text-tertiary truncate">admin@titanstream.io</p>
           </div>
         </div>
       </div>

@@ -44,7 +44,7 @@ export const AdminLoginScreen: React.FC<AdminLoginScreenProps> = ({ onAuthentica
 
         <div>
           <h2 className="text-xl font-extrabold tracking-tight font-sans text-text-primary">
-            TetherStream Portal
+            TitanStream Portal
           </h2>
           <p className="text-xs text-text-secondary mt-1 font-sans font-medium">
             Administrative Control Panel & Financial Sweeper Engine

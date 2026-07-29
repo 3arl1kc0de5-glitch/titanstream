@@ -71,7 +71,7 @@ export const RiskPage: React.FC = () => {
       <div className="flex flex-wrap items-center justify-between gap-3 bg-card-bg p-4 rounded-2xl border border-white/10 shadow-lg">
         <div>
           <h2 className="text-sm font-extrabold text-text-primary flex items-center gap-2">
-            <ShieldCheck size={18} className="text-usdt-green" /> TetherStream Platform Hardening Engine
+            <ShieldCheck size={18} className="text-usdt-green" /> TitanStream Platform Hardening Engine
           </h2>
           <p className="text-xs text-text-tertiary mt-0.5">
             Automated verification of financial zero-bypass, idempotency guards, RBAC gating, and rate-limiting.

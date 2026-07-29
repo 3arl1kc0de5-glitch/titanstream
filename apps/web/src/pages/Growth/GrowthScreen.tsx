@@ -122,7 +122,7 @@ export const GrowthScreen: React.FC = () => {
     if (!profile?.referrals.link) return;
     hapticFeedback.impactOccurred('medium');
     const text = encodeURIComponent(
-      `Join me on TetherStream to earn and settle USDT instantly with zero friction! Use my referral code: ${profile.referrals.code}`,
+      `Join me on TitanStream to earn and settle USDT instantly with zero friction! Use my referral code: ${profile.referrals.code}`,
     );
     const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(profile.referrals.link)}&text=${text}`;
     if (telegram?.openTelegramLink) {

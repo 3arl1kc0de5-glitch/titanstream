@@ -68,7 +68,7 @@ export const WalletScreen: React.FC = () => {
       <EducationCard
         educationKey="deposit"
         title="Understanding Deposits"
-        body="Fund your TetherStream balance using local Mobile Money or Telegram @CryptoBot. Every deposit is logged in our production financial ledger and credited to your available balance immediately upon operator confirmation."
+        body="Fund your TitanStream balance using local Mobile Money or Telegram @CryptoBot. Every deposit is logged in our production financial ledger and credited to your available balance immediately upon operator confirmation."
       />
 
       {/* Balance Hero Card */}

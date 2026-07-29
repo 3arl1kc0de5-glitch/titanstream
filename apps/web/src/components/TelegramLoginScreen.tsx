@@ -190,7 +190,7 @@ export const TelegramLoginScreen: React.FC = () => {
         </div>
 
         <h1 className="text-[34px] font-black text-text-primary tracking-tight font-sans leading-none">
-          TetherStream
+          TitanStream
         </h1>
         <p className="text-[15px] text-text-secondary mt-3 font-semibold font-sans leading-snug">
           Participate in the<br />Cloud Computing Economy

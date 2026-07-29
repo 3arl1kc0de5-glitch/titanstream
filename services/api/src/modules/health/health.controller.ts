@@ -14,7 +14,7 @@ export class HealthController {
       return {
         status: 'ok',
         timestamp: new Date().toISOString(),
-        service: 'tetherstream-api',
+        service: 'titanstream-api',
         checks: {
           database: 'ok',
         },
@@ -36,7 +36,7 @@ export class HealthController {
     return {
       status: 'UP',
       timestamp: new Date().toISOString(),
-      service: 'tetherstream-api',
+      service: 'titanstream-api',
     };
   }
 

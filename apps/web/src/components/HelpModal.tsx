@@ -24,8 +24,8 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
   const faqItems: FAQItem[] = [
     {
       id: 'what_is',
-      question: 'What is TetherStream?',
-      answer: 'TetherStream is a simple way for ordinary people to participate in the growing cloud computing economy. By pooling resources together, users help secure high-performance computing capacity that businesses rent daily. We share the generated rental revenue directly with you.',
+      question: 'What is TitanStream?',
+      answer: 'TitanStream is a simple way for ordinary people to participate in the growing cloud computing economy. By pooling resources together, users help secure high-performance computing capacity that businesses rent daily. We share the generated rental revenue directly with you.',
       icon: <Server size={20} className="text-usdt-green" />
     },
     {
@@ -138,8 +138,8 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
     },
     {
       id: 'platform_fee',
-      question: 'How does TetherStream make money?',
-      answer: 'TetherStream acts as the platform orchestrator. We take a small service fee from the rental contracts paid by businesses to cover data center maintenance, electricity, and platform operations.',
+      question: 'How does TitanStream make money?',
+      answer: 'TitanStream acts as the platform orchestrator. We take a small service fee from the rental contracts paid by businesses to cover data center maintenance, electricity, and platform operations.',
       icon: <Server size={20} className="text-gray-400" />
     },
     {
@@ -189,7 +189,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
           {/* Introduction */}
           <div className="bg-control-bg/30 border border-white/5 rounded-2xl p-4 mb-4">
             <p className="text-xs text-text-secondary leading-relaxed font-medium">
-              TetherStream is your portal to the growing cloud computing economy. 
+              TitanStream is your portal to the growing cloud computing economy. 
               By joining together, we secure high-performance computing capacity that businesses rent daily. 
               Enjoy secure payouts in real-time.
             </p>
@@ -252,7 +252,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                 useSupportStore.getState().createTicket(
                   {
                     userTelegramId: user?.id?.toString() || '74829103',
-                    userName: user?.first_name || 'TetherStream User',
+                    userName: user?.first_name || 'TitanStream User',
                     userUsername: user?.username ? `@${user.username}` : '@user',
                     userCountry: 'Uganda',
                     userBalanceUsdt: useWalletStore.getState().usdtBalance,

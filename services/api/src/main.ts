@@ -23,7 +23,7 @@ async function bootstrap() {
 
   const frontendUrl = process.env.FRONTEND_URL;
   const allowedOrigins = frontendUrl
-    ? [frontendUrl, 'https://tetherstream.netlify.app', 'http://localhost:5173']
+    ? [frontendUrl, 'https://titanstream.netlify.app', 'http://localhost:5173']
     : true;
 
   app.enableCors({
@@ -34,7 +34,7 @@ async function bootstrap() {
   });
 
   const config = new DocumentBuilder()
-    .setTitle('TetherStream API')
+    .setTitle('TitanStream API')
     .setDescription('Telegram-native financial application backend')
     .setVersion('1.0.0')
     .addBearerAuth()
@@ -45,7 +45,7 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  console.log(`TetherStream API running on port ${port}`);
+  console.log(`TitanStream API running on port ${port}`);
   console.log(`Swagger docs at http://localhost:${port}/docs`);
 }
 bootstrap();

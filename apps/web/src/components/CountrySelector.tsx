@@ -10,7 +10,7 @@ interface CountrySelectorProps {
 }
 
 /**
- * Full-screen overlay asking "Which country are you using TetherStream from?"
+ * Full-screen overlay asking "Which country are you using TitanStream from?"
  * Shown after onboarding completes if the user hasn't selected a country yet.
  * Searchable list with flags.
  */
@@ -61,7 +61,7 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({ onComplete }) 
       <div className="px-6 pt-8 pb-4">
         <div className="flex items-center gap-2 mb-1">
           <span className="w-6 h-6 rounded-full bg-usdt-green/20 text-usdt-green flex items-center justify-center font-black text-xs">₮</span>
-          <span className="text-sm font-extrabold text-text-primary tracking-tight">TetherStream</span>
+          <span className="text-sm font-extrabold text-text-primary tracking-tight">TitanStream</span>
         </div>
 
         <div className="mt-4 mb-1">
@@ -69,7 +69,7 @@ export const CountrySelector: React.FC<CountrySelectorProps> = ({ onComplete }) 
             <Globe size={22} />
           </div>
           <h1 className="text-xl font-black text-text-primary tracking-tight font-sans">
-            Which country are you using TetherStream from?
+            Which country are you using TitanStream from?
           </h1>
           <p className="text-xs text-text-secondary mt-2 leading-relaxed font-medium font-sans">
             This helps us show prices in your local currency and offer the best payment methods for your region.

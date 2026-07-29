@@ -33,8 +33,8 @@ export const OnboardingOverlay: React.FC<OnboardingOverlayProps> = ({ onComplete
   const slides: Slide[] = [
     {
       id: 0,
-      title: "Welcome to TetherStream 👋",
-      copy: "TetherStream gives everyday people access to powerful cloud computers.\n\nYou don't need to own expensive equipment — we make it simple to get started together.",
+      title: "Welcome to TitanStream 👋",
+      copy: "TitanStream gives everyday people access to powerful cloud computers.\n\nYou don't need to own expensive equipment — we make it simple to get started together.",
       icon: <Server size={28} />,
       gradient: "from-emerald-400 to-cyan-400",
       bgGlow: "bg-emerald-500/15",
@@ -42,7 +42,7 @@ export const OnboardingOverlay: React.FC<OnboardingOverlayProps> = ({ onComplete
     {
       id: 1,
       title: "How does it make money?",
-      copy: "Businesses around the world rent cloud computers every day.\n\nThey use them for AI, apps, websites, data processing, video rendering, and many other tasks.\n\nTetherStream grows cloud capacity and shares part of the revenue with its community.",
+      copy: "Businesses around the world rent cloud computers every day.\n\nThey use them for AI, apps, websites, data processing, video rendering, and many other tasks.\n\nTitanStream grows cloud capacity and shares part of the revenue with its community.",
       icon: <TrendingUp size={28} />,
       gradient: "from-purple-400 to-indigo-400",
       bgGlow: "bg-purple-500/15",
@@ -110,7 +110,7 @@ export const OnboardingOverlay: React.FC<OnboardingOverlayProps> = ({ onComplete
       <div className="relative z-10 flex items-center justify-between px-6 pt-6">
         <div className="flex items-center gap-2">
           <span className="w-6 h-6 rounded-full bg-usdt-green/20 text-usdt-green flex items-center justify-center font-black text-xs">₮</span>
-          <span className="text-sm font-extrabold text-text-primary tracking-tight font-sans">TetherStream</span>
+          <span className="text-sm font-extrabold text-text-primary tracking-tight font-sans">TitanStream</span>
         </div>
         
         {!isLast && (

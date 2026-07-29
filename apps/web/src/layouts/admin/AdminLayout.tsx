@@ -71,7 +71,7 @@ export const AdminLayout: React.FC = () => {
           <div className="absolute inset-0 bg-black/60" onClick={() => setMobileMenuOpen(false)} />
           <div className="relative w-64 h-full bg-app-bg-secondary border-r border-border overflow-y-auto">
             <div className="flex items-center justify-between h-14 px-4 border-b border-border">
-              <span className="text-sm font-bold text-text-primary">TetherStream</span>
+              <span className="text-sm font-bold text-text-primary">TitanStream</span>
               <button onClick={() => setMobileMenuOpen(false)} className="p-1 rounded-lg hover:bg-control-bg">
                 <X size={18} className="text-text-secondary" />
               </button>

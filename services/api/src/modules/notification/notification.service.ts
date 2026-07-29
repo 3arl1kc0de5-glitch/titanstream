@@ -163,7 +163,7 @@ export class NotificationService implements OnModuleInit {
       {
         code: 'ACCOUNT_CREATED',
         name: 'Account Created',
-        titleTemplate: 'Welcome to TetherStream',
+        titleTemplate: 'Welcome to TitanStream',
         bodyTemplate: 'Welcome {firstName}! Your Telegram identity node has been initialized successfully.',
         channel: NotificationChannel.IN_APP,
       },
@@ -248,7 +248,7 @@ export class NotificationService implements OnModuleInit {
         code: 'REFERRAL_JOINED',
         name: 'Referral Joined',
         titleTemplate: 'New Partner Joined',
-        bodyTemplate: 'User {username} joined TetherStream using your referral link!',
+        bodyTemplate: 'User {username} joined TitanStream using your referral link!',
         channel: NotificationChannel.IN_APP,
       },
       {

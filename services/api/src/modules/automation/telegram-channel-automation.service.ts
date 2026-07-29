@@ -30,8 +30,8 @@ export class TelegramChannelAutomationService implements OnModuleInit {
 
   private seedDefaultChannels() {
     const ch1: TelegramChannelConfig = {
-      channelId: '@tetherstream_announcements',
-      channelName: 'TetherStream Official Announcements',
+      channelId: '@titanstream_announcements',
+      channelName: 'TitanStream Official Announcements',
       channelType: 'ANNOUNCEMENT',
       enabledEvents: ['PLATFORM_ANNOUNCEMENT', 'MILESTONE_REACHED'],
       messageTemplate: '📢 [ANNOUNCEMENT] {title}\n\n{body}',
@@ -39,8 +39,8 @@ export class TelegramChannelAutomationService implements OnModuleInit {
     };
 
     const ch2: TelegramChannelConfig = {
-      channelId: '@tetherstream_success_feed',
-      channelName: 'TetherStream Live Activity Feed',
+      channelId: '@titanstream_success_feed',
+      channelName: 'TitanStream Live Activity Feed',
       channelType: 'SUCCESS',
       enabledEvents: ['LARGE_DEPOSIT', 'MACHINE_ACTIVATED', 'LARGE_WITHDRAWAL'],
       messageTemplate: '🎉 [COMMUNITY EVENT] {message}',

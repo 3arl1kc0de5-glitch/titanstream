@@ -167,7 +167,7 @@ export class ConsentService {
     return [
       {
         type: 'not_a_bank',
-        label: 'I understand that TetherStream is not a bank or financial institution',
+        label: 'I understand that TitanStream is not a bank or financial institution',
         required: true,
       },
       {

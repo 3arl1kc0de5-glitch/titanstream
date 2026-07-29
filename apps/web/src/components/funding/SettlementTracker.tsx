@@ -228,7 +228,7 @@ export const SettlementTracker: React.FC<SettlementTrackerProps> = ({
         <div className="glass-panel p-4 rounded-2xl border border-white/10 space-y-3 bg-usdt-green/5">
           <div className="flex items-center gap-2 text-usdt-green font-bold text-xs">
             <ShieldCheck size={16} />
-            <span>TetherStream Verified Payment Route</span>
+            <span>TitanStream Verified Payment Route</span>
           </div>
 
           <div className="space-y-2 text-xs">

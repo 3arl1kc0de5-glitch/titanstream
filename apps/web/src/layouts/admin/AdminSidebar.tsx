@@ -97,7 +97,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ collapsed, onToggle,
     <aside className={`h-screen bg-app-bg-secondary border-r border-border flex flex-col transition-all duration-200 ${collapsed ? 'w-[60px]' : 'w-[240px]'}`}>
       <div className="flex items-center justify-between h-14 px-4 border-b border-border">
         {!collapsed && (
-          <span className="text-sm font-bold text-text-primary tracking-wide">TetherStream</span>
+          <span className="text-sm font-bold text-text-primary tracking-wide">TitanStream</span>
         )}
         <button
           onClick={onToggle}

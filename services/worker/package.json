@@ -1,7 +1,7 @@
 {
-  "name": "@tetherstream/worker",
+  "name": "@titanstream/worker",
   "version": "1.0.0",
-  "description": "TetherStream Background Queue Worker & Operations Sweeper Engine",
+  "description": "TitanStream Background Queue Worker & Operations Sweeper Engine",
   "main": "dist/main.js",
   "scripts": {
     "build": "tsc",

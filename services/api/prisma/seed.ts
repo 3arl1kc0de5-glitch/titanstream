@@ -32,14 +32,14 @@ async function main() {
         },
         {
           type: 'text',
-          data: { text: 'TetherStream uses a simulated mining system. You earn in-app balances that can be withdrawn as real USDT or TON to your external wallet.' },
+          data: { text: 'TitanStream uses a simulated mining system. You earn in-app balances that can be withdrawn as real USDT or TON to your external wallet.' },
           localizationKey: 'edu.crypto_basics.slide4',
         },
       ],
     },
     {
       id: 'welcome' as EducationModuleId,
-      title: 'Welcome to TetherStream',
+      title: 'Welcome to TitanStream',
       description: 'What this platform is, what it is not, and the high-level opportunity',
       mandatory: true,
       estimatedSeconds: 30,
@@ -48,7 +48,7 @@ async function main() {
       content: [
         {
           type: 'text',
-          data: { text: 'Welcome to TetherStream — a platform where you can earn rewards through simulated mining activities. No real crypto required to start.' },
+          data: { text: 'Welcome to TitanStream — a platform where you can earn rewards through simulated mining activities. No real crypto required to start.' },
           localizationKey: 'edu.welcome.slide1',
         },
         {
@@ -147,7 +147,7 @@ async function main() {
         },
         {
           type: 'text',
-          data: { text: 'Security: Never share your account. TetherStream will never ask for your private keys or seed phrase.' },
+          data: { text: 'Security: Never share your account. TitanStream will never ask for your private keys or seed phrase.' },
           localizationKey: 'edu.risks.slide3',
         },
         {
@@ -176,7 +176,7 @@ async function main() {
     {
       id: 'myths' as EducationModuleId,
       title: 'Common Misconceptions',
-      description: 'Myth vs Fact: what TetherStream is and is not',
+      description: 'Myth vs Fact: what TitanStream is and is not',
       mandatory: true,
       estimatedSeconds: 60,
       orderIndex: 7,
@@ -184,7 +184,7 @@ async function main() {
       content: [
         {
           type: 'myth_fact',
-          data: { myth: 'This is a bank', fact: 'TetherStream is a gaming/mining platform' },
+          data: { myth: 'This is a bank', fact: 'TitanStream is a gaming/mining platform' },
           localizationKey: 'edu.myths.myth1',
         },
         {
@@ -222,10 +222,10 @@ async function main() {
         {
           type: 'quiz_question',
           data: {
-            question: 'What is TetherStream?',
+            question: 'What is TitanStream?',
             options: ['A bank', 'A simulated mining platform', 'A cryptocurrency exchange', 'An investment fund'],
             correctIndex: 1,
-            explanation: 'TetherStream is a simulated mining platform, not a bank or investment service.',
+            explanation: 'TitanStream is a simulated mining platform, not a bank or investment service.',
           },
           localizationKey: 'edu.quiz.q1',
         },
@@ -245,14 +245,14 @@ async function main() {
             question: 'What should you NEVER share?',
             options: ['Your username', 'Your mining speed', 'Your private keys or seed phrase', 'Your invite code'],
             correctIndex: 2,
-            explanation: 'Never share your private keys or seed phrase. TetherStream will never ask for them.',
+            explanation: 'Never share your private keys or seed phrase. TitanStream will never ask for them.',
           },
           localizationKey: 'edu.quiz.q3',
         },
         {
           type: 'quiz_question',
           data: {
-            question: 'How do funds move in TetherStream?',
+            question: 'How do funds move in TitanStream?',
             options: ['Direct bank transfer', 'Credit card payment', 'In-app balance converts to real crypto on withdrawal', 'PayPal'],
             correctIndex: 2,
             explanation: 'Funds exist as in-app balances. When you withdraw, a real blockchain transaction is initiated.',
@@ -262,10 +262,10 @@ async function main() {
         {
           type: 'quiz_question',
           data: {
-            question: 'Is TetherStream a financial institution?',
+            question: 'Is TitanStream a financial institution?',
             options: ['Yes, it is a bank', 'Yes, it is an investment firm', 'No, it is a gaming/mining platform', 'No, it is a charity'],
             correctIndex: 2,
-            explanation: 'TetherStream is not a bank or financial institution. It is a simulated mining platform.',
+            explanation: 'TitanStream is not a bank or financial institution. It is a simulated mining platform.',
           },
           localizationKey: 'edu.quiz.q5',
         },

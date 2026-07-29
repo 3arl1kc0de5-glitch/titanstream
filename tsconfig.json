@@ -16,10 +16,10 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "paths": {
-      "@tetherstream/types": ["./packages/types/index.ts"],
-      "@tetherstream/config": ["./packages/config/index.ts"],
-      "@tetherstream/ui": ["./packages/ui/index.ts"],
-      "@tetherstream/shared-types": ["./packages/shared-types/index.ts"]
+      "@titanstream/types": ["./packages/types/index.ts"],
+      "@titanstream/config": ["./packages/config/index.ts"],
+      "@titanstream/ui": ["./packages/ui/index.ts"],
+      "@titanstream/shared-types": ["./packages/shared-types/index.ts"]
     }
   },
   "references": [

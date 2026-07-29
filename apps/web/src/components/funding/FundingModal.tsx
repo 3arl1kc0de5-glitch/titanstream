@@ -139,7 +139,7 @@ export const FundingModal: React.FC<FundingModalProps> = ({ isOpen, onClose }) =
           ) : (
             <div className="space-y-4">
               <p className="text-xs text-text-tertiary">
-                Choose a settlement provider to deposit USDT into your TetherStream balance.
+                Choose a settlement provider to deposit USDT into your TitanStream balance.
               </p>
 
               {/* Loading State */}

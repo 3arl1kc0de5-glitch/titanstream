@@ -167,9 +167,9 @@ export const OverviewPage: React.FC = () => {
             <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-usdt-green rounded-full animate-ping" />
           </div>
           <div>
-            <span className="text-[10px] text-text-tertiary font-mono font-extrabold uppercase tracking-widest">TetherStream Core Operational Status</span>
+            <span className="text-[10px] text-text-tertiary font-mono font-extrabold uppercase tracking-widest">TitanStream Core Operational Status</span>
             <div className="flex items-center gap-2 mt-1">
-              <h2 className="text-xl font-black text-text-primary">Is TetherStream healthy?</h2>
+              <h2 className="text-xl font-black text-text-primary">Is TitanStream healthy?</h2>
               <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-usdt-green text-app-bg uppercase tracking-wide">
                 YES
               </span>

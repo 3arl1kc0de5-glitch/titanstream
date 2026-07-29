@@ -32,7 +32,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
         className="flex flex-col items-center gap-6"
       >
-        {/* TetherStream Emblem */}
+        {/* TitanStream Emblem */}
         <div className="relative">
           <div className="absolute inset-0 rounded-full bg-usdt-green/30 blur-3xl animate-glow" />
           <div className="relative w-28 h-28 rounded-full bg-gradient-to-br from-usdt-green via-[#00c853] to-app-bg border-2 border-white/20 flex items-center justify-center text-app-bg font-extrabold text-6xl shadow-[0_0_40px_rgba(0,230,118,0.5)]">
@@ -41,7 +41,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
         </div>
 
         <div className="flex flex-col items-center gap-1 text-center font-sans">
-          <h1 className="text-3xl font-extrabold text-gradient-usdt tracking-tight">TetherStream</h1>
+          <h1 className="text-3xl font-extrabold text-gradient-usdt tracking-tight">TitanStream</h1>
           <p className="text-xs text-text-secondary tracking-wide font-semibold mt-1">Participate in the Cloud Computing Economy</p>
         </div>
 

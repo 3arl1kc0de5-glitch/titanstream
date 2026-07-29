@@ -35,7 +35,7 @@ export const NotificationsPage: React.FC = () => {
   const [isSending, setIsSending] = useState(false);
 
   const announcementTemplates = [
-    { title: '🔥 Power Machine Activated', text: '🔥 A new Power Machine has been activated on the TetherStream network!' },
+    { title: '🔥 Power Machine Activated', text: '🔥 A new Power Machine has been activated on the TitanStream network!' },
     { title: '📈 Daily Cloud Activity Report', text: '📈 Today\'s cloud activity report is ready. All daily rewards processed.' },
     { title: '🌍 Uganda Milestone', text: '🌍 Uganda users crossed 5,000 active cloud computing members!' },
     { title: '⚡ Reward Distribution', text: '⚡ Reward distribution cycle completed. Check your derived wallet balance.' },
