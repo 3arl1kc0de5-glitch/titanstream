@@ -28,6 +28,7 @@ const createSessionFromAuth = (data: { accessToken: string; refreshToken: string
 export const TelegramLoginScreen: React.FC = () => {
   const { isAuthLoading, authError, setAuthLoading, setAuthError, setSession } = useAuthStore();
   const authStarted = useRef(false);
+  const widgetContainerRef = useRef<HTMLDivElement>(null);
 
   const isMiniApp = !!((window as any).Telegram?.WebApp?.initData || (window as any).Telegram?.WebApp?.initDataUnsafe?.user);
 
@@ -84,11 +85,29 @@ export const TelegramLoginScreen: React.FC = () => {
     }
   };
 
+  // Attach global callback and inject Telegram Login Widget for standalone Web context
   useEffect(() => {
     if (isMiniApp) return;
+
     (window as any).onTelegramAuth = (user: any) => {
       handleTelegramWidgetLogin(user);
     };
+
+    if (widgetContainerRef.current) {
+      widgetContainerRef.current.innerHTML = '';
+
+      const botUsername = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'titanstream_bot';
+      const script = document.createElement('script');
+      script.src = 'https://telegram.org/js/telegram-widget.js?22';
+      script.async = true;
+      script.setAttribute('data-telegram-login', botUsername);
+      script.setAttribute('data-size', 'large');
+      script.setAttribute('data-radius', '14');
+      script.setAttribute('data-onauth', 'onTelegramAuth(user)');
+      script.setAttribute('data-request-access', 'write');
+
+      widgetContainerRef.current.appendChild(script);
+    }
   }, [isMiniApp]);
 
   const handleWebLogin = () => {
@@ -128,7 +147,6 @@ export const TelegramLoginScreen: React.FC = () => {
     }
 
     // Mini App but not loading and no error — auth hasn't started yet (edge case)
-    // Show loading instead of any button
     return (
       <div className="fixed inset-0 z-50 bg-[#06070b] flex flex-col items-center justify-center select-none">
         <Loader2 size={32} className="text-usdt-green animate-spin mb-4" />
@@ -137,7 +155,7 @@ export const TelegramLoginScreen: React.FC = () => {
     );
   }
 
-  // ── Web context — branded login screen with bot redirect ──
+  // ── Web context — branded login screen with Telegram Login Widget ──
 
   const features = [
     { icon: <Server size={14} />, label: 'Cloud Computing Capacity' },
@@ -218,16 +236,16 @@ export const TelegramLoginScreen: React.FC = () => {
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        className="relative z-10 w-full max-w-sm px-8 pb-10 flex flex-col gap-4"
+        className="relative z-10 w-full max-w-sm px-8 pb-10 flex flex-col items-center gap-4"
       >
+        {/* Telegram Web Login Widget container */}
+        <div ref={widgetContainerRef} className="flex justify-center w-full min-h-[48px]" />
+
         <button
           onClick={handleWebLogin}
-          className="w-full py-[18px] rounded-2xl bg-[#2AABEE] text-white font-extrabold text-[15px] flex items-center justify-center gap-3 shadow-xl shadow-[#2AABEE]/30 hover:brightness-110 hover:shadow-2xl hover:shadow-[#2AABEE]/40 press-feedback transition-all active:scale-[0.97]"
+          className="text-xs text-text-tertiary hover:text-text-secondary transition-colors py-1 font-medium"
         >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
-          </svg>
-          <span>Continue with Telegram</span>
+          Or open in Telegram Mini App
         </button>
 
         <div className="flex items-center justify-center gap-2 text-[10px] text-text-tertiary font-medium">
