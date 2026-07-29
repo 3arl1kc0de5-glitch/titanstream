@@ -7,7 +7,7 @@ import { TelegramAuthService } from '../src/modules/auth/strategies/telegram-aut
 import { TransformInterceptor } from '../src/common/interceptors/transform.interceptor';
 import { HttpExceptionFilter } from '../src/common/filters/http-exception.filter';
 
-describe('TetherStream API (e2e)', () => {
+describe('TitanStream API (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
 

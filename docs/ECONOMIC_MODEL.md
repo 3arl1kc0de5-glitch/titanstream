@@ -1,6 +1,6 @@
-# TetherStream Cloud Computing Economic Engine & 5-Tier Calibration Model
+# TitanStream Cloud Computing Economic Engine & 5-Tier Calibration Model
 
-This document outlines the authoritative economic calibration model for the concise 5-tier enterprise cloud compute hardware lineup hosted on the TetherStream platform.
+This document outlines the authoritative economic calibration model for the concise 5-tier enterprise cloud compute hardware lineup hosted on the TitanStream platform.
 
 ---
 

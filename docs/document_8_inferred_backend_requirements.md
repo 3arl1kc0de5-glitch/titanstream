@@ -1,6 +1,6 @@
 # Document 8: Inferred Backend Requirements
 
-This document specifies the backend service modules, database triggers, validation flows, and blockchain interfaces required to power the TetherStream application.
+This document specifies the backend service modules, database triggers, validation flows, and blockchain interfaces required to power the TitanStream application.
 
 ---
 

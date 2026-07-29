@@ -16,7 +16,7 @@ export interface WithdrawalRequestDto {
 @Injectable()
 export class BotWithdrawalService {
   private readonly logger = new Logger(BotWithdrawalService.name);
-  private readonly webAppUrl = process.env.TELEGRAM_WEBAPP_URL || 'https://tetherstream.app';
+  private readonly webAppUrl = process.env.TELEGRAM_WEBAPP_URL || 'https://titanstream.app';
 
   constructor(
     private readonly prisma: PrismaService,
@@ -53,7 +53,7 @@ export class BotWithdrawalService {
       // default
     }
 
-    const text = `<b>💸 TetherStream Withdrawal Assistant</b>\n\nConvert your USDT balance directly to local cash or external crypto wallet.\n\n• <b>Your Tier:</b> ${userTier}\n• <b>Average Processing Time:</b> 3-10 minutes\n• <b>Security Status:</b> 🟢 100% Guaranteed Settlement\n\nSelect an action below:`;
+    const text = `<b>💸 TitanStream Withdrawal Assistant</b>\n\nConvert your USDT balance directly to local cash or external crypto wallet.\n\n• <b>Your Tier:</b> ${userTier}\n• <b>Average Processing Time:</b> 3-10 minutes\n• <b>Security Status:</b> 🟢 100% Guaranteed Settlement\n\nSelect an action below:`;
 
     return {
       text,

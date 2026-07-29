@@ -1,6 +1,6 @@
-# RAILWAY DEPLOYMENT GUIDE — TetherStream NestJS Backend API
+# RAILWAY DEPLOYMENT GUIDE — TitanStream NestJS Backend API
 
-This guide provides step-by-step instructions for deploying the TetherStream NestJS backend API (`services/api/`) on **Railway**.
+This guide provides step-by-step instructions for deploying the TitanStream NestJS backend API (`services/api/`) on **Railway**.
 
 ---
 
@@ -15,7 +15,7 @@ Docker Build (services/api/Dockerfile) — monorepo root context
   ↓
 pnpm install --frozen-lockfile (using root pnpm-lock.yaml)
   ↓
-Prisma Client Generate + NestJS Build (pnpm --filter @tetherstream/api build)
+Prisma Client Generate + NestJS Build (pnpm --filter @titanstream/api build)
   ↓
 Production image — multi-stage (dev deps stripped)
   ↓
@@ -35,7 +35,7 @@ Health Probe Check (/api/v1/health/liveness) -> Status UP
 ### Step 1: Create Railway Project
 1. Log in to [Railway.app](https://railway.app).
 2. Click **New Project** -> **Deploy from GitHub repo**.
-3. Select the `tetherstream` repository.
+3. Select the `titanstream` repository.
 
 ### Step 2: Configure Service
 Railway will auto-detect the `railway.json` at the monorepo root.
@@ -64,8 +64,8 @@ TELEGRAM_BOT_TOKEN=<YOUR_TELEGRAM_BOT_TOKEN>
 TELEGRAM_BOT_USERNAME=titanstream_bot
 CRYPTOBOT_API_TOKEN=<YOUR_CRYPTOBOT_TOKEN>
 CRYPTOBOT_NETWORK=mainnet
-FRONTEND_URL=https://tetherstream.netlify.app
-API_URL=https://tetherstream-api.up.railway.app
+FRONTEND_URL=https://titanstream.netlify.app
+API_URL=https://titanstream-api.up.railway.app
 MIN_DEPOSIT_USDT=1.0
 MAX_DEPOSIT_USDT=10000.0
 MIN_WITHDRAWAL_USDT=5.0
@@ -74,11 +74,11 @@ AUTO_APPROVE_WITHDRAWAL_LIMIT_USDT=100.0
 ```
 
 ### Step 5: Verify Deployment & Health Check
-Once deployed, Railway will generate a public HTTPS URL (e.g. `https://tetherstream-api.up.railway.app`).
+Once deployed, Railway will generate a public HTTPS URL (e.g. `https://titanstream-api.up.railway.app`).
 
 Test API Health:
 ```bash
-curl -i https://tetherstream-api.up.railway.app/api/v1/health/liveness
+curl -i https://titanstream-api.up.railway.app/api/v1/health/liveness
 ```
 
 Expected Output:
@@ -86,13 +86,13 @@ Expected Output:
 {
   "status": "UP",
   "timestamp": "2026-01-01T00:00:00.000Z",
-  "service": "tetherstream-api"
+  "service": "titanstream-api"
 }
 ```
 
 Test Database Health:
 ```bash
-curl -i https://tetherstream-api.up.railway.app/api/v1/health
+curl -i https://titanstream-api.up.railway.app/api/v1/health
 ```
 
 ---

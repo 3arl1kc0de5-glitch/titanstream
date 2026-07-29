@@ -1,6 +1,6 @@
 # Document 9: Data Model Inventory
 
-This document defines the logical data schemas and relational entities inferred from the visible user interface states of the TetherStream Telegram Mini App.
+This document defines the logical data schemas and relational entities inferred from the visible user interface states of the TitanStream Telegram Mini App.
 
 ---
 

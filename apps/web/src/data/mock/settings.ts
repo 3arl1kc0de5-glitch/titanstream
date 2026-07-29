@@ -7,7 +7,7 @@ export interface GeneralSetting {
 }
 
 export const generalSettings: GeneralSetting[] = [
-  { key: 'platform_name', label: 'Platform Name', value: 'TetherStream', type: 'text' },
+  { key: 'platform_name', label: 'Platform Name', value: 'TitanStream', type: 'text' },
   { key: 'default_fee', label: 'Default Fee (%)', value: 1.5, type: 'number' },
   { key: 'min_order', label: 'Min Order Amount (USDT)', value: 10, type: 'number' },
   { key: 'max_order', label: 'Max Order Amount (USDT)', value: 50000, type: 'number' },

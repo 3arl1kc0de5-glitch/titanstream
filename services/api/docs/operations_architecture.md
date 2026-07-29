@@ -1,6 +1,6 @@
 # Operations Control Plane Architecture
 
-The TetherStream Operations Control Plane is the human-operator interface for managing live operations, merchant pools, settlement exceptions, user investigations, and risk incidents.
+The TitanStream Operations Control Plane is the human-operator interface for managing live operations, merchant pools, settlement exceptions, user investigations, and risk incidents.
 
 ## Core Architectural Invariants
 

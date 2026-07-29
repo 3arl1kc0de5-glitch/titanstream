@@ -1,4 +1,4 @@
-# TetherStream Financial Foundation
+# TitanStream Financial Foundation
 
 This layer is the internal accounting foundation for future wallet, deposit, withdrawal, reward, and adjustment flows. It does not integrate with wallet providers, blockchains, exchanges, yield, mining, referrals, or payment gateways.
 

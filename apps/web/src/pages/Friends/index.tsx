@@ -22,7 +22,7 @@ export const FriendsScreen: React.FC = () => {
 
   const handleShare = () => {
     const tg = window.Telegram?.WebApp;
-    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent('Mine USDT & TON on TetherStream!')}`;
+    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent('Mine USDT & TON on TitanStream!')}`;
     if (tg?.openTelegramLink) {
       tg.openTelegramLink(shareUrl);
     } else {
@@ -38,7 +38,7 @@ export const FriendsScreen: React.FC = () => {
       <EducationCard
         educationKey="referral"
         title="Contextual Referrals"
-        body="Invite friends to TetherStream and receive bonus compute capacity (+0.2 CU per friend) and a continuous 1% real-time share of all USDT they generate. No limits, no thresholds."
+        body="Invite friends to TitanStream and receive bonus compute capacity (+0.2 CU per friend) and a continuous 1% real-time share of all USDT they generate. No limits, no thresholds."
         icon={<Gift size={18} />}
       />
       {/* Title Header */}
@@ -52,7 +52,7 @@ export const FriendsScreen: React.FC = () => {
         </div>
         <h1 className="text-3xl font-extrabold text-text-primary mt-1.5 tracking-tight">Friends</h1>
         <p className="text-xs text-text-secondary leading-relaxed">
-          Invite friends to TetherStream. You will receive compute capacity boosts and a direct share of all USDT & TON they earn.
+          Invite friends to TitanStream. You will receive compute capacity boosts and a direct share of all USDT & TON they earn.
         </p>
       </motion.div>
 

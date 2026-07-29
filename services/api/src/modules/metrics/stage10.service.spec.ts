@@ -58,13 +58,13 @@ describe('Stage 10 — Production Readiness, Metrics & Ledger Reconciliation Tes
 
       const metricsOutput = await metricsController.getMetrics();
 
-      expect(metricsOutput).toContain('tetherstream_financial_transactions_total{asset="USDT",operation_type="DEPOSIT"} 1');
-      expect(metricsOutput).toContain('tetherstream_settlements_total{provider="MerchantProvider",status="COMPLETED"} 1');
-      expect(metricsOutput).toContain('tetherstream_ledger_reconciliation_drift 0');
-      expect(metricsOutput).toContain('tetherstream_registered_users_total 150');
-      expect(metricsOutput).toContain('tetherstream_active_settlements_total 42');
-      expect(metricsOutput).toContain('tetherstream_pending_operations_total 3');
-      expect(metricsOutput).toContain('tetherstream_http_requests_total{method="GET",path="/api/growth/profile",status="200"} 1');
+      expect(metricsOutput).toContain('titanstream_financial_transactions_total{asset="USDT",operation_type="DEPOSIT"} 1');
+      expect(metricsOutput).toContain('titanstream_settlements_total{provider="MerchantProvider",status="COMPLETED"} 1');
+      expect(metricsOutput).toContain('titanstream_ledger_reconciliation_drift 0');
+      expect(metricsOutput).toContain('titanstream_registered_users_total 150');
+      expect(metricsOutput).toContain('titanstream_active_settlements_total 42');
+      expect(metricsOutput).toContain('titanstream_pending_operations_total 3');
+      expect(metricsOutput).toContain('titanstream_http_requests_total{method="GET",path="/api/growth/profile",status="200"} 1');
     });
   });
 
@@ -123,7 +123,7 @@ describe('Stage 10 — Production Readiness, Metrics & Ledger Reconciliation Tes
     it('should return UP status for /health/liveness probe', () => {
       const result = healthController.getLiveness();
       expect(result.status).toBe('UP');
-      expect(result.service).toBe('tetherstream-api');
+      expect(result.service).toBe('titanstream-api');
     });
 
     it('should return READY status for /health/readiness probe when DB query succeeds', async () => {

@@ -811,7 +811,7 @@ M013: Add indexes (all)
       },
       {
         "type": "image",
-        "url": "https://cdn.tetherstream.com/edu/crypto_basics/slide_2_v1.png",
+        "url": "https://cdn.titanstream.com/edu/crypto_basics/slide_2_v1.png",
         "altKey": "crypto_basics.slide_2_alt"
       }
     ],
@@ -993,7 +993,7 @@ M013: Add indexes (all)
   "granted": true,
   "version": "risk_v1.0",
   "documentHash": "a1b2c3d4e5f6...",
-  "documentUrl": "https://tetherstream.com/legal/risk-disclosure-v1"
+  "documentUrl": "https://titanstream.com/legal/risk-disclosure-v1"
 }
 ```
 
@@ -1147,7 +1147,7 @@ All events published on Redis Pub/Sub. BullMQ used for async job processing.
 
 | Field | Value |
 |-------|-------|
-| **Trigger** | User clicks "Enter TetherStream" — state transitions to ELIGIBLE |
+| **Trigger** | User clicks "Enter TitanStream" — state transitions to ELIGIBLE |
 | **Producer** | Onboarding Service |
 | **Consumers** | User Profile Service, Wallet Service (welcome bonus), Notification Service, Referral Service |
 | **Payload** | `{ userId, totalTimeSpentSeconds, educationScore, consentTypes }` |
@@ -1519,7 +1519,7 @@ class StateGuard implements CanActivate {
 | Element | Detail |
 |---------|--------|
 | **User action** | Sends `/start` to @titanstream_bot |
-| **Bot message** | "Welcome to TetherStream! A Telegram-native earning platform.\n\n⚠ TetherStream is not a bank, not an investment, and not guaranteed income.\n\nChoose your language to begin:" |
+| **Bot message** | "Welcome to TitanStream! A Telegram-native earning platform.\n\n⚠ TitanStream is not a bank, not an investment, and not guaranteed income.\n\nChoose your language to begin:" |
 | **Buttons** | `🇬🇧 English` \| `🇷🇺 Русский` \| `🇪🇸 Español` \| `🇵🇹 Português` |
 | **Backend call** | `POST /api/v1/auth/telegram` with initData from Mini App |
 | **Next state** | Bot opens Mini App. User sees welcome screen in selected language. |
@@ -1544,7 +1544,7 @@ class StateGuard implements CanActivate {
 |---------|--------|
 | **User action** | Sends `/start` |
 | **Bot message** | "Welcome back! Your mining has been running. You've earned approximately X USDT since your last visit." |
-| **Buttons** | `⛏ Open TetherStream` |
+| **Buttons** | `⛏ Open TitanStream` |
 | **Backend call** | `POST /api/v1/auth/telegram` |
 | **Next state** | Mini App opens to dashboard. Dashboard shows "What's New" if features changed. |
 
@@ -1569,7 +1569,7 @@ class StateGuard implements CanActivate {
 | Element | Detail |
 |---------|--------|
 | **Trigger** | BullMQ cron: user in ONB_* state with 3h inactivity |
-| **Bot message** | "Hey! You started setting up your TetherStream account. You're only 5 minutes away from completing." |
+| **Bot message** | "Hey! You started setting up your TitanStream account. You're only 5 minutes away from completing." |
 | **Buttons** | `▶ Continue` |
 | **Backend call** | `GET /api/v1/onboarding/state` → mini app |
 | **Next state** | No state change — just re-engagement |
@@ -1579,7 +1579,7 @@ class StateGuard implements CanActivate {
 | Element | Detail |
 |---------|--------|
 | **Trigger** | BullMQ cron: 12h inactivity |
-| **Bot message** | "Your TetherStream account is almost ready! Complete the last few steps to start mining." |
+| **Bot message** | "Your TitanStream account is almost ready! Complete the last few steps to start mining." |
 | **Buttons** | `▶ Continue` |
 | **Backend call** | Same as above |
 | **Next state** | No state change |

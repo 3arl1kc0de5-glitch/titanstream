@@ -14,7 +14,7 @@ export interface CommercialProduct {
 @Injectable()
 export class BotMonetizationService {
   private readonly logger = new Logger(BotMonetizationService.name);
-  private readonly webAppUrl = process.env.TELEGRAM_WEBAPP_URL || 'https://tetherstream.app';
+  private readonly webAppUrl = process.env.TELEGRAM_WEBAPP_URL || 'https://titanstream.app';
 
   private readonly products: Record<string, CommercialProduct> = {
     PRIORITY_SETTLEMENT: {
@@ -76,7 +76,7 @@ export class BotMonetizationService {
 
     const activeCodes = new Set(activeSubs.map((s) => s.productCode));
 
-    const text = `<b>🚀 TetherStream Commercial Boost Passes</b>\n\nSupercharge your financial experience with premium passes and business features:\n\n` +
+    const text = `<b>🚀 TitanStream Commercial Boost Passes</b>\n\nSupercharge your financial experience with premium passes and business features:\n\n` +
       `• <b>🚀 Priority Settlement Pass</b> ($15/mo)\n` +
       `• <b>⭐ High-Volume Limits Pass</b> ($29/mo)\n` +
       `• <b>🏢 Business Merchant Account</b> ($99/mo)\n` +

@@ -47,7 +47,7 @@ Each assumption is rated: Valid, Needs Confirmation, Invalid, Unacceptable Risk
 | A8 | Telegram Mini App initData is always available | Desktop Telegram and web clients may not support Mini Apps. | Needs Confirmation | Fallback strategy required: redirect to Telegram Bot conversational flow or web fallback. Document supported clients. |
 | A9 | Telegram initData hash verification is a stable protocol | The HMAC verification is a community-reverse-engineered protocol, NOT an official Telegram Bot API feature. Telegram could change the algorithm without notice. | Unacceptable Risk | Critical risk. Implement: (1) Monitor Telegram changelog. (2) Kill switch to fall back to simpler auth (one-time code via bot). (3) Consider official Telegram Login Widget for web fallback. |
 | A10 | 24h auth_date tolerance is sufficient | An attacker who captures initData has 24 hours to replay it. | Invalid | Reduce to 5 minutes. Add nonce-based deduplication using query_id stored in Redis with 5min TTL. |
-| A11 | Telegram user ID is a stable, unique identifier | Users can delete and recreate accounts (new ID). Users can have multiple accounts on one device. | Needs Confirmation | Document account merge/deletion policy explicitly in ToS. User loses access to old TetherStream account if they delete Telegram. |
+| A11 | Telegram user ID is a stable, unique identifier | Users can delete and recreate accounts (new ID). Users can have multiple accounts on one device. | Needs Confirmation | Document account merge/deletion policy explicitly in ToS. User loses access to old TitanStream account if they delete Telegram. |
 | A12 | Telegram Bot API has unlimited throughput | Telegram limits bots to 30 messages/second global, ~1 msg/s per chat. Nudges to thousands of users will hit limits. | Invalid | Design nudge system for batch delivery with BullMQ rate limiting (30/s global, 1/s per chat). Priority queuing for security alerts. |
 
 ### 1.3 Compliance and Regulatory Assumptions
@@ -56,7 +56,7 @@ Each assumption is rated: Valid, Needs Confirmation, Invalid, Unacceptable Risk
 |---|-----------|------|---------|-------------|
 | A13 | No KYC/AML needed because it's "simulated mining" | Regulators do not distinguish "simulated" from "real" when users can withdraw real assets. If users convert in-app value to USDT/TON and withdraw, this is a financial service. | Unacceptable Risk | Legal review required immediately. Design must support: geo-blocking, tiered KYC, AML transaction monitoring, suspicious activity reporting. |
 | A14 | Privacy regulations do not apply | Global platform must comply with GDPR, CCPA, LGPD, PIPEDA, etc. | Unacceptable Risk | Privacy-by-design: data minimization, consent records, data export API, right to erasure (with 30-day grace period), DPA with third parties. |
-| A15 | No money transmitter licensing needed | If TetherStream holds user funds and facilitates transfers, it may be classified as a money transmitter. | Unacceptable Risk | Legal review required. Determine: who holds USDT/TON? Custodied by TetherStream or third-party? Withdrawal processing by TetherStream or partner? |
+| A15 | No money transmitter licensing needed | If TitanStream holds user funds and facilitates transfers, it may be classified as a money transmitter. | Unacceptable Risk | Legal review required. Determine: who holds USDT/TON? Custodied by TitanStream or third-party? Withdrawal processing by TitanStream or partner? |
 | A16 | GDPR right to erasure means immediate deletion | GDPR Art. 17 allows retention for legal/regulatory compliance (tax, AML). Deleting financial records immediately violates AML law. | Invalid | Tiered deletion: personal data anonymized immediately. Financial records retained 5-7 years. Audit logs retained for legal minimum. |
 | A17 | "Educational" content shields from financial advice regulations | Educational content about mining/earning could be construed as financial advice or investment scheme. | Needs Confirmation | Legal review of all educational content. Disclaimers on every module: "For informational purposes only. Not financial advice." |
 
@@ -75,7 +75,7 @@ Each assumption is rated: Valid, Needs Confirmation, Invalid, Unacceptable Risk
 
 | # | Assumption | Risk | Verdict | Replacement |
 |---|-----------|------|---------|-------------|
-| A24 | Users understand mining rewards are platform-determined | Most users will believe they earn real cryptocurrency through computational work. When rewards change, users feel defrauded. | Unacceptable Risk | Mandatory disclosure on every earning screen: "Reward rates are determined by TetherStream and may change. Past earnings do not guarantee future results." |
+| A24 | Users understand mining rewards are platform-determined | Most users will believe they earn real cryptocurrency through computational work. When rewards change, users feel defrauded. | Unacceptable Risk | Mandatory disclosure on every earning screen: "Reward rates are determined by TitanStream and may change. Past earnings do not guarantee future results." |
 | A25 | Withdrawal fees can be passed without explicit consent | Charging fees without transparent upfront disclosure is a regulatory violation (EU PSD2, US state laws). | Invalid | Fee disclosure at point of earning, not just withdrawal. Display cumulative fees before confirmation with acknowledgement. |
 | A26 | No minimum holding period for earned funds | Some jurisdictions require holding period for AML compliance. Immediate withdrawal may facilitate layering. | Needs Confirmation | Cooling-off period on first withdrawal (24-48h) for AML. Disclosed during onboarding. |
 | A27 | Platform can adjust mining rates without notice | Rate cuts cause user revolt. Trust issue with direct financial consequence. | Invalid | Rate change policy: (1) Announce 7+ days in advance. (2) Never retroactive. (3) Publish transparent formula. (4) Grandfather existing users. |
@@ -387,7 +387,7 @@ Every endpoint must declare its access level. State-gated endpoints check `STATE
 
 | Area | Risk | Required Action |
 |------|------|-----------------|
-| Jurisdiction classification | Is TetherStream a money transmitter, game, or financial service? | Legal opinion needed before launch. |
+| Jurisdiction classification | Is TitanStream a money transmitter, game, or financial service? | Legal opinion needed before launch. |
 | KYC/AML obligations | When does KYC trigger? What AML monitoring is needed? | Consult with AML compliance specialist. |
 | Cross-border operations | Which countries are restricted? What are local licensing requirements? | Geo-blocking strategy + per-country legal review. |
 | User age requirements | 18+ verification method | Age verification UX + legal review of COPPA/GDPR-K compliance. |
@@ -436,7 +436,7 @@ Before a user can perform their first meaningful financial action (mining), the 
 | User completed all 8 education modules | Onboarding service | 8 modules (~10 min) |
 | User passed quiz (100% on risk questions) | Education service | 5 questions |
 | User acknowledged all 6 consent items individually | Consent service | 6 interactions |
-| User confirmed "Enter TetherStream" | Onboarding service | 1 click |
+| User confirmed "Enter TitanStream" | Onboarding service | 1 click |
 | User's IP is not from restricted country | Geo-blocking middleware | None (passive check) |
 | User's device fingerprint is not flagged | Fraud guard | None (passive check) |
 | User has not exceeded account limit per IP/device | Fraud guard | None (passive check) |
@@ -459,7 +459,7 @@ Before a user can perform their first meaningful financial action (mining), the 
 5. First session ends:
    - Shows summary: "You mined for X minutes. Earned Y speed. Potential: Z USDT/TON"
 
-All screens carry: "Reward rates determined by TetherStream. Not guaranteed."
+All screens carry: "Reward rates determined by TitanStream. Not guaranteed."
 ```
 
 ### 9.3 First Withdrawal Pre-Flight

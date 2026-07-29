@@ -38,7 +38,7 @@ const DEFAULT_TEMPLATES: NotificationTemplateDefinition[] = [
     code: 'SECURITY_EVENT',
     name: 'Security Alert',
     titleTemplate: '🛡️ Security Notification',
-    bodyTemplate: 'Security activity detected on your TetherStream account: {details}.',
+    bodyTemplate: 'Security activity detected on your TitanStream account: {details}.',
   },
 ];
 

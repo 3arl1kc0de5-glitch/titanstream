@@ -1,6 +1,6 @@
 # Role-Based Access Control (RBAC) Specification
 
-TetherStream implements fine-grained RBAC for all operational APIs.
+TitanStream implements fine-grained RBAC for all operational APIs.
 
 ## Admin Roles
 

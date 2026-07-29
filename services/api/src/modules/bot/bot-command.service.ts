@@ -9,7 +9,7 @@ import { SupportCategory, SupportPriority } from '@prisma/client';
 
 export const getPersistentMainKeyboard = (webAppUrl: string) => ({
   keyboard: [
-    [{ text: '🚀 Open TetherStream', web_app: { url: webAppUrl } }],
+    [{ text: '🚀 Open TitanStream', web_app: { url: webAppUrl } }],
     [{ text: '💰 Balance' }, { text: '➕ Deposit' }, { text: '💸 Withdraw' }],
     [{ text: '🎁 Rewards' }, { text: '⭐ Trust Level' }, { text: '👥 Referrals' }],
     [{ text: '📚 Learn' }, { text: '🆘 Support' }, { text: '⚙️ Settings' }],
@@ -20,7 +20,7 @@ export const getPersistentMainKeyboard = (webAppUrl: string) => ({
 @Injectable()
 export class BotCommandService {
   private readonly logger = new Logger(BotCommandService.name);
-  private readonly webAppUrl = process.env.TELEGRAM_WEBAPP_URL || 'https://tetherstream.app';
+  private readonly webAppUrl = process.env.TELEGRAM_WEBAPP_URL || 'https://titanstream.app';
 
   constructor(
     private readonly prisma: PrismaService,
@@ -73,10 +73,10 @@ export class BotCommandService {
     if (!gateResult.verified) return { text: gateResult.message, keyboard: gateResult.keyboard };
 
     return {
-      text: `<b>TetherStream Mini App Hub 🚀</b>\n\nTap below to open your full financial dashboard:`,
+      text: `<b>TitanStream Mini App Hub 🚀</b>\n\nTap below to open your full financial dashboard:`,
       keyboard: {
         inline_keyboard: [
-          [{ text: '🚀 Launch TetherStream', web_app: { url: this.webAppUrl } }],
+          [{ text: '🚀 Launch TitanStream', web_app: { url: this.webAppUrl } }],
         ],
       },
     };
@@ -112,7 +112,7 @@ export class BotCommandService {
       // default
     }
 
-    const text = `<b>Your TetherStream Account Balance</b>\n\n` +
+    const text = `<b>Your TitanStream Account Balance</b>\n\n` +
       `<b>USDT:</b>\n<b>${availableUSDT} USDT</b>\n\n` +
       `<b>Trust Level:</b>\n${trustLevelName}\n\n` +
       `<b>Available Limit:</b>\n<b>${availableUSDT} USDT</b>`;
@@ -134,15 +134,15 @@ export class BotCommandService {
 
     const summary = await this.referralService.getUserReferralSummary(userCtx.id);
 
-    const text = `<b>🎁 TetherStream Referral Program</b>\n\n` +
-      `Invite friends to TetherStream and earn instant rewards on every deposit!\n\n` +
+    const text = `<b>🎁 TitanStream Referral Program</b>\n\n` +
+      `Invite friends to TitanStream and earn instant rewards on every deposit!\n\n` +
       `<b>Your Referral Link:</b>\n<code>${summary.referralLink}</code>\n\n` +
       `<b>Referral Performance:</b>\n` +
       `• Total Invited: <b>${summary.totalInvited}</b>\n` +
       `• Qualified Friends: <b>${summary.qualifiedCount}</b>\n` +
       `• Rewards Earned: <b>${summary.totalEarnedUSDT.toFixed(2)} USDT</b>`;
 
-    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(summary.referralLink)}&text=${encodeURIComponent('Join TetherStream for instant 24/7 USDT mobile money settlements! 🚀')}`;
+    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(summary.referralLink)}&text=${encodeURIComponent('Join TitanStream for instant 24/7 USDT mobile money settlements! 🚀')}`;
 
     return {
       text,

@@ -56,7 +56,7 @@ export class BotAdminService {
     const state = await this.getEmergencyState();
     const systemStatus = state.depositsPaused || state.withdrawalsPaused || state.rewardsPaused ? '⚠️ PAUSED (PARTIAL)' : '🟢 ALL SYSTEMS OPERATIONAL';
 
-    const text = `<b>🛡 TetherStream Admin Control Panel</b>\n\nWelcome, Operator <b>${userCtx.firstName}</b>.\n\n<b>System Health:</b> ${systemStatus}\n\nSelect an administrative department:`;
+    const text = `<b>🛡 TitanStream Admin Control Panel</b>\n\nWelcome, Operator <b>${userCtx.firstName}</b>.\n\n<b>System Health:</b> ${systemStatus}\n\nSelect an administrative department:`;
 
     return {
       text,

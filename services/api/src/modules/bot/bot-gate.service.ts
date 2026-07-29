@@ -18,15 +18,15 @@ export interface TelegramUserCtx {
 export class BotGateService {
   private readonly logger = new Logger(BotGateService.name);
   private readonly requiredChannels: { id: string; username: string; label: string }[];
-  private readonly webAppUrl = process.env.TELEGRAM_WEBAPP_URL || 'https://tetherstream.app';
+  private readonly webAppUrl = process.env.TELEGRAM_WEBAPP_URL || 'https://titanstream.app';
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly telegramClient: TelegramClientService,
     private readonly auditService: AuditService,
   ) {
-    const mainChannelId = process.env.TELEGRAM_CHANNEL_ID || '@tetherstream';
-    const mainChannelUser = process.env.TELEGRAM_CHANNEL_USERNAME || 'tetherstream';
+    const mainChannelId = process.env.TELEGRAM_CHANNEL_ID || '@titanstream';
+    const mainChannelUser = process.env.TELEGRAM_CHANNEL_USERNAME || 'titanstream';
 
     this.requiredChannels = [
       { id: mainChannelId, username: mainChannelUser, label: '📢 Main Community Channel' },
@@ -206,7 +206,7 @@ export class BotGateService {
 
       const depositCheck = hasDeposit ? '✅' : '⬜';
 
-      const welcomeText = `<b>Welcome to TetherStream 🚀</b>\n\n` +
+      const welcomeText = `<b>Welcome to TitanStream 🚀</b>\n\n` +
         `Your Telegram-native financial account is active.\n\n` +
         `<b>Account Progress:</b>\n` +
         `✅ Join community channel\n` +
@@ -221,7 +221,7 @@ export class BotGateService {
           inline_keyboard: [
             [
               {
-                text: '🚀 Open TetherStream Mini App',
+                text: '🚀 Open TitanStream Mini App',
                 web_app: { url: this.webAppUrl },
               },
             ],
@@ -238,7 +238,7 @@ export class BotGateService {
     const channelLink = `https://t.me/${mainChan.username.replace('@', '')}`;
     return {
       verified: false,
-      message: `<b>Welcome to TetherStream 🚀</b>\n\nA Telegram-native liquidity and financial platform.\n\nBefore continuing, join our official community channel:`,
+      message: `<b>Welcome to TitanStream 🚀</b>\n\nA Telegram-native liquidity and financial platform.\n\nBefore continuing, join our official community channel:`,
       keyboard: {
         inline_keyboard: [
           [{ text: mainChan.label, url: channelLink }],

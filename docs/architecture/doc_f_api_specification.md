@@ -1,6 +1,6 @@
 # Document F: API Specification
 
-This document details the public and private HTTP endpoints of the TetherStream API service, including parameters, payloads, and response structures.
+This document details the public and private HTTP endpoints of the TitanStream API service, including parameters, payloads, and response structures.
 
 ---
 

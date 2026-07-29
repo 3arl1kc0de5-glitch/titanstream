@@ -1,6 +1,6 @@
 # Document 7: Visual Design System
 
-This document outlines the visual design system tokens, typography rules, color palettes, and layout constraints of the TetherStream Telegram Mini App.
+This document outlines the visual design system tokens, typography rules, color palettes, and layout constraints of the TitanStream Telegram Mini App.
 
 ---
 

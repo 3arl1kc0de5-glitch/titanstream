@@ -1,6 +1,6 @@
 # Document T: Development Roadmap
 
-This document outlines the development phases, milestone exit criteria, dependency trees, and risk logs for the TetherStream project build.
+This document outlines the development phases, milestone exit criteria, dependency trees, and risk logs for the TitanStream project build.
 
 ---
 

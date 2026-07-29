@@ -17,7 +17,7 @@ describe('Stage 12A — Production Architecture & Calibration Tests', () => {
   });
 
   describe('Part 4 & 6: Compute Engine Calibration & Machine Naming', () => {
-    it('contains all 5 TetherStream cloud models with distinct non-NVIDIA product names', () => {
+    it('contains all 5 TitanStream cloud models with distinct non-NVIDIA product names', () => {
       expect(MACHINE_CATALOG.length).toBe(5);
       const names = MACHINE_CATALOG.map((m) => m.name);
       

@@ -22,7 +22,7 @@ export class AdminAuthService implements OnModuleInit {
   }
 
   private hashPassword(password: string): string {
-    return crypto.createHash('sha256').update(`tetherstream_salt:${password}`).digest('hex');
+    return crypto.createHash('sha256').update(`titanstream_salt:${password}`).digest('hex');
   }
 
   async seedDefaultAdminAccounts() {
@@ -30,19 +30,19 @@ export class AdminAuthService implements OnModuleInit {
       const defaultAdmins = [
         {
           username: 'superadmin',
-          email: 'superadmin@tetherstream.io',
+          email: 'superadmin@titanstream.io',
           password: 'admin_super_secret_123',
           role: AdminRole.SUPER_ADMIN,
         },
         {
           username: 'ops_admin',
-          email: 'ops@tetherstream.io',
+          email: 'ops@titanstream.io',
           password: 'ops_secret_pass_123',
           role: AdminRole.OPERATIONS_ADMIN,
         },
         {
           username: 'risk_operator',
-          email: 'risk@tetherstream.io',
+          email: 'risk@titanstream.io',
           password: 'risk_secret_pass_123',
           role: AdminRole.RISK_OPERATOR,
         },

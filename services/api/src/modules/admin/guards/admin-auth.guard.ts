@@ -25,7 +25,7 @@ export class AdminAuthGuard implements CanActivate {
       request.admin = {
         id,
         username: `admin_${role.toLowerCase()}`,
-        email: `${role.toLowerCase()}@tetherstream.io`,
+        email: `${role.toLowerCase()}@titanstream.io`,
         role,
       };
       return true;

@@ -2,7 +2,7 @@
 
 > **Status:** Draft v1.0
 > **Design Authority:** Senior Fintech Product Architect
-> **Scope:** Authentication, onboarding, education, trust, and user-state infrastructure for TetherStream, a Telegram-native financial application.
+> **Scope:** Authentication, onboarding, education, trust, and user-state infrastructure for TitanStream, a Telegram-native financial application.
 
 ---
 
@@ -41,7 +41,7 @@
                                              │
                                              ▼
                      ┌───────────────────────────────────────────────────┐
-                     │           TETHERSTREAM API GATEWAY               │
+                     │           TITANSTREAM API GATEWAY               │
                      │         (NestJS — services/api/)                 │
                      │                                                   │
                      │  ┌──────────┐ ┌──────────┐ ┌──────────────────┐  │
@@ -410,7 +410,7 @@ CREATE INDEX idx_sessions_expires_at ON sessions(expires_at);
 | ONBOARDING_EDUCATION | EDUCATION_COMPLETE | Education Service: `complete_education` | All mandatory modules done |
 | ONBOARDING_EDUCATION | ONBOARDING_STALLED | Cron: 7d inactivity in education | |
 | EDUCATION_COMPLETE | READY_FOR_PLATFORM | Consent Service: `record_consents` | All required acknowledgements signed |
-| READY_FOR_PLATFORM | ELIGIBLE_USER | User clicks "Enter TetherStream" | Final gate |
+| READY_FOR_PLATFORM | ELIGIBLE_USER | User clicks "Enter TitanStream" | Final gate |
 | READY_FOR_PLATFORM | ONBOARDING_STALLED | Cron: 7d inactivity | |
 | ELIGIBLE_USER | ACTIVE_USER | First platform action (mine, tap, invite) | Auto-transition |
 | ACTIVE_USER | DORMANT_USER | Cron: 30d no activity | |
@@ -529,7 +529,7 @@ const STATE_RESTRICTIONS: Record<UserState, StateRestrictions> = {
 
 | # | Module ID | Title | Content Summary | Format | Mandatory | Est. Time |
 |---|-----------|-------|-----------------|--------|-----------|-----------|
-| 1 | `welcome` | Welcome to TetherStream | What this platform is, what it is not, high-level opportunity | Text + 1 image | Yes | 30s |
+| 1 | `welcome` | Welcome to TitanStream | What this platform is, what it is not, high-level opportunity | Text + 1 image | Yes | 30s |
 | 2 | `platform` | How the Platform Works | Mining mechanics, earning model, boost system | Interactive slides | Yes | 2min |
 | 3 | `funds` | How Funds Move | USDT vs TON, on-chain vs in-app balance, no real money mining | Diagram + text | Yes | 1min |
 | 4 | `actions` | What You Can Do | Mining, inviting friends, boosts, quests, games, withdrawals | Bullet list + icons | Yes | 1min |
@@ -615,7 +615,7 @@ interface QuizAnswer {
 │                   FINAL CONSENT FORM                           │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  ☐ I understand that TetherStream is not a bank or financial   │
+│  ☐ I understand that TitanStream is not a bank or financial   │
 │    institution.                                                 │
 │                                                                 │
 │  ☐ I understand that mining rewards are not guaranteed and     │
@@ -652,11 +652,11 @@ interface QuizAnswer {
 | Element | Detail |
 |---------|--------|
 | **User action** | Opens Telegram, finds @titanstream_bot, sends `/start` |
-| **System response** | `Welcome to TetherStream! 🚀\n\nTetherStream is a Telegram-native earning platform where you can participate in simulated mining activities.\n\n⚠️ *Important:* TetherStream is not a bank, not an investment platform, and not a guaranteed income source.\n\nReady to get started?` |
-| **Buttons** | `🚀 Let's Go!` \| `🌐 Language: English` \| `❓ What is TetherStream?` |
+| **System response** | `Welcome to TitanStream! 🚀\n\nTitanStream is a Telegram-native earning platform where you can participate in simulated mining activities.\n\n⚠️ *Important:* TitanStream is not a bank, not an investment platform, and not a guaranteed income source.\n\nReady to get started?` |
+| **Buttons** | `🚀 Let's Go!` \| `🌐 Language: English` \| `❓ What is TitanStream?` |
 | **Backend event** | `auth.pre_onboarding_started` |
 | **Database change** | User created in `users` table with state `NEW`. `telegram_accounts` row inserted. `auth_date` logged. |
-| **Next paths** | → Step 2 (Let's Go) → Step 1 (What is TetherStream? — shows FAQ then returns) |
+| **Next paths** | → Step 2 (Let's Go) → Step 1 (What is TitanStream? — shows FAQ then returns) |
 
 ---
 
@@ -665,7 +665,7 @@ interface QuizAnswer {
 | Element | Detail |
 |---------|--------|
 | **User action** | Taps `🚀 Let's Go!` button |
-| **System response** | TetherStream Mini App opens. Splash screen loads. Telegram `initData` is gathered.\n\nClient calls `POST /api/v1/auth/telegram`.\n\nServer verifies initData → creates/finds user → returns JWT + user state. |
+| **System response** | TitanStream Mini App opens. Splash screen loads. Telegram `initData` is gathered.\n\nClient calls `POST /api/v1/auth/telegram`.\n\nServer verifies initData → creates/finds user → returns JWT + user state. |
 | **Buttons** | In Mini App: `Begin Onboarding` |
 | **Backend event** | `auth.authenticated` \| `onboarding.started` |
 | **Database change** | User state → `ONBOARDING_WELCOME`. Session created in `sessions` table. Onboarding progress row created in `onboarding_progress`. |
@@ -682,7 +682,7 @@ interface QuizAnswer {
 | Element | Detail |
 |---------|--------|
 | **User action** | Clicks `Begin Onboarding` in Mini App |
-| **System response** | **Slide 1:** "Welcome to TetherStream — a platform where you can earn rewards through simulated mining activities. No real crypto required to start."\n\n**Slide 2:** "Your goal: mine USDT and TON by interacting with the app. Invite friends, complete quests, and boost your earnings."\n\n**Slide 3:** "Let's walk through how everything works." |
+| **System response** | **Slide 1:** "Welcome to TitanStream — a platform where you can earn rewards through simulated mining activities. No real crypto required to start."\n\n**Slide 2:** "Your goal: mine USDT and TON by interacting with the app. Invite friends, complete quests, and boost your earnings."\n\n**Slide 3:** "Let's walk through how everything works." |
 | **Buttons** | `Next →` (per slide) \| `Skip Tutorial` (with confirm dialog) |
 | **Backend event** | `education.module_started { module_id: "welcome" }` |
 | **Database change** | `education_completion` row for module `welcome` → `IN_PROGRESS` |
@@ -734,7 +734,7 @@ interface QuizAnswer {
 | Element | Detail |
 |---------|--------|
 | **User action** | Reads risk disclosures |
-| **System response** | **⚠️ Risk Disclosure (3 slides):**\n\n**Slide 1:** "Market Risk: The value of USDT and TON can fluctuate. Your earnings' real-world value is not guaranteed."\n\n**Slide 2:** "Platform Risk: Mining rewards are determined by platform algorithms. We reserve the right to adjust mechanics."\n\n**Slide 3:** "Security: Never share your account. TetherStream will never ask for your private keys or seed phrase."\n\n**Acknowledgement checkbox:** "I have read and understand these risks." |
+| **System response** | **⚠️ Risk Disclosure (3 slides):**\n\n**Slide 1:** "Market Risk: The value of USDT and TON can fluctuate. Your earnings' real-world value is not guaranteed."\n\n**Slide 2:** "Platform Risk: Mining rewards are determined by platform algorithms. We reserve the right to adjust mechanics."\n\n**Slide 3:** "Security: Never share your account. TitanStream will never ask for your private keys or seed phrase."\n\n**Acknowledgement checkbox:** "I have read and understand these risks." |
 | **Buttons** | `Next →` \| `I Acknowledge the Risks` (only enabled after checkbox) |
 | **Backend event** | `education.module_completed { module_id: "risks" }` \| `consent.risk_acknowledged` |
 | **Database change** | `education_completion` for module `risks` → `COMPLETED`. `user_consents` row created for `risk_acknowledgement`. |
@@ -760,7 +760,7 @@ interface QuizAnswer {
 | Element | Detail |
 |---------|--------|
 | **User action** | Views myth vs fact comparisons |
-| **System response** | **Myth vs Fact cards:**\n\n❌ "This is a bank" → ✅ "TetherStream is a gaming/mining platform"\n❌ "Guaranteed returns" → ✅ "Rewards vary based on activity"\n❌ "Get rich quick" → ✅ "Small, consistent earnings over time"\n❌ "No risk involved" → ✅ "All earnings carry some risk"\n❌ "It's crypto trading" → ✅ "It's simulated mining, not trading" |
+| **System response** | **Myth vs Fact cards:**\n\n❌ "This is a bank" → ✅ "TitanStream is a gaming/mining platform"\n❌ "Guaranteed returns" → ✅ "Rewards vary based on activity"\n❌ "Get rich quick" → ✅ "Small, consistent earnings over time"\n❌ "No risk involved" → ✅ "All earnings carry some risk"\n❌ "It's crypto trading" → ✅ "It's simulated mining, not trading" |
 | **Buttons** | `Next →` \| `← Back` \| `Got it!` |
 | **Backend event** | `education.module_completed { module_id: "myths" }` |
 | **Database change** | `education_completion` for module `myths` → `COMPLETED` |
@@ -773,7 +773,7 @@ interface QuizAnswer {
 | Element | Detail |
 |---------|--------|
 | **User action** | Answers 5 multiple-choice questions |
-| **System response** | **Question examples:**\n1. "What determines your mining speed?"\n   a) Account age\n   b) GH/s rate and multipliers ✅\n   c) Number of friends invited\n\n2. "Can you lose money on TetherStream?"\n   a) No, it's risk-free\n   b) Yes, earnings are not guaranteed ✅\n   c) Only if you withdraw\n\n3. "How do you withdraw funds?"\n   a) Send a request to support\n   b) Use the Withdraw tab ✅\n   c) Convert to Telegram Stars\n\n4. "Is TetherStream a bank?"\n   a) Yes\n   b) No ✅\n\n5. "What should you never share?"\n   a) Your username\n   b) Your private keys / seed phrase ✅\n   c) Your mining speed |
+| **System response** | **Question examples:**\n1. "What determines your mining speed?"\n   a) Account age\n   b) GH/s rate and multipliers ✅\n   c) Number of friends invited\n\n2. "Can you lose money on TitanStream?"\n   a) No, it's risk-free\n   b) Yes, earnings are not guaranteed ✅\n   c) Only if you withdraw\n\n3. "How do you withdraw funds?"\n   a) Send a request to support\n   b) Use the Withdraw tab ✅\n   c) Convert to Telegram Stars\n\n4. "Is TitanStream a bank?"\n   a) Yes\n   b) No ✅\n\n5. "What should you never share?"\n   a) Your username\n   b) Your private keys / seed phrase ✅\n   c) Your mining speed |
 | **Buttons** | Per question: 3-4 option buttons \| `Submit Answer` |
 | **Backend event** | `education.quiz_attempt` (per question) \| `education.quiz_completed` |
 | **Database change** | Quiz answers stored in `education_completion.quiz_answers`. Score recorded. If ≥ 4/5 → step 11. If < 4/5 → show explanations, offer retry. |
@@ -807,7 +807,7 @@ interface QuizAnswer {
 | Element | Detail |
 |---------|--------|
 | **User action** | Sees congratulations message |
-| **System response** | `🎉 You're all set!\n\nYou've completed onboarding. Here's a quick summary:\n\n✅ Education modules completed\n✅ Risks acknowledged\n✅ Consent given\n\nYou're now ready to explore TetherStream!` |
+| **System response** | `🎉 You're all set!\n\nYou've completed onboarding. Here's a quick summary:\n\n✅ Education modules completed\n✅ Risks acknowledged\n✅ Consent given\n\nYou're now ready to explore TitanStream!` |
 | **Buttons** | `⛏️ Start Mining` \| `👥 Invite Friends` \| `📋 View Dashboard` |
 | **Backend event** | `onboarding.completed` |
 | **Database change** | User state → `ELIGIBLE_USER`. `onboarding_progress.completed_at` set. Welcome bonus queued if applicable. |
@@ -840,7 +840,7 @@ interface OnboardingProgress {
 | Time | Channel | Message | Trigger |
 |------|---------|---------|---------|
 | 3h after stall | Telegram Bot | "You're halfway there! Complete onboarding to start earning." | Cron: check stalled users |
-| 24h after stall | Telegram Bot | "Your TetherStream account is waiting. Finish setup in 2 minutes." | Cron |
+| 24h after stall | Telegram Bot | "Your TitanStream account is waiting. Finish setup in 2 minutes." | Cron |
 | 72h after stall | Telegram Bot | "We saved your progress. Come back anytime!" + deep link | Cron |
 | 7d after stall | State change | Move to ONBOARDING_STALLED, stop nudges | Cron |
 
@@ -1803,7 +1803,7 @@ All endpoints prefixed with `/api/v1`. All responses wrapped in `{ success: bool
     "percentage": 40,
     "correctAnswers": [0, 2, 3, 1, 4],     // Show which were correct
     "explanations": {
-      "1": "TetherStream is not a bank...",
+      "1": "TitanStream is not a bank...",
       "3": "You should never share private keys..."
     },
     "retryAllowed": true,
@@ -1829,7 +1829,7 @@ All endpoints prefixed with `/api/v1`. All responses wrapped in `{ success: bool
   "granted": true,
   "version": "v1.0",
   "metadata": {
-    "documentUrl": "https://tetherstream.com/risk-disclosure-v1"
+    "documentUrl": "https://titanstream.com/risk-disclosure-v1"
   }
 }
 

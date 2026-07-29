@@ -1,6 +1,6 @@
 # Document S: Coding Standards
 
-This document establishes the code quality rules, TypeScript constraints, testing expectations, and repository conventions for the TetherStream team.
+This document establishes the code quality rules, TypeScript constraints, testing expectations, and repository conventions for the TitanStream team.
 
 ---
 

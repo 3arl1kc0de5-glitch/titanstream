@@ -1,6 +1,6 @@
-# DATABASE DEPLOYMENT GUIDE — TetherStream PostgreSQL & Prisma ORM
+# DATABASE DEPLOYMENT GUIDE — TitanStream PostgreSQL & Prisma ORM
 
-This document details the production deployment, migration workflow, schema synchronization, and rollback strategies for TetherStream's PostgreSQL database hosted on Railway.
+This document details the production deployment, migration workflow, schema synchronization, and rollback strategies for TitanStream's PostgreSQL database hosted on Railway.
 
 ---
 

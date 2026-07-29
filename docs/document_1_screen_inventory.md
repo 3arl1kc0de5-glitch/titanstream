@@ -1,6 +1,6 @@
 # Document 1: Complete Screen Inventory
 
-This document catalogs every screen identified from the reference screenshots of the TetherStream Telegram Mini App, detailing their purposes, hierarchy, and entry points.
+This document catalogs every screen identified from the reference screenshots of the TitanStream Telegram Mini App, detailing their purposes, hierarchy, and entry points.
 
 ## Screen Hierarchy Overview
 

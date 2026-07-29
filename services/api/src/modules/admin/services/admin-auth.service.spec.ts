@@ -28,7 +28,7 @@ describe('AdminAuthService', () => {
     prisma.adminUser.findUnique.mockResolvedValue({
       id: 'admin_1',
       username: 'superadmin',
-      email: 'superadmin@tetherstream.io',
+      email: 'superadmin@titanstream.io',
       passwordHash,
       role: AdminRole.SUPER_ADMIN,
       isActive: true,

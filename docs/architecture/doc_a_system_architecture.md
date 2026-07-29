@@ -1,6 +1,6 @@
 # Document A: Complete System Architecture
 
-This document outlines the system topology, data flows, and security trust boundaries for the TetherStream platform.
+This document outlines the system topology, data flows, and security trust boundaries for the TitanStream platform.
 
 ---
 

@@ -1,6 +1,6 @@
 # Document 3: Navigation Map
 
-This document specifies the routing, transition behaviors, back navigation, and deep-link entry points for the TetherStream Telegram Mini App.
+This document specifies the routing, transition behaviors, back navigation, and deep-link entry points for the TitanStream Telegram Mini App.
 
 ---
 

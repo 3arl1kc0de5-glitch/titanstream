@@ -39,7 +39,7 @@ export const WithdrawScreen: React.FC = () => {
 
   return (
     <div className="p-4 flex flex-col gap-5">
-      {/* Header with Tether Emblem */}
+      {/* Header with TitanStream Emblem */}
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}

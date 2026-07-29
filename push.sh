@@ -1,5 +1,5 @@
 #!/bin/bash
-# Tetherstream Git Push Helper Script
+# Titanstream Git Push Helper Script
 
 # Ensure git is installed
 if ! command -v git &> /dev/null; then

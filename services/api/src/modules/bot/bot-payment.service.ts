@@ -17,7 +17,7 @@ export interface CreateDepositInvoiceDto {
 @Injectable()
 export class BotPaymentService {
   private readonly logger = new Logger(BotPaymentService.name);
-  private readonly webAppUrl = process.env.TELEGRAM_WEBAPP_URL || 'https://tetherstream.app';
+  private readonly webAppUrl = process.env.TELEGRAM_WEBAPP_URL || 'https://titanstream.app';
 
   constructor(
     private readonly prisma: PrismaService,
@@ -41,7 +41,7 @@ export class BotPaymentService {
       };
     }
 
-    const text = `<b>➕ Deposit Funds into TetherStream</b>\n\nSelect a deposit amount or enter a custom amount:\n\n• Instant USDT crediting\n• Supported rails: CryptoBot (Telegram Pay), TRC20, Mobile Money`;
+    const text = `<b>➕ Deposit Funds into TitanStream</b>\n\nSelect a deposit amount or enter a custom amount:\n\n• Instant USDT crediting\n• Supported rails: CryptoBot (Telegram Pay), TRC20, Mobile Money`;
 
     return {
       text,
@@ -223,7 +223,7 @@ export class BotPaymentService {
     );
 
     return {
-      text: `<b>✅ Payment Verified & Credited!</b>\n\n<b>Invoice ID:</b> <code>${invoice.externalInvoiceId}</code>\n<b>Amount:</b> <b>+${Number(invoice.amount).toFixed(2)} USDT</b>\n<b>Status:</b> 🟢 PAID\n\nYour TetherStream balance has been credited instantly.`,
+      text: `<b>✅ Payment Verified & Credited!</b>\n\n<b>Invoice ID:</b> <code>${invoice.externalInvoiceId}</code>\n<b>Amount:</b> <b>+${Number(invoice.amount).toFixed(2)} USDT</b>\n<b>Status:</b> 🟢 PAID\n\nYour TitanStream balance has been credited instantly.`,
       keyboard: {
         inline_keyboard: [
           [{ text: '🚀 View Balance', web_app: { url: `${this.webAppUrl}/balance` } }],

@@ -86,7 +86,7 @@ const INITIAL_TICKETS: SupportTicket[] = [
       {
         id: 'msg-2',
         sender: 'admin',
-        senderName: 'TetherStream Automated Escrow',
+        senderName: 'TitanStream Automated Escrow',
         text: 'Your deposit session #KES-88291 was submitted to admin verification queue.',
         createdAt: new Date(Date.now() - 3600000 * 1.8).toISOString(),
         internalNote: true,

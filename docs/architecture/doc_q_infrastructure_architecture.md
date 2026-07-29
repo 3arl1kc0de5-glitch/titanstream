@@ -67,16 +67,16 @@ http {
 
     server {
         listen 80;
-        server_name api.tetherstream.com;
+        server_name api.titanstream.com;
         return 301 https://$host$request_uri;
     }
 
     server {
         listen 443 ssl http2;
-        server_name api.tetherstream.com;
+        server_name api.titanstream.com;
 
-        ssl_certificate /etc/letsencrypt/live/tetherstream.com/fullchain.pem;
-        ssl_certificate_key /etc/letsencrypt/live/tetherstream.com/privkey.pem;
+        ssl_certificate /etc/letsencrypt/live/titanstream.com/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/titanstream.com/privkey.pem;
 
         # Static Client Assets
         location / {

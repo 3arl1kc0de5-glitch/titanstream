@@ -1,6 +1,6 @@
 # Document 5: Interaction Specification
 
-This document defines the interactive behaviors, state changes, and user feedbacks for all controls within the TetherStream Telegram Mini App.
+This document defines the interactive behaviors, state changes, and user feedbacks for all controls within the TitanStream Telegram Mini App.
 
 ---
 

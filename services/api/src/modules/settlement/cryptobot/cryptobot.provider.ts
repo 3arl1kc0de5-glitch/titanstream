@@ -59,7 +59,7 @@ export class CryptoBotProvider implements SettlementProvider {
     const liveInvoice = await this.cryptoBotClient.createInvoice({
       asset: dto.asset,
       amount: dto.requestedAmount,
-      description: `TetherStream ${dto.asset} Funding`,
+      description: `TitanStream ${dto.asset} Funding`,
       payload: `user_${telegramUserId}`,
       expires_in: 900,
     });

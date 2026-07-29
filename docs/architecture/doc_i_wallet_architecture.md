@@ -31,7 +31,7 @@ To prevent balance discrepancies (e.g., race conditions during simultaneous API 
 
 ## 3. Blockchain Abstraction Layer
 
-TetherStream uses a Strategy pattern to interface with blockchain networks. The core code interacts with a generic interface, while specific clients handle network RPC details.
+TitanStream uses a Strategy pattern to interface with blockchain networks. The core code interacts with a generic interface, while specific clients handle network RPC details.
 
 ```mermaid
 classDiagram

@@ -1,6 +1,6 @@
 # Document C: Frontend Architecture
 
-This document defines the architecture, directory standards, state management, and visual rendering strategies for the TetherStream React client.
+This document defines the architecture, directory standards, state management, and visual rendering strategies for the TitanStream React client.
 
 ---
 

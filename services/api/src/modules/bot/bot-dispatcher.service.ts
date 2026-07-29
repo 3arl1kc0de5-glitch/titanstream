@@ -50,7 +50,7 @@ export interface TelegramUpdate {
 @Injectable()
 export class BotDispatcherService {
   private readonly logger = new Logger(BotDispatcherService.name);
-  private readonly webAppUrl = process.env.TELEGRAM_WEBAPP_URL || 'https://tetherstream.app';
+  private readonly webAppUrl = process.env.TELEGRAM_WEBAPP_URL || 'https://titanstream.app';
 
   constructor(
     private readonly telegramClient: TelegramClientService,
@@ -88,7 +88,7 @@ export class BotDispatcherService {
       const parts = text.split(' ');
       const startParam = parts[1];
       response = await this.botCommand.handleStart(userCtx, startParam);
-    } else if (text === '🚀 Open TetherStream' || text.startsWith('/app')) {
+    } else if (text === '🚀 Open TitanStream' || text.startsWith('/app')) {
       response = await this.botCommand.handleApp(userCtx);
     } else if (text === '💰 Balance' || text.startsWith('/balance')) {
       response = await this.botCommand.handleBalance(userCtx);

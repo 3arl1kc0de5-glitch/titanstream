@@ -244,7 +244,7 @@ describe('Telegram Host Bot Production Suite', () => {
   describe('CryptoBot Payment Invoice Lifecycle', () => {
     it('should render deposit amount menu', async () => {
       const res = await paymentService.getDepositMenu(BigInt(123456));
-      expect(res.text).toContain('Deposit Funds into TetherStream');
+      expect(res.text).toContain('Deposit Funds into TitanStream');
       expect(res.keyboard.inline_keyboard.length).toBeGreaterThan(0);
     });
 
@@ -265,7 +265,7 @@ describe('Telegram Host Bot Production Suite', () => {
   describe('Interactive Withdrawal Assistant & Limit Controls', () => {
     it('should render withdrawal menu with tier limits', async () => {
       const res = await withdrawalService.getWithdrawalMenu(BigInt(123456));
-      expect(res.text).toContain('TetherStream Withdrawal Assistant');
+      expect(res.text).toContain('TitanStream Withdrawal Assistant');
       expect(res.keyboard.inline_keyboard[0][0].text).toContain('Request Withdrawal');
     });
 
@@ -324,7 +324,7 @@ describe('Telegram Host Bot Production Suite', () => {
 
       expect(mockTelegramClient.sendMessage).toHaveBeenCalledWith(
         123456,
-        expect.stringContaining('Your TetherStream Account Balance'),
+        expect.stringContaining('Your TitanStream Account Balance'),
         expect.anything(),
       );
     });

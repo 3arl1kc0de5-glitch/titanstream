@@ -1,6 +1,6 @@
 # Document 4: Feature Specification
 
-This document details the functional specifications for each feature category in the TetherStream Telegram Mini App, derived directly from the audited application states.
+This document details the functional specifications for each feature category in the TitanStream Telegram Mini App, derived directly from the audited application states.
 
 ---
 

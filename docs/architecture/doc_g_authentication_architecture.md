@@ -71,7 +71,7 @@ export function verifyTelegramInitData(initDataString: string, botToken: string)
 
 ## 3. JWT & Session Management
 
-TetherStream uses a dual-token JWT setup to maintain secure, stateless user authorization.
+TitanStream uses a dual-token JWT setup to maintain secure, stateless user authorization.
 
 * **Access Token:**
   * **Duration:** 15 minutes.

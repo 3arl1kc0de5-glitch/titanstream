@@ -1,6 +1,6 @@
 # Document 6: Animation Specification
 
-This document details the visual motion and animations required to replicate the interactive dynamics of the TetherStream Telegram Mini App.
+This document details the visual motion and animations required to replicate the interactive dynamics of the TitanStream Telegram Mini App.
 
 ---
 

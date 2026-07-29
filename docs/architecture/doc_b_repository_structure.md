@@ -1,15 +1,15 @@
 # Document B: Repository Structure
 
-This document details the monorepo folder layout and the responsibilities of each directory within the TetherStream codebase.
+This document details the monorepo folder layout and the responsibilities of each directory within the TitanStream codebase.
 
 ---
 
 ## 1. Monorepo Directory Tree
 
-TetherStream is organized as a monorepo to consolidate the React frontend, NestJS backend, shared TypeScript packages, and infrastructure configurations into a single version control repository.
+TitanStream is organized as a monorepo to consolidate the React frontend, NestJS backend, shared TypeScript packages, and infrastructure configurations into a single version control repository.
 
 ```
-/tetherstream (Monorepo Root)
+/titanstream (Monorepo Root)
 ├── apps/
 │   ├── web/                    # React/Vite/TailwindCSS Telegram Mini App
 │   └── admin-dashboard/        # React Admin Panel
@@ -78,6 +78,6 @@ TetherStream is organized as a monorepo to consolidate the React frontend, NestJ
 The monorepo uses `pnpm` workspaces (or npm workspaces) for dependency sharing, managed by **Turborepo** for build caching and dependency compilation.
 
 * **Workspace Routing:**
-  * Packages inside `/packages` are linked as dependencies inside `/apps` and `/services` using standard local version mapping (e.g. `"@tetherstream/database": "workspace:*"`).
+  * Packages inside `/packages` are linked as dependencies inside `/apps` and `/services` using standard local version mapping (e.g. `"@titanstream/database": "workspace:*"`).
 * **Shared Configurations:**
   * Base `tsconfig.json`, Prettier, and ESLint configurations are defined at the root directory. Subprojects extend these base settings to ensure clean, consistent linting and compilation constraints.

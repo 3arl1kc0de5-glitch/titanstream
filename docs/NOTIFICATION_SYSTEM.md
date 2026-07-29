@@ -1,6 +1,6 @@
-# TetherStream Event-Driven Notification System Architecture
+# TitanStream Event-Driven Notification System Architecture
 
-This document details the production notification architecture for TetherStream, covering event definitions, template catalog, multi-channel delivery (In-App + Telegram Bot), and delivery preferences.
+This document details the production notification architecture for TitanStream, covering event definitions, template catalog, multi-channel delivery (In-App + Telegram Bot), and delivery preferences.
 
 ---
 
@@ -35,7 +35,7 @@ All notifications are 100% **event-driven**. When a system action occurs (e.g. d
 | 10 | `WITHDRAWAL_REQUESTED`| Payout requested | In-App & Telegram | "Withdrawal request of {amount} USDT to network {network} is pending operator approval." |
 | 11 | `WITHDRAWAL_APPROVED` | Payout approved | In-App & Telegram | "Your withdrawal request of {amount} USDT has been approved and queued for dispatch." |
 | 12 | `WITHDRAWAL_REJECTED` | Payout rejected | In-App & Telegram | "Withdrawal request {reference} was rejected. Funds returned to your available balance." |
-| 13 | `REFERRAL_JOINED` | Partner signup | In-App & Telegram | "User {username} joined TetherStream using your referral link!" |
+| 13 | `REFERRAL_JOINED` | Partner signup | In-App & Telegram | "User {username} joined TitanStream using your referral link!" |
 | 14 | `REFERRAL_MILESTONE` | Tier target reached | In-App & Telegram | "Congratulations! You reached the {milestone} referral milestone and earned +{bonus} USDT!" |
 | 15 | `SUPPORT_UPDATE` | Support ticket reply | In-App | "An update was posted to your support ticket #{ticketId}: \"{responseSnippet}\"." |
 | 16 | `PLATFORM_ANNOUNCEMENT`| Admin broadcast | In-App & Telegram | "{announcementText}" |

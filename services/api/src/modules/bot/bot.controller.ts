@@ -51,9 +51,9 @@ export class BotController {
   getBotConfig() {
     return {
       botUsername: process.env.TELEGRAM_BOT_USERNAME || 'titanstream_bot',
-      channelId: process.env.TELEGRAM_CHANNEL_ID || '@tetherstream',
-      channelUsername: process.env.TELEGRAM_CHANNEL_USERNAME || 'tetherstream',
-      webAppUrl: process.env.TELEGRAM_WEBAPP_URL || 'https://tetherstream.app',
+      channelId: process.env.TELEGRAM_CHANNEL_ID || '@titanstream',
+      channelUsername: process.env.TELEGRAM_CHANNEL_USERNAME || 'titanstream',
+      webAppUrl: process.env.TELEGRAM_WEBAPP_URL || 'https://titanstream.app',
       status: 'ONLINE',
     };
   }

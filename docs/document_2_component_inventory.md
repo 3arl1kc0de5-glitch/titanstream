@@ -1,6 +1,6 @@
 # Document 2: Component Inventory
 
-This document catalogs every visible UI component in the TetherStream Telegram Mini App, specifying its purpose, approximate size, positioning, visual appearance, interaction model, state changes, and dependencies.
+This document catalogs every visible UI component in the TitanStream Telegram Mini App, specifying its purpose, approximate size, positioning, visual appearance, interaction model, state changes, and dependencies.
 
 ---
 

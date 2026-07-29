@@ -38,7 +38,7 @@ export class BotNotificationService {
       metadata: { amount, txRef },
       actionButton: {
         text: '🚀 Open Balance',
-        web_app: { url: `${process.env.TELEGRAM_WEBAPP_URL || 'https://tetherstream.app'}/balance` },
+        web_app: { url: `${process.env.TELEGRAM_WEBAPP_URL || 'https://titanstream.app'}/balance` },
       },
     });
   }
@@ -69,7 +69,7 @@ export class BotNotificationService {
       metadata: { newLevel },
       actionButton: {
         text: '⭐ View Tier Benefits',
-        web_app: { url: `${process.env.TELEGRAM_WEBAPP_URL || 'https://tetherstream.app'}/boost` },
+        web_app: { url: `${process.env.TELEGRAM_WEBAPP_URL || 'https://titanstream.app'}/boost` },
       },
     });
   }
@@ -87,7 +87,7 @@ export class BotNotificationService {
       metadata: { rewardAmount, refereeName },
       actionButton: {
         text: '👥 Referral Dashboard',
-        web_app: { url: `${process.env.TELEGRAM_WEBAPP_URL || 'https://tetherstream.app'}/boost` },
+        web_app: { url: `${process.env.TELEGRAM_WEBAPP_URL || 'https://titanstream.app'}/boost` },
       },
     });
   }
