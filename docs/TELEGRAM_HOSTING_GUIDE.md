@@ -9,7 +9,7 @@ This guide details the complete production hosting and deployment configuration 
 1. Open Telegram and search for `@BotFather`.
 2. Execute `/newbot` to create your production bot.
    - **Name**: `TetherStream Cloud Bot`
-   - **Username**: `TetherStreamBot` (or your chosen production handle)
+   - **Username**: `titanstream_bot` (or your chosen production handle)
 3. Copy the HTTP API token issued by BotFather:
    ```env
    TELEGRAM_BOT_TOKEN="123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ"
@@ -36,7 +36,7 @@ Configure the following environment variables in your server / container hosting
 ```env
 # Telegram Bot Core
 TELEGRAM_BOT_TOKEN="123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ"
-TELEGRAM_BOT_USERNAME="TetherStreamBot"
+TELEGRAM_BOT_USERNAME="titanstream_bot"
 TELEGRAM_MINI_APP_URL="https://tetherstream.app"
 TELEGRAM_WEBHOOK_URL="https://api.tetherstream.app/api/bot/webhook"
 TELEGRAM_WEBHOOK_SECRET="ts_sec_webhook_987654321_prod"

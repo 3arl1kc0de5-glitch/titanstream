@@ -29,7 +29,7 @@ TetherStream has successfully passed all 12 stages of the Production Launch Audi
 ## Section 2 — Complete User Money Lifecycle Trace
 
 ```
-Telegram User -> Open Bot (@TetherStreamBot)
+Telegram User -> Open Bot (@titanstream_bot)
   ↓
 Launch Telegram Mini App -> Validate HMAC Telegram initData
   ↓

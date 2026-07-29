@@ -50,7 +50,7 @@ export class BotController {
   @ApiOperation({ summary: 'Get Telegram Host Bot configuration' })
   getBotConfig() {
     return {
-      botUsername: process.env.TELEGRAM_BOT_USERNAME || 'TetherStreamBot',
+      botUsername: process.env.TELEGRAM_BOT_USERNAME || 'titanstream_bot',
       channelId: process.env.TELEGRAM_CHANNEL_ID || '@tetherstream',
       channelUsername: process.env.TELEGRAM_CHANNEL_USERNAME || 'tetherstream',
       webAppUrl: process.env.TELEGRAM_WEBAPP_URL || 'https://tetherstream.app',

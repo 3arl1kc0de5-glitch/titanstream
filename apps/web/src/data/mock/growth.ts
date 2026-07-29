@@ -27,7 +27,7 @@ export const growthProfile = {
   totalVolumeUSDT: 128500,
   referrals: {
     code: 'TSDEMO',
-    link: 'https://t.me/TetherStreamBot?start=TSDEMO',
+    link: 'https://t.me/titanstream_bot?start=TSDEMO',
     totalInvited: 12,
     qualifiedCount: 7,
     totalEarnedUSDT: 35,
@@ -37,7 +37,7 @@ export const growthProfile = {
 
 export const referralSummary = {
   referralCode: 'TSDEMO',
-  referralLink: 'https://t.me/TetherStreamBot?start=TSDEMO',
+  referralLink: 'https://t.me/titanstream_bot?start=TSDEMO',
   totalInvited: 12,
   qualifiedCount: 7,
   payingCount: 3,

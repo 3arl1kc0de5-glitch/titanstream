@@ -460,11 +460,11 @@ const STATE_RESTRICTIONS: Record<UserState, StateRestrictions> = {
 │  Day 1: User stops mid-onboarding                                   │
 │  Day 3: Telegram bot sends: "Hey! You didn't finish setting up.    │
 │          Tap here to continue where you left off."                  │
-│          → Deep link: https://t.me/TetherStreamBot/app?start=resume │
+│          → Deep link: https://t.me/titanstream_bot/app?start=resume │
 │                                                                     │
 │  Day 7: User moved to ONBOARDING_STALLED state                     │
 │          Bot sends: "Your onboarding link has expired. Restart?     │
-│          → Deep link: https://t.me/TetherStreamBot/app?start=restart│
+│          → Deep link: https://t.me/titanstream_bot/app?start=restart│
 │                                                                     │
 │  Day 14: Final nudge: "We've saved your progress. Come back        │
 │           anytime to pick up where you left off."                   │
@@ -651,7 +651,7 @@ interface QuizAnswer {
 
 | Element | Detail |
 |---------|--------|
-| **User action** | Opens Telegram, finds @TetherStreamBot, sends `/start` |
+| **User action** | Opens Telegram, finds @titanstream_bot, sends `/start` |
 | **System response** | `Welcome to TetherStream! 🚀\n\nTetherStream is a Telegram-native earning platform where you can participate in simulated mining activities.\n\n⚠️ *Important:* TetherStream is not a bank, not an investment platform, and not a guaranteed income source.\n\nReady to get started?` |
 | **Buttons** | `🚀 Let's Go!` \| `🌐 Language: English` \| `❓ What is TetherStream?` |
 | **Backend event** | `auth.pre_onboarding_started` |

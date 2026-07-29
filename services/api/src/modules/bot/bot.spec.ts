@@ -137,7 +137,7 @@ describe('Telegram Host Bot Production Suite', () => {
     registerReferral: jest.fn().mockResolvedValue({ id: 'ref_rel_1' }),
     getUserReferralSummary: jest.fn().mockResolvedValue({
       referralCode: 'TS123456',
-      referralLink: 'https://t.me/TetherStreamBot?start=ref_TS123456',
+      referralLink: 'https://t.me/titanstream_bot?start=ref_TS123456',
       totalInvited: 3,
       qualifiedCount: 1,
       totalEarnedUSDT: 5,

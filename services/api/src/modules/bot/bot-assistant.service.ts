@@ -37,7 +37,7 @@ export class BotAssistantService {
     security: {
       id: 'security',
       title: '3️⃣ Security & Safe Banking',
-      content: `<b>Lesson 3: Security & Anti-Phishing 🛡</b>\n\nProtect your TetherStream account:\n\n1. <b>Never share your Telegram recovery key or OTP</b> with anyone.\n2. TetherStream staff will <b>NEVER DM you first asking for funds</b>.\n3. Always verify you are interacting with official bot <code>@TetherStreamBot</code>.`,
+      content: `<b>Lesson 3: Security & Anti-Phishing 🛡</b>\n\nProtect your TetherStream account:\n\n1. <b>Never share your Telegram recovery key or OTP</b> with anyone.\n2. TetherStream staff will <b>NEVER DM you first asking for funds</b>.\n3. Always verify you are interacting with official bot <code>@titanstream_bot</code>.`,
     },
     safety: {
       id: 'safety',

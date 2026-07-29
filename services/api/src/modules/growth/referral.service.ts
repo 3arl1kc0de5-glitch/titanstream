@@ -6,7 +6,7 @@ import { ReferralStatus, GrowthEventType, Prisma } from '@prisma/client';
 @Injectable()
 export class ReferralService {
   private readonly logger = new Logger(ReferralService.name);
-  private readonly BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME || 'TetherStreamBot';
+  private readonly BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME || 'titanstream_bot';
 
   constructor(
     private readonly prisma: PrismaService,

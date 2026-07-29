@@ -1518,7 +1518,7 @@ class StateGuard implements CanActivate {
 
 | Element | Detail |
 |---------|--------|
-| **User action** | Sends `/start` to @TetherStreamBot |
+| **User action** | Sends `/start` to @titanstream_bot |
 | **Bot message** | "Welcome to TetherStream! A Telegram-native earning platform.\n\n⚠ TetherStream is not a bank, not an investment, and not guaranteed income.\n\nChoose your language to begin:" |
 | **Buttons** | `🇬🇧 English` \| `🇷🇺 Русский` \| `🇪🇸 Español` \| `🇵🇹 Português` |
 | **Backend call** | `POST /api/v1/auth/telegram` with initData from Mini App |

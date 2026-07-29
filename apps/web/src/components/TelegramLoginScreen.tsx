@@ -92,7 +92,7 @@ export const TelegramLoginScreen: React.FC = () => {
   }, [isMiniApp]);
 
   const handleWebLogin = () => {
-    const botUsername = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'TetherStreamBot';
+    const botUsername = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'titanstream_bot';
     const tgAppUrl = `https://t.me/${botUsername}/app`;
     window.open(tgAppUrl, '_blank');
   };
