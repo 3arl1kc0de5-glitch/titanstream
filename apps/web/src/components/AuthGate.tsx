@@ -77,6 +77,12 @@ export const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
 
   // ── Mini App: auto-authenticate via initData ───────────────────────────────
   const authenticateMiniApp = useCallback(async () => {
+    const currentAuthState = useAuthStore.getState();
+    if (currentAuthState.isAuthenticated && !currentAuthState.isSessionExpired()) {
+      console.info('[AUTH_GATE] mini_app.auth_skipped reason=already_authenticated');
+      return;
+    }
+
     const tg = (window as any).Telegram?.WebApp;
     const initData = tg?.initData;
     const traceId = `tgapp_${Date.now().toString(36)}`;
@@ -192,15 +198,15 @@ export const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
   // ── Main auth orchestration effect ────────────────────────────────────────
   useEffect(() => {
     if (!isReady) return; // Wait for Telegram SDK to initialize
+
+    const authState = useAuthStore.getState();
+    if (authState.isAuthenticated && !authState.isSessionExpired() && authState.session?.accessToken) {
+      console.info(`[AUTH_GATE] session.active_and_valid userId=${authState.session.user.telegramUserId}`);
+      return; // Already authenticated cleanly
+    }
+
     if (authAttempted.current) return;
     authAttempted.current = true;
-
-    // Check for existing valid session first
-    const authState = useAuthStore.getState();
-    if (!authState.isSessionExpired() && authState.session?.accessToken) {
-      console.info(`[AUTH_GATE] session.restored userId=${authState.session.user.telegramUserId}`);
-      return; // Already authenticated, isAuthenticated will be true
-    }
 
     if (authState.isSessionExpired() && authState.session) {
       console.info('[AUTH_GATE] session.expired clearing');
