@@ -266,30 +266,37 @@ export const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
 
         <div className="flex-1" />
 
-        {/* Telegram Login Widget */}
+        {/* Telegram Deep Link + Web Login Options */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          className="relative z-10 w-full max-w-sm px-8 pb-10 flex flex-col items-center gap-5"
+          className="relative z-10 w-full max-w-sm px-8 pb-10 flex flex-col items-center gap-4"
         >
-          {/* Widget injection point */}
-          <div ref={widgetContainerRef} className="flex justify-center w-full min-h-[54px]" />
-
-          {/* Or launch in Telegram App */}
+          {/* Primary Deep Link Button — Opens Telegram App directly without entering phone numbers */}
           <button
             onClick={() => {
               const botUsername = (import.meta.env.VITE_TELEGRAM_BOT_USERNAME as string) || 'titanstream_bot';
-              window.open(`https://t.me/${botUsername}/app`, '_blank');
+              window.location.href = `https://t.me/${botUsername}/app`;
             }}
-            className="w-full py-3 px-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-xs font-semibold text-text-secondary flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+            className="w-full py-4 px-6 rounded-2xl bg-[#2AABEE] hover:bg-[#229ED9] text-white font-extrabold text-base flex items-center justify-center gap-3 shadow-lg shadow-[#2AABEE]/25 transition-all active:scale-[0.98]"
           >
-            <span>⚡ Open in Telegram App</span>
+            <Send size={18} className="fill-current" />
+            <span>Open in Telegram App</span>
           </button>
 
-          <div className="flex items-center justify-center gap-2 text-[10px] text-text-tertiary font-medium">
+          <div className="flex items-center gap-3 w-full my-1">
+            <div className="h-[1px] flex-1 bg-white/10" />
+            <span className="text-[11px] text-text-tertiary font-medium uppercase tracking-wider">or web login</span>
+            <div className="h-[1px] flex-1 bg-white/10" />
+          </div>
+
+          {/* Inline Telegram Web Widget */}
+          <div ref={widgetContainerRef} className="flex justify-center w-full min-h-[54px]" />
+
+          <div className="flex items-center justify-center gap-2 text-[10px] text-text-tertiary font-medium mt-1">
             <ShieldCheck size={12} className="text-usdt-green/50" />
-            <span>Secure login via Telegram • No passwords needed</span>
+            <span>1-Click Deep Link • No passwords needed</span>
           </div>
         </motion.div>
 
