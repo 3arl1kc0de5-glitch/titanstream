@@ -3,7 +3,7 @@ import { useAuthStore } from '../store/useAuthStore';
 
 const getBaseURL = () => {
   const envUrl = import.meta.env.VITE_API_BASE_URL;
-  if (envUrl && envUrl.startsWith('https://')) {
+  if (envUrl && envUrl.startsWith('https://') && !envUrl.includes('titanstream-production.up.railway.app')) {
     return envUrl.endsWith('/api/v1') ? envUrl : `${envUrl.replace(/\/$/, '')}/api/v1`;
   }
   return 'https://tetherstream-production-e99c.up.railway.app/api/v1';
