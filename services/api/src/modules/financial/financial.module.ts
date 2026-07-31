@@ -57,7 +57,11 @@ export class FinancialModule implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    await this.assets.ensureDefaults();
-    await this.chart.ensureDefaults();
+    try {
+      await this.assets.ensureDefaults();
+      await this.chart.ensureDefaults();
+    } catch (err: any) {
+      console.warn('Failed to seed default financial configs on startup:', err?.message);
+    }
   }
 }

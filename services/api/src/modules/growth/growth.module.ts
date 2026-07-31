@@ -57,9 +57,13 @@ export class GrowthModule implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    await this.rewardService.ensureDefaultRules();
-    await this.userLevelService.ensureDefaultLevelConfigs();
-    await this.notificationService.ensureDefaultTemplates();
+    try {
+      await this.rewardService.ensureDefaultRules();
+      await this.userLevelService.ensureDefaultLevelConfigs();
+      await this.notificationService.ensureDefaultTemplates();
+    } catch (err: any) {
+      console.warn('Failed to seed default growth configs on startup:', err?.message);
+    }
 
     this.registerEventListeners();
   }

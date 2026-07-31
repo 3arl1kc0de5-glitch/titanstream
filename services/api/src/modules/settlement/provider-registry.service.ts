@@ -49,7 +49,11 @@ export class ProviderRegistryService implements OnModuleInit {
   }
 
   async onModuleInit() {
-    await Promise.all([...this.adapters.values()].map((provider) => this.ensureProvider(provider)));
+    try {
+      await Promise.all([...this.adapters.values()].map((provider) => this.ensureProvider(provider)));
+    } catch (err: any) {
+      console.warn('Failed to seed default settlement providers on startup:', err?.message);
+    }
   }
 
   registerProvider(provider: SettlementProvider) {

@@ -18,7 +18,11 @@ export class AdminAuthService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    await this.seedDefaultAdminAccounts();
+    try {
+      await this.seedDefaultAdminAccounts();
+    } catch (err: any) {
+      console.warn('Failed to seed default admin accounts on startup:', err?.message);
+    }
   }
 
   private hashPassword(password: string): string {
