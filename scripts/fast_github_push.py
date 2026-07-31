@@ -15,9 +15,9 @@ if not TOKEN:
     print("❌ Error: Could not retrieve GitHub OAuth token.")
     sys.exit(1)
 
-OWNER = 'codeswendy-droid'
-REPO = 'tetherstream'
-BRANCH = 'master'
+OWNER = os.environ.get('GH_OWNER', 'marlikkodes')
+REPO = os.environ.get('GH_REPO', 'titanstream')
+BRANCH = os.environ.get('GH_BRANCH', 'main')
 
 def api_request(method, endpoint, body=None):
     url = f"https://api.github.com/repos/{OWNER}/{REPO}{endpoint}"
