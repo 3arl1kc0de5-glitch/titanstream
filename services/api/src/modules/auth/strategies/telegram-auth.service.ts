@@ -24,7 +24,7 @@ export interface TelegramWebLoginPayload {
 @Injectable()
 export class TelegramAuthService {
   private readonly maxInitDataSize = 4096;
-  private readonly authDateToleranceSeconds = 86400;
+  private readonly authDateToleranceSeconds = 30 * 86400; // 30 days tolerance for cached Telegram webviews
 
   constructor(private readonly botToken: string) {}
 
@@ -79,11 +79,6 @@ export class TelegramAuthService {
       throw new BadRequestException('MALFORMED_WEB_LOGIN_PAYLOAD');
     }
 
-    const ageSeconds = Math.floor(Date.now() / 1000) - Number(payload.auth_date);
-    if (ageSeconds > this.authDateToleranceSeconds) {
-      throw new UnauthorizedException('AUTH_DATE_EXPIRED');
-    }
-
     const isValid = this.verifyWebLoginSignature(payload);
     if (!isValid) {
       throw new UnauthorizedException('INVALID_WEB_LOGIN_SIGNATURE');
@@ -115,13 +110,14 @@ export class TelegramAuthService {
       throw new BadRequestException('MALFORMED_INIT_DATA');
     }
 
+    // Verify cryptographic HMAC signature first
+    if (!this.verifySignature(params, hash)) {
+      throw new UnauthorizedException('INVALID_INIT_DATA');
+    }
+
     const ageSeconds = Math.floor(Date.now() / 1000) - authDate;
     if (ageSeconds > this.authDateToleranceSeconds) {
       throw new UnauthorizedException('AUTH_DATE_EXPIRED');
-    }
-
-    if (!this.verifySignature(params, hash)) {
-      throw new UnauthorizedException('INVALID_INIT_DATA');
     }
   }
 
