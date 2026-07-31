@@ -45,7 +45,7 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  console.log(`TitanStream API running on port ${port}`);
+  console.log(`TitanStream API running on port ${port} [v1.0.1]`);
   console.log(`Swagger docs at http://localhost:${port}/docs`);
 }
 bootstrap();
