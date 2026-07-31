@@ -23,7 +23,11 @@ export class NotificationService implements OnModuleInit {
 
   async onModuleInit() {
     this.logger.log('Initializing Notification templates seed and event listeners...');
-    await this.ensureDefaultTemplates();
+    try {
+      await this.ensureDefaultTemplates();
+    } catch (err: any) {
+      this.logger.warn(`Failed to seed default notification templates on startup: ${err?.message}`);
+    }
 
     // 1. Listen for SettlementCreated events
     this.eventBus.on('SettlementCreated').subscribe({

@@ -31,6 +31,10 @@ export class FinancialOrchestrationModule implements OnModuleInit {
   constructor(private readonly rules: FinancialRulesService) {}
 
   async onModuleInit() {
-    await this.rules.ensureDefaults();
+    try {
+      await this.rules.ensureDefaults();
+    } catch (err: any) {
+      console.warn('Failed to seed default financial rules on startup:', err?.message);
+    }
   }
 }
