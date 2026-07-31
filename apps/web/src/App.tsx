@@ -147,9 +147,11 @@ export function App() {
     }
   }, [isAuthenticated, isSessionExpired, clearSession]);
 
+  const isCountrySet = countrySelected || hasSelectedCountry || localStorage.getItem('has_chosen_currency') === 'true';
+
   // IP-based country detection on first auth
   useEffect(() => {
-    if (isAuthenticated && !countrySelected) {
+    if (isAuthenticated && !isCountrySet) {
       detectUserCountry().then((code) => {
         if (code) {
           setDetectedCountry(code);
@@ -157,11 +159,13 @@ export function App() {
           if (match) {
             selectCountry(match.code);
             setCurrencyPreference(match.code !== 'US', match.name, match.currencyCode, match.currencySymbol, match.exchangeRate);
+            markCountrySelected();
+            localStorage.setItem('has_chosen_currency', 'true');
           }
         }
       });
     }
-  }, [isAuthenticated, countrySelected, setDetectedCountry, selectCountry, setCurrencyPreference]);
+  }, [isAuthenticated, isCountrySet, setDetectedCountry, selectCountry, setCurrencyPreference, markCountrySelected]);
 
   // 1. Splash screen (always first)
   if (showSplash) {
@@ -181,7 +185,7 @@ export function App() {
       {/* 4. Onboarding overlay (new users) */}
       {!onboardingComplete ? (
         <OnboardingOverlay />
-      ) : !countrySelected ? (
+      ) : !isCountrySet ? (
         /* 5. Country selection (once after onboarding) */
         <CountrySelector
           onComplete={() => {
