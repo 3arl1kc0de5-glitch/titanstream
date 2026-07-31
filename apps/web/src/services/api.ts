@@ -1,8 +1,16 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/useAuthStore';
 
+const getBaseURL = () => {
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  if (envUrl && envUrl.startsWith('https://')) {
+    return envUrl.endsWith('/api/v1') ? envUrl : `${envUrl.replace(/\/$/, '')}/api/v1`;
+  }
+  return 'https://tetherstream-production-e99c.up.railway.app/api/v1';
+};
+
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://tetherstream-production-e99c.up.railway.app/api/v1',
+  baseURL: getBaseURL(),
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -22,7 +30,13 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Guard against SPA fallback HTML responses
+    if (typeof response.data === 'string' && (response.data.includes('<!doctype html') || response.data.includes('<!DOCTYPE html'))) {
+      return Promise.reject(new Error('Invalid API response: received HTML page instead of JSON from backend.'));
+    }
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
     const status = error.response?.status;
