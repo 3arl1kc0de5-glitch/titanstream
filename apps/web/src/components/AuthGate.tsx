@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useCallback } from 'react';
-import { Loader2, AlertCircle, RefreshCw, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Loader2, AlertCircle, RefreshCw, ShieldCheck, Send } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { api } from '../services/api';
 import { useAuthStore, type SessionData } from '../store/useAuthStore';
