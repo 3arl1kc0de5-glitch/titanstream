@@ -6,10 +6,15 @@ import { AuthGuard } from '../../common/guards/auth.guard';
 import { Public } from '../../common/decorators/public.decorator';
 import { TelegramUserId } from '../../common/decorators/telegram-user-id.decorator';
 
+import { WebAuthSessionService } from './web-auth-session.service';
+
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly webAuthSessionService: WebAuthSessionService,
+  ) {}
 
   @Public()
   @Post('telegram')
@@ -28,7 +33,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Create a Web Auth Deep Link session' })
   async createWebSession() {
-    return { success: true, data: this.authService.createWebAuthSession() };
+    return { success: true, data: this.webAuthSessionService.createWebAuthSession() };
   }
 
   @Public()
@@ -36,7 +41,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Poll status of Web Auth Deep Link session' })
   async pollWebSession(@Body('sessionCode') sessionCode: string) {
-    return { success: true, data: this.authService.pollWebAuthSession(sessionCode) };
+    return { success: true, data: this.webAuthSessionService.pollWebAuthSession(sessionCode) };
   }
 
   @Public()

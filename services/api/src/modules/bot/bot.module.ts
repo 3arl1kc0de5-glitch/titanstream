@@ -1,4 +1,4 @@
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../database/prisma.module';
 import { AuditModule } from '../audit/audit.module';
 import { FinancialModule } from '../financial/financial.module';
@@ -28,7 +28,7 @@ import { BotController } from './bot.controller';
     GrowthModule,
     AdminModule,
     FinancialOrchestrationModule,
-    forwardRef(() => AuthModule),
+    AuthModule,
   ],
   controllers: [BotController],
   providers: [

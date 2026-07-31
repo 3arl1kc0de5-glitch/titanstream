@@ -2,11 +2,14 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { WebAuthSessionService } from './web-auth-session.service';
 import { TelegramAuthService } from './strategies/telegram-auth.service';
 import { AuditModule } from '../audit/audit.module';
+import { PrismaModule } from '../../database/prisma.module';
 
 @Module({
   imports: [
+    PrismaModule,
     JwtModule.register({
       global: true,
       secret: process.env.JWT_SECRET || 'super-secret-jwt-key',
@@ -17,6 +20,7 @@ import { AuditModule } from '../audit/audit.module';
   controllers: [AuthController],
   providers: [
     AuthService,
+    WebAuthSessionService,
     {
       provide: TelegramAuthService,
       useFactory: () => {
@@ -25,6 +29,6 @@ import { AuditModule } from '../audit/audit.module';
       },
     },
   ],
-  exports: [AuthService, JwtModule],
+  exports: [AuthService, WebAuthSessionService, JwtModule],
 })
 export class AuthModule {}

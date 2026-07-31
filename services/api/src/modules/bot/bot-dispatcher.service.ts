@@ -1,4 +1,4 @@
-import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { TelegramClientService } from './telegram-client.service';
 import { BotGateService, TelegramUserCtx } from './bot-gate.service';
 import { BotCommandService, getPersistentMainKeyboard } from './bot-command.service';
@@ -7,7 +7,7 @@ import { BotAdminService } from './bot-admin.service';
 import { BotPaymentService } from './bot-payment.service';
 import { BotWithdrawalService } from './bot-withdrawal.service';
 import { BotMonetizationService } from './bot-monetization.service';
-import { AuthService } from '../auth/auth.service';
+import { WebAuthSessionService } from '../auth/web-auth-session.service';
 
 export interface TelegramUpdate {
   update_id: number;
@@ -62,7 +62,7 @@ export class BotDispatcherService {
     private readonly botPayment: BotPaymentService,
     private readonly botWithdrawal: BotWithdrawalService,
     private readonly botMonetization: BotMonetizationService,
-    @Inject(forwardRef(() => AuthService)) private readonly authService: AuthService,
+    private readonly webAuthSessionService: WebAuthSessionService,
   ) {}
 
   async handleUpdate(update: TelegramUpdate): Promise<void> {
@@ -91,7 +91,7 @@ export class BotDispatcherService {
       const startParam = parts[1];
 
       if (startParam && startParam.startsWith('wa_')) {
-        const success = await this.authService.authorizeWebSessionViaTelegram(startParam, msg.from);
+        const success = await this.webAuthSessionService.authorizeWebSessionViaTelegram(startParam, msg.from);
         if (success) {
           await this.telegramClient.sendMessage(
             msg.chat.id,
