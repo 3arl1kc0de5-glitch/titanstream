@@ -39,15 +39,23 @@ export const Header: React.FC = () => {
     }
   };
 
-  // Format balance based on preference
+  // Format balance based on preference safely
   const displayBalance = () => {
-    if (preferLocalCurrency && selectedCountry && selectedCountry.code !== 'US') {
-      const localVal = usdtBalance * selectedCountry.exchangeRate;
-      return {
-        value: localVal < 1 ? localVal.toFixed(4) : localVal.toLocaleString(undefined, selectedCountry.numberFormat),
-        symbol: selectedCountry.currencySymbol,
-        flag: selectedCountry.flag,
-      };
+    try {
+      if (preferLocalCurrency && selectedCountry && selectedCountry.code !== 'US') {
+        const rate = selectedCountry.exchangeRate || 1;
+        const localVal = usdtBalance * rate;
+        const fmtOpts = selectedCountry.numberFormat && typeof selectedCountry.numberFormat === 'object'
+          ? selectedCountry.numberFormat
+          : { maximumFractionDigits: 2 };
+        return {
+          value: localVal < 1 ? localVal.toFixed(4) : localVal.toLocaleString(undefined, fmtOpts),
+          symbol: selectedCountry.currencySymbol || 'USh',
+          flag: selectedCountry.flag || '🇺🇬',
+        };
+      }
+    } catch (err) {
+      console.warn('[HEADER] displayBalance formatting error:', err);
     }
     return {
       value: usdtBalance.toFixed(4),

@@ -79,9 +79,12 @@ export const useAuthStore = create<AuthState>()(
 
       setSession: (session) => {
         localStorage.setItem('auth_token', session.accessToken);
+        const hasChosenCurrency = localStorage.getItem('has_chosen_currency') === 'true';
         set({
           isAuthenticated: true,
           session,
+          onboardingComplete: session.onboarding?.isCompleted ?? !session.isNewUser,
+          countrySelected: hasChosenCurrency,
           isAuthLoading: false,
           authError: null,
         });

@@ -37,6 +37,7 @@ import { useSettingsStore } from './store/useSettingsStore';
 import { AuthGate } from './components/AuthGate';
 import { OnboardingOverlay } from './components/OnboardingOverlay';
 import { CountrySelector } from './components/CountrySelector';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // ─── Admin Routes (accessible without user auth) ─────────────────────────────
 
@@ -181,42 +182,44 @@ export function App() {
   //    It handles: loading, error, web widget, mini app auth.
   //    Only renders children when auth is confirmed.
   return (
-    <AuthGate>
-      {/* 4. Onboarding overlay (new users) */}
-      {!onboardingComplete ? (
-        <OnboardingOverlay />
-      ) : !isCountrySet ? (
-        /* 5. Country selection (once after onboarding) */
-        <CountrySelector
-          onComplete={() => {
-            markCountrySelected();
-            localStorage.setItem('has_chosen_currency', 'true');
-          }}
-        />
-      ) : (
-        /* 6. Fully authenticated, onboarded, country set → full app */
-        <Routes>
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<OverviewPage />} />
-            <Route path="orders" element={<OrdersPage />} />
-            <Route path="operations" element={<OperationsPage />} />
-            <Route path="liquidity" element={<LiquidityPage />} />
-            <Route path="treasury" element={<TreasuryPage />} />
-            <Route path="payment-rails" element={<PaymentRailsPage />} />
-            <Route path="withdrawals" element={<WithdrawalsPage />} />
-            <Route path="users" element={<UsersPage />} />
-            <Route path="support" element={<AdminSupportPage />} />
-            <Route path="risk" element={<RiskPage />} />
-            <Route path="automation" element={<AutomationPage />} />
-            <Route path="revenue" element={<RevenuePage />} />
-            <Route path="notifications" element={<NotificationsPage />} />
-            <Route path="audit" element={<AuditPage />} />
-            <Route path="health" element={<HealthPage />} />
-            <Route path="settings" element={<SettingsPage />} />
-          </Route>
-          <Route path="*" element={<MainApp />} />
-        </Routes>
-      )}
-    </AuthGate>
+    <ErrorBoundary>
+      <AuthGate>
+        {/* 4. Onboarding overlay (new users) */}
+        {!onboardingComplete ? (
+          <OnboardingOverlay />
+        ) : !isCountrySet ? (
+          /* 5. Country selection (once after onboarding) */
+          <CountrySelector
+            onComplete={() => {
+              markCountrySelected();
+              localStorage.setItem('has_chosen_currency', 'true');
+            }}
+          />
+        ) : (
+          /* 6. Fully authenticated, onboarded, country set → full app */
+          <Routes>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<OverviewPage />} />
+              <Route path="orders" element={<OrdersPage />} />
+              <Route path="operations" element={<OperationsPage />} />
+              <Route path="liquidity" element={<LiquidityPage />} />
+              <Route path="treasury" element={<TreasuryPage />} />
+              <Route path="payment-rails" element={<PaymentRailsPage />} />
+              <Route path="withdrawals" element={<WithdrawalsPage />} />
+              <Route path="users" element={<UsersPage />} />
+              <Route path="support" element={<AdminSupportPage />} />
+              <Route path="risk" element={<RiskPage />} />
+              <Route path="automation" element={<AutomationPage />} />
+              <Route path="revenue" element={<RevenuePage />} />
+              <Route path="notifications" element={<NotificationsPage />} />
+              <Route path="audit" element={<AuditPage />} />
+              <Route path="health" element={<HealthPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+            </Route>
+            <Route path="*" element={<MainApp />} />
+          </Routes>
+        )}
+      </AuthGate>
+    </ErrorBoundary>
   );
 }
