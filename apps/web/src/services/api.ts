@@ -48,7 +48,6 @@ api.interceptors.response.use(
 
     const session = useAuthStore.getState().session;
     if (!session?.refreshToken) {
-      useAuthStore.getState().clearSession();
       return Promise.reject(error);
     }
 
@@ -69,8 +68,12 @@ api.interceptors.response.use(
       useAuthStore.getState().updateTokens(body.data.accessToken, body.data.refreshToken, expiresAt);
       originalRequest.headers.Authorization = `Bearer ${body.data.accessToken}`;
       return api(originalRequest);
-    } catch (refreshError) {
-      useAuthStore.getState().clearSession();
+    } catch (refreshError: any) {
+      // Only clear session if token refresh endpoint explicitly returns 401 Unauthorized
+      if (refreshError.response?.status === 401) {
+        console.warn('[API] Refresh token expired or revoked. Resetting session.');
+        useAuthStore.getState().clearSession();
+      }
       return Promise.reject(refreshError);
     }
   },
