@@ -232,18 +232,18 @@ export class AuthService {
         if (ipAddress) updateData.lastActiveIp = ipAddress;
 
         user = await this.prisma.user.update({
-          where: { id: user.id },
+          where: { telegramUserId: telegramUserIdBig },
           data: updateData,
         });
 
-        await this.auditService.recordAuthEvent(
-          telegramUserIdBig,
-          AuditEventType.USER_AUTHENTICATED,
-          `User authenticated via ${provider}`,
+        await this.auditService.create({
+          telegramUserId: telegramUserIdBig,
+          eventType: AuditEventType.USER_AUTHENTICATED,
+          description: `User authenticated via ${provider}`,
           ipAddress,
           userAgent,
-          { provider, traceId },
-        );
+          metadata: { provider, traceId },
+        });
       }
     } catch (dbError: any) {
       this.logger.warn(`[AUTH_FALLBACK] Database operation failed: ${dbError.message}. Generating resilient session for user ${telegramUserId}`);
