@@ -80,9 +80,13 @@ export const useAuthStore = create<AuthState>()(
       setSession: (session) => {
         localStorage.setItem('auth_token', session.accessToken);
         const hasChosenCurrency = localStorage.getItem('has_chosen_currency') === 'true';
+        const expiresAt = session.expiresAt || (Date.now() + 30 * 24 * 60 * 60 * 1000);
         set({
           isAuthenticated: true,
-          session,
+          session: {
+            ...session,
+            expiresAt,
+          },
           onboardingComplete: session.onboarding?.isCompleted ?? !session.isNewUser,
           countrySelected: hasChosenCurrency,
           isAuthLoading: false,
@@ -101,7 +105,8 @@ export const useAuthStore = create<AuthState>()(
 
       isSessionExpired: () => {
         const { session } = get();
-        if (!session) return true;
+        if (!session || !session.accessToken) return true;
+        if (!session.expiresAt || typeof session.expiresAt !== 'number') return false;
         return Date.now() > session.expiresAt;
       },
 
