@@ -311,7 +311,7 @@ export const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
 
         <div className="flex-1" />
 
-        {/* Telegram Deep Link + Web Login Options */}
+        {/* Telegram Deep Link Login */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
@@ -342,15 +342,6 @@ export const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
               <span>Waiting for Telegram authorization...</span>
             </motion.div>
           )}
-
-          <div className="flex items-center gap-3 w-full my-1">
-            <div className="h-[1px] flex-1 bg-white/10" />
-            <span className="text-[11px] text-text-tertiary font-medium uppercase tracking-wider">or web widget</span>
-            <div className="h-[1px] flex-1 bg-white/10" />
-          </div>
-
-          {/* Inline Telegram Web Widget */}
-          <div ref={widgetContainerRef} className="flex justify-center w-full min-h-[54px]" />
 
           <div className="flex items-center justify-center gap-2 text-[10px] text-text-tertiary font-medium mt-1">
             <ShieldCheck size={12} className="text-usdt-green/50" />
