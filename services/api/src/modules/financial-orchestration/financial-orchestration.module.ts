@@ -25,7 +25,7 @@ import { MetricsModule } from '../metrics/metrics.module';
     ReconciliationService,
     LedgerReconciliationSweeperService,
   ],
-  exports: [FinancialOrchestratorService, FinancialRulesService, ReconciliationService, LedgerReconciliationSweeperService],
+  exports: [FinancialOrchestratorService, FinancialRulesService, ReconciliationService, LedgerReconciliationSweeperService, IdempotencyService],
 })
 export class FinancialOrchestrationModule implements OnModuleInit {
   constructor(private readonly rules: FinancialRulesService) {}
