@@ -276,6 +276,17 @@ export const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
           {/* Widget injection point */}
           <div ref={widgetContainerRef} className="flex justify-center w-full min-h-[54px]" />
 
+          {/* Or launch in Telegram App */}
+          <button
+            onClick={() => {
+              const botUsername = (import.meta.env.VITE_TELEGRAM_BOT_USERNAME as string) || 'titanstream_bot';
+              window.open(`https://t.me/${botUsername}/app`, '_blank');
+            }}
+            className="w-full py-3 px-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-xs font-semibold text-text-secondary flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+          >
+            <span>⚡ Open in Telegram App</span>
+          </button>
+
           <div className="flex items-center justify-center gap-2 text-[10px] text-text-tertiary font-medium">
             <ShieldCheck size={12} className="text-usdt-green/50" />
             <span>Secure login via Telegram • No passwords needed</span>
