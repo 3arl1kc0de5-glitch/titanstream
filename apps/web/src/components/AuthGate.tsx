@@ -143,6 +143,52 @@ export const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
     console.info(`[AUTH_GATE] web.widget.mounted botUsername=${BOT_USERNAME}`);
   }, [handleWebWidgetLogin]);
 
+  const [webDeepLink, setWebDeepLink] = useState<string | null>(null);
+  const [webSessionCode, setWebSessionCode] = useState<string | null>(null);
+  const [isWaitingForTelegramAuth, setIsWaitingForTelegramAuth] = useState(false);
+
+  // ── Create Web Auth Session on Web mount ─────────────────────────────────
+  useEffect(() => {
+    if (!isReady || isMiniApp || isAuthenticated) return;
+
+    let isMounted = true;
+    const initWebSession = async () => {
+      try {
+        const res = await api.post('/auth/web-session/create');
+        if (isMounted && res.data?.success && res.data?.data) {
+          setWebDeepLink(res.data.data.deepLink);
+          setWebSessionCode(res.data.data.sessionCode);
+        }
+      } catch (err) {
+        console.error('[AUTH_GATE] web_session_create_failed', err);
+      }
+    };
+
+    initWebSession();
+    return () => { isMounted = false; };
+  }, [isReady, isMiniApp, isAuthenticated]);
+
+  // ── Poll Web Auth Session status ──────────────────────────────────────────
+  useEffect(() => {
+    if (!webSessionCode || isAuthenticated || isMiniApp) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await api.post('/auth/web-session/poll', { sessionCode: webSessionCode });
+        const body = res.data;
+        if (body?.success && body?.data?.status === 'AUTHENTICATED') {
+          console.info(`[AUTH_GATE] web_deep_link.auth_success userId=${body.data.user.telegramUserId}`);
+          clearInterval(interval);
+          setSession(buildSession(body.data, 'web'));
+        }
+      } catch (err) {
+        // Silently retry polling
+      }
+    }, 1500);
+
+    return () => clearInterval(interval);
+  }, [webSessionCode, isAuthenticated, isMiniApp, setSession]);
+
   // ── Main auth orchestration effect ────────────────────────────────────────
   useEffect(() => {
     if (!isReady) return; // Wait for Telegram SDK to initialize
@@ -164,7 +210,6 @@ export const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
     if (isMiniApp) {
       authenticateMiniApp();
     }
-    // Web: widget is mounted separately in the render via useEffect
   }, [isReady, isMiniApp, authenticateMiniApp, clearSession]);
 
   // Mount widget for web context after render
@@ -273,21 +318,34 @@ export const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
           transition={{ duration: 0.7, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
           className="relative z-10 w-full max-w-sm px-8 pb-10 flex flex-col items-center gap-4"
         >
-          {/* Primary Deep Link Button — Opens Telegram App directly without entering phone numbers */}
+          {/* Primary Deep Link Button — Opens Telegram App to authorize web session */}
           <button
             onClick={() => {
               const botUsername = (import.meta.env.VITE_TELEGRAM_BOT_USERNAME as string) || 'titanstream_bot';
-              window.location.href = `https://t.me/${botUsername}/app`;
+              const targetUrl = webDeepLink || `https://t.me/${botUsername}`;
+              window.open(targetUrl, '_blank');
+              setIsWaitingForTelegramAuth(true);
             }}
             className="w-full py-4 px-6 rounded-2xl bg-[#2AABEE] hover:bg-[#229ED9] text-white font-extrabold text-base flex items-center justify-center gap-3 shadow-lg shadow-[#2AABEE]/25 transition-all active:scale-[0.98]"
           >
             <Send size={18} className="fill-current" />
-            <span>Open in Telegram App</span>
+            <span>Login via Telegram App</span>
           </button>
+
+          {isWaitingForTelegramAuth && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-2 p-3 rounded-xl bg-[#2AABEE]/10 border border-[#2AABEE]/30 text-[#2AABEE] text-xs font-semibold w-full text-center justify-center"
+            >
+              <Loader2 size={14} className="animate-spin" />
+              <span>Waiting for Telegram authorization...</span>
+            </motion.div>
+          )}
 
           <div className="flex items-center gap-3 w-full my-1">
             <div className="h-[1px] flex-1 bg-white/10" />
-            <span className="text-[11px] text-text-tertiary font-medium uppercase tracking-wider">or web login</span>
+            <span className="text-[11px] text-text-tertiary font-medium uppercase tracking-wider">or web widget</span>
             <div className="h-[1px] flex-1 bg-white/10" />
           </div>
 

@@ -1,10 +1,11 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { PrismaModule } from '../../database/prisma.module';
 import { AuditModule } from '../audit/audit.module';
 import { FinancialModule } from '../financial/financial.module';
 import { GrowthModule } from '../growth/growth.module';
 import { AdminModule } from '../admin/admin.module';
 import { FinancialOrchestrationModule } from '../financial-orchestration/financial-orchestration.module';
+import { AuthModule } from '../auth/auth.module';
 import { TelegramClientService } from './telegram-client.service';
 import { BotGateService } from './bot-gate.service';
 import { BotCommandService } from './bot-command.service';
@@ -27,6 +28,7 @@ import { BotController } from './bot.controller';
     GrowthModule,
     AdminModule,
     FinancialOrchestrationModule,
+    forwardRef(() => AuthModule),
   ],
   controllers: [BotController],
   providers: [

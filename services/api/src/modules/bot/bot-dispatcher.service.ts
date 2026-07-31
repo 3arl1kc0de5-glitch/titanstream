@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { TelegramClientService } from './telegram-client.service';
 import { BotGateService, TelegramUserCtx } from './bot-gate.service';
 import { BotCommandService, getPersistentMainKeyboard } from './bot-command.service';
@@ -7,6 +7,7 @@ import { BotAdminService } from './bot-admin.service';
 import { BotPaymentService } from './bot-payment.service';
 import { BotWithdrawalService } from './bot-withdrawal.service';
 import { BotMonetizationService } from './bot-monetization.service';
+import { AuthService } from '../auth/auth.service';
 
 export interface TelegramUpdate {
   update_id: number;
@@ -61,6 +62,7 @@ export class BotDispatcherService {
     private readonly botPayment: BotPaymentService,
     private readonly botWithdrawal: BotWithdrawalService,
     private readonly botMonetization: BotMonetizationService,
+    @Inject(forwardRef(() => AuthService)) private readonly authService: AuthService,
   ) {}
 
   async handleUpdate(update: TelegramUpdate): Promise<void> {
@@ -87,6 +89,19 @@ export class BotDispatcherService {
     if (text.startsWith('/start')) {
       const parts = text.split(' ');
       const startParam = parts[1];
+
+      if (startParam && startParam.startsWith('wa_')) {
+        const success = await this.authService.authorizeWebSessionViaTelegram(startParam, msg.from);
+        if (success) {
+          await this.telegramClient.sendMessage(
+            msg.chat.id,
+            `✅ *Authenticated for TitanStream Web!*\n\nYou have successfully authorized your browser session. You can now switch back to your browser tab to access your account.`,
+            { parse_mode: 'Markdown' }
+          );
+          return;
+        }
+      }
+
       response = await this.botCommand.handleStart(userCtx, startParam);
     } else if (text === '🚀 Open TitanStream' || text.startsWith('/app')) {
       response = await this.botCommand.handleApp(userCtx);

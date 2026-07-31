@@ -24,6 +24,22 @@ export class AuthController {
   }
 
   @Public()
+  @Post('web-session/create')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Create a Web Auth Deep Link session' })
+  async createWebSession() {
+    return { success: true, data: this.authService.createWebAuthSession() };
+  }
+
+  @Public()
+  @Post('web-session/poll')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Poll status of Web Auth Deep Link session' })
+  async pollWebSession(@Body('sessionCode') sessionCode: string) {
+    return { success: true, data: this.authService.pollWebAuthSession(sessionCode) };
+  }
+
+  @Public()
   @Post('telegram-login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Authenticate via Telegram Web Login Widget' })

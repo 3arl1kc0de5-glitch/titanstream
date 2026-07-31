@@ -30,6 +30,83 @@ export class AuthService {
     }
   }
 
+  private readonly webAuthSessions = new Map<string, {
+    status: 'PENDING' | 'AUTHENTICATED' | 'EXPIRED';
+    data?: any;
+    createdAt: number;
+  }>();
+
+  createWebAuthSession() {
+    const sessionCode = `wa_${Math.random().toString(36).substring(2)}${Date.now().toString(36)}`;
+    const botUsername = process.env.TELEGRAM_BOT_USERNAME || 'titanstream_bot';
+    const deepLink = `https://t.me/${botUsername}?start=${sessionCode}`;
+
+    this.webAuthSessions.set(sessionCode, {
+      status: 'PENDING',
+      createdAt: Date.now(),
+    });
+
+    const tenMinsAgo = Date.now() - 10 * 60 * 1000;
+    for (const [code, sess] of this.webAuthSessions.entries()) {
+      if (sess.createdAt < tenMinsAgo) this.webAuthSessions.delete(code);
+    }
+
+    return { sessionCode, deepLink };
+  }
+
+  pollWebAuthSession(sessionCode: string) {
+    const session = this.webAuthSessions.get(sessionCode);
+    if (!session) {
+      return { status: 'EXPIRED' };
+    }
+
+    if (Date.now() - session.createdAt > 10 * 60 * 1000) {
+      this.webAuthSessions.delete(sessionCode);
+      return { status: 'EXPIRED' };
+    }
+
+    if (session.status === 'AUTHENTICATED' && session.data) {
+      return { status: 'AUTHENTICATED', ...session.data };
+    }
+
+    return { status: 'PENDING' };
+  }
+
+  async authorizeWebSessionViaTelegram(sessionCode: string, telegramUser: {
+    id: number | bigint;
+    first_name: string;
+    last_name?: string;
+    username?: string;
+    language_code?: string;
+    photo_url?: string;
+  }) {
+    const session = this.webAuthSessions.get(sessionCode);
+    if (!session || session.status === 'EXPIRED') {
+      this.logger.warn(`Attempted deep link web auth for unknown or expired session ${sessionCode}`);
+      return false;
+    }
+
+    const parsed = {
+      telegramUserId: telegramUser.id,
+      firstName: telegramUser.first_name,
+      lastName: telegramUser.last_name,
+      username: telegramUser.username,
+      languageCode: telegramUser.language_code,
+      photoUrl: telegramUser.photo_url,
+    };
+
+    const authResult = await this.authenticateTelegramIdentity(parsed, 'telegram_deep_link_bot', `deeplink_${sessionCode}`);
+
+    this.webAuthSessions.set(sessionCode, {
+      status: 'AUTHENTICATED',
+      data: authResult,
+      createdAt: session.createdAt,
+    });
+
+    this.logger.log(`Web auth session ${sessionCode} successfully authorized for Telegram ID ${telegramUser.id}`);
+    return true;
+  }
+
   async authenticateWebLogin(payload: any, ipAddress?: string, userAgent?: string) {
     const traceId = this.createTraceId();
     this.logAuth(traceId, 'web_login.request_received', `telegramPayloadId=${payload?.id ?? 'missing'}`);
