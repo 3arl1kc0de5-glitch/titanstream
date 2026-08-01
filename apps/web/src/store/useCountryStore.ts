@@ -215,17 +215,20 @@ export const UGX_EXCHANGE_RATE = 3700;
 export const RWF_EXCHANGE_RATE = 1350;
 
 export const formatUgx = (usdtAmount: number): string => {
-  const ugx = Math.round(usdtAmount * UGX_EXCHANGE_RATE);
+  const safeUsdt = Number(usdtAmount) || 0;
+  const ugx = Math.round(safeUsdt * UGX_EXCHANGE_RATE);
   return `UGX ${ugx.toLocaleString()}`;
 };
 
 export const formatRwf = (usdtAmount: number): string => {
-  const rwf = Math.round(usdtAmount * RWF_EXCHANGE_RATE);
+  const safeUsdt = Number(usdtAmount) || 0;
+  const rwf = Math.round(safeUsdt * RWF_EXCHANGE_RATE);
   return `RWF ${rwf.toLocaleString()}`;
 };
 
 export const formatUsdt = (usdtAmount: number): string => {
-  return `${usdtAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT`;
+  const safeUsdt = Number(usdtAmount) || 0;
+  return `${safeUsdt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT`;
 };
 
 export interface DualCurrencyYield {
@@ -291,20 +294,25 @@ export const useCountryStore = create<CountryState>()(
       },
 
       getLocalAmount: (usdtAmount: number): string => {
+        const safeUsdt = Number(usdtAmount) || 0;
         const preferLocal = useSettingsStore.getState().preferLocalCurrency;
         const { selectedCountry } = get();
         if (!preferLocal || !selectedCountry || selectedCountry.code === 'US') {
-          return `$${usdtAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+          return `$${safeUsdt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         }
-        const localValue = usdtAmount * selectedCountry.exchangeRate;
-        return `${selectedCountry.currencySymbol} ${localValue.toLocaleString(undefined, selectedCountry.numberFormat)}`;
+        const localValue = safeUsdt * (Number(selectedCountry.exchangeRate) || 1);
+        const fmt = selectedCountry.numberFormat && typeof selectedCountry.numberFormat === 'object'
+          ? selectedCountry.numberFormat
+          : { maximumFractionDigits: 0 };
+        return `${selectedCountry.currencySymbol || ''} ${localValue.toLocaleString(undefined, fmt)}`;
       },
 
       getLocalAmountRaw: (usdtAmount: number): number => {
+        const safeUsdt = Number(usdtAmount) || 0;
         const preferLocal = useSettingsStore.getState().preferLocalCurrency;
         const { selectedCountry } = get();
-        if (!preferLocal || !selectedCountry) return usdtAmount;
-        return usdtAmount * selectedCountry.exchangeRate;
+        if (!preferLocal || !selectedCountry) return safeUsdt;
+        return safeUsdt * (Number(selectedCountry.exchangeRate) || 1);
       },
 
       clearCountry: () => set({ selectedCountry: null, hasSelectedCountry: false }),

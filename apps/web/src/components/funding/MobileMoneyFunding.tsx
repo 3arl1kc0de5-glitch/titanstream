@@ -99,7 +99,7 @@ export const MobileMoneyFunding: React.FC<MobileMoneyFundingProps> = ({
             ${(Number(activeOrder?.amount) || 0).toFixed(2)} USDT
           </div>
           <div className="text-xs font-mono font-bold text-text-secondary">
-            Payable: <span className="text-usdt-green">{activeOrder.localAmount.toLocaleString()} {activeOrder.currency}</span>
+            Payable: <span className="text-usdt-green">{(Number(activeOrder?.localAmount) || 0).toLocaleString()} {activeOrder.currency}</span>
           </div>
         </div>
 

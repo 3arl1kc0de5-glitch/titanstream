@@ -162,7 +162,7 @@ export const CapacityEngine: React.FC = () => {
           <div className="bg-control-bg/30 p-3 rounded-xl border border-white/5">
             <div className="text-[10px] text-text-secondary font-bold">Current Capacity</div>
             <div className="text-lg font-black text-text-primary font-mono mt-1">
-              {currentCapacity.toLocaleString()}
+              {(Number(currentCapacity) || 0).toLocaleString()}
             </div>
             <div className="text-[8px] text-usdt-green mt-0.5 font-mono">
               +{todayCapacityEarned} Today
