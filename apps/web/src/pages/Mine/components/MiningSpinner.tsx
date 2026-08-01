@@ -46,7 +46,7 @@ interface SpinnerModel {
   dailyYieldUsdt: number;
 }
 
-const USDT_SPINNERS: SpinnerModel[] = MACHINE_CATALOG.map((m) => {
+const USDT_SPINNERS: SpinnerModel[] = MACHINE_CATALOG.map((m, idx) => {
   // Calibrate spin animation duration: TS Compute C10 = 4.2s, TS Vector V1000 = 0.8s
   const spinDurationSeconds = Math.max(0.8, 4.5 / m.spinnerSpeedMultiplier);
   return {
@@ -62,7 +62,7 @@ const USDT_SPINNERS: SpinnerModel[] = MACHINE_CATALOG.map((m) => {
          : m.tierCode === 'TS_P250' ? '#10b981'
          : m.tierCode === 'TS_X1000' ? '#e040fb'
          : '#00b0ff',
-    minBoostGhs: m.capacityGhs,
+    minBoostGhs: idx === 0 ? 0 : m.capacityGhs,
     baseSpeedMultiplier: m.spinnerSpeedMultiplier,
     payoutMultiplier: m.dailyYieldUsdt,
     spinDurationSeconds,
@@ -71,7 +71,7 @@ const USDT_SPINNERS: SpinnerModel[] = MACHINE_CATALOG.map((m) => {
   };
 });
 
-const TON_SPINNERS: SpinnerModel[] = MACHINE_CATALOG.map((m) => {
+const TON_SPINNERS: SpinnerModel[] = MACHINE_CATALOG.map((m, idx) => {
   // TON mode compute characteristics: 1.3x speed boost with quantum blue pulse (duration 0.6s to 3.2s)
   const spinDurationSeconds = Math.max(0.6, 3.6 / (m.spinnerSpeedMultiplier * 1.25));
   return {
@@ -87,7 +87,7 @@ const TON_SPINNERS: SpinnerModel[] = MACHINE_CATALOG.map((m) => {
          : m.tierCode === 'TS_P250' ? '#3f51b5'
          : m.tierCode === 'TS_X1000' ? '#7c4dff'
          : '#00e676',
-    minBoostGhs: m.capacityGhs * 1.2,
+    minBoostGhs: idx === 0 ? 0 : m.capacityGhs * 1.2,
     baseSpeedMultiplier: m.spinnerSpeedMultiplier * 1.25,
     payoutMultiplier: m.dailyYieldUsdt * 1.15,
     spinDurationSeconds,
