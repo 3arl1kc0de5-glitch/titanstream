@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { miningService } from '../services/mining.service';
 import { useWalletStore } from './useWalletStore';
+import { MACHINE_CATALOG } from '../data/machines';
 
 type Currency = 'USDT' | 'TON';
 
@@ -30,7 +31,7 @@ export interface MiningState {
   toggleCurrency: (currency: Currency) => Promise<void>;
   setUsdtSpinnerIdx: (idx: number) => void;
   setTonSpinnerIdx: (idx: number) => void;
-  tap: () => boolean; // returns false if overheated/locked/capped
+  tap: () => number; // returns yield amount (0 if tap failed)
   setMultiplier: (value: number) => void;
   decay: () => void;
   triggerOverheat: () => void;
@@ -146,13 +147,13 @@ export const useMiningStore = create<MiningState>((set, get) => {
     tap: () => {
       const state = get();
       if (state.isOverheated || state.isMiningLocked()) {
-        return false;
+        return 0;
       }
 
       // Check 48h Free Trial Cap ($5.00 USDT maximum accumulation)
       if (!state.hasPurchasedMachine && state.isTrialActive()) {
         if (state.trialEarnings >= TRIAL_EARNINGS_CAP_USDT) {
-          return false;
+          return 0;
         }
       }
 
@@ -167,6 +168,12 @@ export const useMiningStore = create<MiningState>((set, get) => {
         tapYield = Math.min(0.02, remainingCap);
         newTrialEarnings = Math.min(TRIAL_EARNINGS_CAP_USDT, state.trialEarnings + tapYield);
         localStorage.setItem('trial_earnings', newTrialEarnings.toString());
+      } else {
+        const isUsdt = state.activeCurrency === 'USDT';
+        const spinnerIdx = isUsdt ? state.usdtSpinnerIdx : state.tonSpinnerIdx;
+        const machine = MACHINE_CATALOG[spinnerIdx];
+        const payoutMultiplier = isUsdt ? machine.dailyYieldUsdt : machine.dailyYieldUsdt * 1.15;
+        tapYield = 0.01 * state.coolerMultiplier * payoutMultiplier;
       }
 
       set({
@@ -180,11 +187,26 @@ export const useMiningStore = create<MiningState>((set, get) => {
         trialEarnings: newTrialEarnings,
       });
 
-      miningService.tapCooler().catch((err) => {
+      // Synchronously credit the wallet store immediately for fluid real-time ticking odometer feedback
+      const wallet = useWalletStore.getState();
+      if (state.activeCurrency === 'USDT') {
+        useWalletStore.setState({ usdtBalance: wallet.usdtBalance + tapYield });
+      } else {
+        useWalletStore.setState({ tonBalance: wallet.tonBalance + tapYield });
+      }
+
+      miningService.tapCooler(tapYield).then((res) => {
+        if (res.success && res.data) {
+          set({
+            coolerMultiplier: res.data.coolerMultiplier,
+            unclaimedBalance: res.data.unclaimedBalance,
+          });
+        }
+      }).catch((err) => {
         console.warn('Failed to sync tap to backend:', err);
       });
 
-      return !willOverheat;
+      return tapYield;
     },
 
     setMultiplier: (value) => set({ coolerMultiplier: value }),

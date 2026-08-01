@@ -80,17 +80,26 @@ def main():
     print(f"🚀 Fast Pushing changes to {OWNER}/{REPO}:{BRANCH} via GitHub REST API...")
     
     # 1. Get branch ref
-    ref_res = api_request('GET', f'/git/ref/heads/{BRANCH}')
-    parent_commit_sha = ref_res['object']['sha']
-    print(f"📌 Remote Parent Commit SHA: {parent_commit_sha}")
+    parent_commit_sha = None
+    remote_tree_sha = None
+    remote_map = {}
+    is_empty = False
     
-    # 2. Get remote tree
-    parent_commit = api_request('GET', f'/git/commits/{parent_commit_sha}')
-    remote_tree_sha = parent_commit['tree']['sha']
-    print(f"📌 Remote Tree SHA: {remote_tree_sha}")
-    
-    remote_tree_res = api_request('GET', f'/git/trees/{remote_tree_sha}?recursive=1')
-    remote_map = {item['path']: item['sha'] for item in remote_tree_res.get('tree', []) if item['type'] == 'blob'}
+    try:
+        ref_res = api_request('GET', f'/git/ref/heads/{BRANCH}')
+        parent_commit_sha = ref_res['object']['sha']
+        print(f"📌 Remote Parent Commit SHA: {parent_commit_sha}")
+        
+        # 2. Get remote tree
+        parent_commit = api_request('GET', f'/git/commits/{parent_commit_sha}')
+        remote_tree_sha = parent_commit['tree']['sha']
+        print(f"📌 Remote Tree SHA: {remote_tree_sha}")
+        
+        remote_tree_res = api_request('GET', f'/git/trees/{remote_tree_sha}?recursive=1')
+        remote_map = {item['path']: item['sha'] for item in remote_tree_res.get('tree', []) if item['type'] == 'blob'}
+    except Exception as e:
+        print(f"⚠️ Failed to fetch remote reference (might be empty repository): {e}")
+        is_empty = True
     
     # 3. Scan local files
     print("🔍 Scanning local workspace files...")
@@ -126,28 +135,36 @@ def main():
     print(f"✨ Uploaded {upload_count} modified files. Creating new remote tree...")
     
     # 5. Create new tree with base_tree
-    new_tree_res = api_request('POST', '/git/trees', {
-        'base_tree': remote_tree_sha,
-        'tree': tree_updates
-    })
+    tree_body = {'tree': tree_updates}
+    if remote_tree_sha:
+        tree_body['base_tree'] = remote_tree_sha
+    new_tree_res = api_request('POST', '/git/trees', tree_body)
     new_tree_sha = new_tree_res['sha']
     print(f"🌲 Created Remote Tree SHA: {new_tree_sha}")
     
     # 6. Create commit
     commit_msg = "refactor: complete full-stack rebrand from TetherStream to TitanStream"
-    new_commit_res = api_request('POST', '/git/commits', {
+    commit_body = {
         'message': commit_msg,
         'tree': new_tree_sha,
-        'parents': [parent_commit_sha]
-    })
+        'parents': [parent_commit_sha] if parent_commit_sha else []
+    }
+    new_commit_res = api_request('POST', '/git/commits', commit_body)
     new_commit_sha = new_commit_res['sha']
     print(f"✨ Created Remote Commit SHA: {new_commit_sha}")
     
     # 7. Update branch ref
-    print(f"🔄 Updating branch ref {BRANCH} to {new_commit_sha}...")
-    api_request('PATCH', f'/git/refs/heads/{BRANCH}', {
-        'sha': new_commit_sha
-    })
+    if is_empty:
+        print(f"🔄 Creating branch ref refs/heads/{BRANCH} for new commit {new_commit_sha}...")
+        api_request('POST', '/git/refs', {
+            'ref': f'refs/heads/{BRANCH}',
+            'sha': new_commit_sha
+        })
+    else:
+        print(f"🔄 Updating branch ref {BRANCH} to {new_commit_sha}...")
+        api_request('PATCH', f'/git/refs/heads/{BRANCH}', {
+            'sha': new_commit_sha
+        })
     
     print(f"🎉 SUCCESS! Successfully pushed branch '{BRANCH}' to GitHub repository {OWNER}/{REPO}!")
     print(f"🔗 Commit URL: https://github.com/{OWNER}/{REPO}/commit/{new_commit_sha}")

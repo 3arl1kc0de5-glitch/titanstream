@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useMiningStore } from '../../../store/useMiningStore';
 import { useWalletStore } from '../../../store/useWalletStore';
 import { useQuestStore } from '../../../store/useQuestStore';
+import { useTreasuryStore } from '../../../store/useTreasuryStore';
 import { useHaptics } from '../../../hooks/useHaptics';
 import { Flame, Thermometer, ChevronLeft, ChevronRight, Lock, Clock } from 'lucide-react';
 import { showToast } from '../../../components/Toast';

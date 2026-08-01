@@ -21,8 +21,8 @@ export const miningService = {
    * Tap the cooling multiplier.
    * Backend endpoint: POST /mining/tap
    */
-  async tapCooler(): Promise<ApiResponse<MiningStateResponse>> {
-    const response = await api.post('/mining/tap');
+  async tapCooler(tapYield?: number): Promise<ApiResponse<MiningStateResponse>> {
+    const response = await api.post('/mining/tap', { yield: tapYield });
     return response.data;
   },
 

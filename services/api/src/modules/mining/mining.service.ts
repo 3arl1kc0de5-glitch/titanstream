@@ -10,6 +10,7 @@ export interface UserMiningState {
   coolerMultiplier: number;
   unclaimedBalance: number;
   lastTappedAt?: Date;
+  lastUpdatedAt?: Date;
 }
 
 @Injectable()
@@ -22,6 +23,28 @@ export class MiningService {
     private readonly orchestrator: FinancialOrchestratorService,
   ) {}
 
+  private accruePassiveYield(session: UserMiningState) {
+    const now = new Date();
+    const lastUpdate = session.lastUpdatedAt ? new Date(session.lastUpdatedAt) : new Date();
+    session.lastUpdatedAt = now;
+
+    const elapsedMs = now.getTime() - lastUpdate.getTime();
+    if (elapsedMs <= 0) return;
+
+    // Passive rate matches the frontend:
+    // 0.0001 per 100ms (0.001 per second) for active machines, 
+    // 0.00005 per 100ms (0.0005 per second) for trial/starter speed.
+    const isTrial = session.baseSpeedGhs <= 1.0;
+    const baseYieldRatePerSec = isTrial ? 0.0005 : 0.001;
+    
+    // delta = speed * multiplier * yieldRate
+    // For passive background mining, we assume a baseline multiplier of 1.0
+    const deltaPerSec = session.baseSpeedGhs * 1.0 * baseYieldRatePerSec;
+    const accumulated = (elapsedMs / 1000) * deltaPerSec;
+
+    session.unclaimedBalance += accumulated;
+  }
+
   getOrCreateSession(telegramUserId: string): UserMiningState {
     let session = this.sessions.get(telegramUserId);
     if (!session) {
@@ -31,20 +54,26 @@ export class MiningService {
         baseSpeedGhs: 2.6,
         coolerMultiplier: 1.0,
         unclaimedBalance: 0.0,
+        lastUpdatedAt: new Date(),
       };
       this.sessions.set(telegramUserId, session);
+    } else {
+      this.accruePassiveYield(session);
     }
     return session;
   }
 
-  tap(telegramUserId: string): UserMiningState {
+  tap(telegramUserId: string, tapYield?: number): UserMiningState {
     const session = this.getOrCreateSession(telegramUserId);
     session.coolerMultiplier = Math.min(20.2, session.coolerMultiplier + 0.6);
     session.lastTappedAt = new Date();
-    // Simulate mining increment per tap
-    session.unclaimedBalance += 0.05; 
+    
+    const increment = typeof tapYield === 'number' && !isNaN(tapYield) ? tapYield : 0.05;
+    session.unclaimedBalance += increment;
+    session.lastUpdatedAt = new Date();
     return session;
   }
+
 
   toggleCurrency(telegramUserId: string, currency: 'USDT' | 'TON'): UserMiningState {
     const session = this.getOrCreateSession(telegramUserId);

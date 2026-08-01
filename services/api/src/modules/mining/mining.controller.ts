@@ -21,10 +21,13 @@ export class MiningController {
 
   @Post('tap')
   @ApiOperation({ summary: 'Tap the mining cooler to increase speed multiplier' })
-  tapCooler(@TelegramUserId() telegramUserId: bigint) {
+  tapCooler(
+    @TelegramUserId() telegramUserId: bigint,
+    @Body('yield') tapYield?: number,
+  ) {
     return {
       success: true,
-      data: this.service.tap(telegramUserId.toString()),
+      data: this.service.tap(telegramUserId.toString(), tapYield),
     };
   }
 
