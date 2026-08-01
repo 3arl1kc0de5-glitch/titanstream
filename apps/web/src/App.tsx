@@ -131,22 +131,13 @@ export function App() {
   const [showSplash, setShowSplash] = useState(true);
 
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const isSessionExpired = useAuthStore((s) => s.isSessionExpired);
   const onboardingComplete = useAuthStore((s) => s.onboardingComplete);
   const countrySelected = useAuthStore((s) => s.countrySelected);
   const setDetectedCountry = useAuthStore((s) => s.setDetectedCountry);
   const markCountrySelected = useAuthStore((s) => s.markCountrySelected);
-  const clearSession = useAuthStore((s) => s.clearSession);
 
   const { hasSelectedCountry, selectCountry } = useCountryStore();
   const { setCurrencyPreference } = useSettingsStore();
-
-  // Check session expiry on mount
-  useEffect(() => {
-    if (isAuthenticated && isSessionExpired()) {
-      clearSession();
-    }
-  }, [isAuthenticated, isSessionExpired, clearSession]);
 
   const isCountrySet = countrySelected || hasSelectedCountry || localStorage.getItem('has_chosen_currency') === 'true';
 

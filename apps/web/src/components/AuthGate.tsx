@@ -41,7 +41,18 @@ function buildSession(data: any, platform: 'telegram' | 'web'): SessionData {
  */
 export const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isReady, isMiniApp, webApp } = useTelegram();
-  const { isAuthenticated, isAuthLoading, authError, session, isSessionExpired, setSession, setAuthLoading, setAuthError, clearSession } = useAuthStore();
+
+  // Fix 4: Individual selectors prevent unnecessary re-renders from unrelated store changes
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isAuthLoading = useAuthStore((s) => s.isAuthLoading);
+  const authError = useAuthStore((s) => s.authError);
+  const session = useAuthStore((s) => s.session);
+  const setSession = useAuthStore((s) => s.setSession);
+  const setAuthLoading = useAuthStore((s) => s.setAuthLoading);
+  const setAuthError = useAuthStore((s) => s.setAuthError);
+  const clearSession = useAuthStore((s) => s.clearSession);
+
   const authAttempted = useRef(false);
   const widgetMounted = useRef(false);
   const widgetContainerRef = useRef<HTMLDivElement>(null);
@@ -235,8 +246,19 @@ export const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
     }
   };
 
+  // ── Render: waiting for Zustand hydration or Telegram SDK ─────────────────
+  if (!hasHydrated || !isReady) {
+    return (
+      <div className="fixed inset-0 z-50 bg-[#06070b] flex flex-col items-center justify-center select-none">
+        <Loader2 size={28} className="text-usdt-green animate-spin mb-4" />
+        <p className="text-text-secondary text-sm">Connecting…</p>
+      </div>
+    );
+  }
+
   // ── Render: authenticated → show app ──────────────────────────────────────
-  if (isAuthenticated && !isSessionExpired()) {
+  const sessionExpired = useAuthStore.getState().isSessionExpired();
+  if (isAuthenticated && !sessionExpired) {
     return <>{children}</>;
   }
 
@@ -360,11 +382,11 @@ export const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
     );
   }
 
-  // Mini App waiting for SDK to be ready (isReady = false)
+  // ── Render: mini app — auth not yet started (should not normally reach here) ──
   return (
     <div className="fixed inset-0 z-50 bg-[#06070b] flex flex-col items-center justify-center select-none">
       <Loader2 size={28} className="text-usdt-green animate-spin mb-4" />
-      <p className="text-text-secondary text-sm">Connecting…</p>
+      <p className="text-text-secondary text-sm">Initializing…</p>
     </div>
   );
 };

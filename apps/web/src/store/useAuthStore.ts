@@ -41,6 +41,7 @@ export interface SessionData {
 }
 
 interface AuthState {
+  _hasHydrated: boolean;
   isAuthenticated: boolean;
   session: SessionData | null;
   onboardingComplete: boolean;
@@ -68,6 +69,7 @@ const SESSION_DURATION = 30 * 24 * 60 * 60 * 1000;
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
+      _hasHydrated: false,
       isAuthenticated: false,
       session: null,
       onboardingComplete: false,
@@ -182,6 +184,12 @@ export const useAuthStore = create<AuthState>()(
         detectedCountryCode: state.detectedCountryCode,
         locationDetected: state.locationDetected,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state._hasHydrated = true;
+          useAuthStore.setState({ _hasHydrated: true });
+        }
+      },
     },
   ),
 );
