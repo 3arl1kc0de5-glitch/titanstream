@@ -41,7 +41,7 @@ export class JwtAuthGuard implements CanActivate {
       }
 
       request.user = {
-        id: telegramUserId,
+        id: String(telegramUserId),
         sub: String(telegramUserId),
         telegramUserId: String(telegramUserId),
         state: userState,
