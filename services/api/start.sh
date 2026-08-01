@@ -58,6 +58,28 @@ else
   echo "[start.sh] DATABASE_URL resolved successfully (length: ${#DATABASE_URL}, is_postgres: $is_pg)."
 fi
 
+# Print list of tables and migration statuses
+echo "=== DATABASE SCHEMA STATUS ==="
+node -e "
+const { Client } = require('pg');
+const client = new Client({ connectionString: process.env.DATABASE_URL });
+client.connect()
+  .then(() => client.query(\"SELECT table_name FROM information_schema.tables WHERE table_schema='public'\"))
+  .then(res => {
+    console.log('Tables:', res.rows.map(r => r.table_name));
+    return client.query(\"SELECT migration_name, rolled_back_at, finished_at FROM _prisma_migrations\");
+  })
+  .then(res => {
+    console.log('Migrations:');
+    res.rows.forEach(r => console.log(' -', r.migration_name, 'rolled_back_at:', r.rolled_back_at, 'finished_at:', r.finished_at));
+    process.exit(0);
+  })
+  .catch(err => {
+    console.error('Error querying DB:', err);
+    process.exit(0);
+  });
+" || true
+
 # Run migrations
 for i in 1 2 3 4 5 6 7 8 9 10; do
   echo "Attempting to run prisma migrate deploy (attempt $i)..."
