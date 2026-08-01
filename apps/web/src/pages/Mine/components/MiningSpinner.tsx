@@ -288,7 +288,15 @@ export const MiningSpinner: React.FC = () => {
     const y = e.clientY - rect.top - rect.height / 2;
 
     const currentMultiplier = useMiningStore.getState().coolerMultiplier;
-    let tapPayout = 0.000001 * currentMultiplier * activeSpinner.payoutMultiplier;
+    const miningStoreState = useMiningStore.getState();
+
+    let tapPayout = 0.02;
+    if (!hasPurchasedMachine && isTrialActive()) {
+      const remainingCap = Math.max(0, 5.0 - miningStoreState.trialEarnings);
+      tapPayout = Math.min(0.02, remainingCap);
+    } else {
+      tapPayout = 0.01 * currentMultiplier * (activeSpinner.payoutMultiplier || 1.0);
+    }
 
     // Credit directly to the wallet store so the odometer display instantly reflects the tap
     const wallet = useWalletStore.getState();
@@ -316,7 +324,7 @@ export const MiningSpinner: React.FC = () => {
       vy: -Math.random() * 5 - 4,
       rotation: Math.random() * 360,
       rotSpeed: (Math.random() - 0.5) * 12,
-      text: `+${(Number(tapPayout) || 0).toFixed(8)} ${activeCurrency}`,
+      text: `+${(Number(tapPayout) || 0).toFixed(4)} ${activeCurrency}`,
     };
 
     setParticles((prev) => [...prev.slice(-12), newParticle]);
