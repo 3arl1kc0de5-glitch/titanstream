@@ -130,7 +130,8 @@ export const MiningSpinner: React.FC = () => {
     isTrialActive,
     isTrialExpired,
     getTrialRemainingMs,
-    trialEarnings
+    trialEarnings,
+    isMiningLocked
   } = useMiningStore();
   const { setActiveTab } = useNavigationStore();
   const { preferLocalCurrency } = useSettingsStore();
@@ -201,13 +202,14 @@ export const MiningSpinner: React.FC = () => {
   useEffect(() => {
     let animFrame: number;
     let lastTime = performance.now();
+    const isLocked = isMiningLocked();
 
     const animate = (time: number) => {
       const delta = time - lastTime;
       lastTime = time;
 
       const baseSpeed = 0.05 * activeSpinner.baseSpeedMultiplier;
-      const rotationSpeed = (isAnyLimitReached || isOverheated) ? 0 : (baseSpeed + coolerMultiplier * 0.08 * activeSpinner.baseSpeedMultiplier) * delta;
+      const rotationSpeed = (isAnyLimitReached || isOverheated || isLocked) ? 0 : (baseSpeed + coolerMultiplier * 0.08 * activeSpinner.baseSpeedMultiplier) * delta;
       setFanRotation((prev) => (prev + rotationSpeed) % 360);
 
       animFrame = requestAnimationFrame(animate);
@@ -215,7 +217,7 @@ export const MiningSpinner: React.FC = () => {
 
     animFrame = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animFrame);
-  }, [coolerMultiplier, isAnyLimitReached, isOverheated, activeSpinner.baseSpeedMultiplier]);
+  }, [coolerMultiplier, isAnyLimitReached, isOverheated, activeSpinner.baseSpeedMultiplier, isMiningLocked]);
 
   // Heat smoke generation when multiplier is high or overheated
   useEffect(() => {

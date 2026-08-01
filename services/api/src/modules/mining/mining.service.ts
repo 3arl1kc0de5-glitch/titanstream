@@ -25,6 +25,54 @@ export class MiningService {
     private readonly machineService: MachineService,
   ) {}
 
+  private async loadFromDb(telegramUserId: string): Promise<UserMiningState | null> {
+    try {
+      const record = await this.prisma.userMiningState.findUnique({
+        where: { telegramUserId: BigInt(telegramUserId) },
+      });
+      if (!record) return null;
+      return {
+        telegramUserId,
+        activeCurrency: record.activeCurrency as 'USDT' | 'TON',
+        baseSpeedGhs: Number(record.baseSpeedGhs),
+        coolerMultiplier: Number(record.coolerMultiplier),
+        unclaimedBalance: Number(record.unclaimedBalance),
+        lastTappedAt: record.lastTappedAt ? new Date(record.lastTappedAt) : undefined,
+        lastUpdatedAt: record.lastUpdatedAt ? new Date(record.lastUpdatedAt) : undefined,
+      };
+    } catch (err) {
+      console.warn('Failed to load mining state from DB:', err);
+      return null;
+    }
+  }
+
+  private async saveToDb(session: UserMiningState): Promise<void> {
+    try {
+      await this.prisma.userMiningState.upsert({
+        where: { telegramUserId: BigInt(session.telegramUserId) },
+        create: {
+          telegramUserId: BigInt(session.telegramUserId),
+          activeCurrency: session.activeCurrency,
+          baseSpeedGhs: session.baseSpeedGhs,
+          coolerMultiplier: session.coolerMultiplier,
+          unclaimedBalance: session.unclaimedBalance,
+          lastTappedAt: session.lastTappedAt,
+          lastUpdatedAt: session.lastUpdatedAt,
+        },
+        update: {
+          activeCurrency: session.activeCurrency,
+          baseSpeedGhs: session.baseSpeedGhs,
+          coolerMultiplier: session.coolerMultiplier,
+          unclaimedBalance: session.unclaimedBalance,
+          lastTappedAt: session.lastTappedAt,
+          lastUpdatedAt: session.lastUpdatedAt,
+        },
+      });
+    } catch (err) {
+      console.warn('Failed to save mining state to DB:', err);
+    }
+  }
+
   private accruePassiveYield(session: UserMiningState) {
     const now = new Date();
     const lastUpdate = session.lastUpdatedAt ? new Date(session.lastUpdatedAt) : new Date();
@@ -56,8 +104,11 @@ export class MiningService {
     session.unclaimedBalance += accumulated;
   }
 
-  getOrCreateSession(telegramUserId: string): UserMiningState {
+  async getOrCreateSession(telegramUserId: string): Promise<UserMiningState> {
     let session = this.sessions.get(telegramUserId);
+    if (!session) {
+      session = await this.loadFromDb(telegramUserId);
+    }
     
     // Sync speed dynamically with user's active machines from MachineService
     const machines = this.machineService.getUserMachines(telegramUserId);
@@ -78,30 +129,35 @@ export class MiningService {
     } else {
       session.baseSpeedGhs = baseSpeed;
       this.accruePassiveYield(session);
+      this.sessions.set(telegramUserId, session);
     }
+
+    await this.saveToDb(session);
     return session;
   }
 
-  tap(telegramUserId: string, tapYield?: number): UserMiningState {
-    const session = this.getOrCreateSession(telegramUserId);
+  async tap(telegramUserId: string, tapYield?: number): Promise<UserMiningState> {
+    const session = await this.getOrCreateSession(telegramUserId);
     session.coolerMultiplier = Math.min(20.2, session.coolerMultiplier + 0.6);
     session.lastTappedAt = new Date();
     
     const increment = typeof tapYield === 'number' && !isNaN(tapYield) ? tapYield : 0.05;
     session.unclaimedBalance += increment;
     session.lastUpdatedAt = new Date();
+    
+    await this.saveToDb(session);
     return session;
   }
 
-
-  toggleCurrency(telegramUserId: string, currency: 'USDT' | 'TON'): UserMiningState {
-    const session = this.getOrCreateSession(telegramUserId);
+  async toggleCurrency(telegramUserId: string, currency: 'USDT' | 'TON'): Promise<UserMiningState> {
+    const session = await this.getOrCreateSession(telegramUserId);
     session.activeCurrency = currency;
+    await this.saveToDb(session);
     return session;
   }
 
   async claim(telegramUserId: string): Promise<{ success: boolean; amount: string; session: UserMiningState }> {
-    const session = this.getOrCreateSession(telegramUserId);
+    const session = await this.getOrCreateSession(telegramUserId);
     const claimAmount = session.unclaimedBalance;
     if (claimAmount <= 0) {
       return { success: false, amount: '0.00', session };
@@ -122,6 +178,8 @@ export class MiningService {
       reference,
       metadata: { source: 'mining_claim', claimAmount },
     });
+
+    await this.saveToDb(session);
 
     return {
       success: true,

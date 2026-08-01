@@ -62,7 +62,7 @@ export const MACHINE_CATALOG: FrontendMachineModel[] = [
     spinnerSpeedMultiplier: 0.5,
     earningsCap: 5.0,
     durationHours: 48,
-    passiveYieldRate: 0.00005,
+    passiveYieldRate: 0.00000289,
   },
   {
     id: 'ripple-x14',

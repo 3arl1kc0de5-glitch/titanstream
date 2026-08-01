@@ -63,7 +63,7 @@ export class MachineService {
       recommendedFor: 'Try out the stream platform.',
       earningsCap: 5.0,
       durationHours: 48,
-      passiveYieldRate: 0.00005,
+      passiveYieldRate: 0.00000289,
     },
     {
       tierCode: 'TS_C10',

@@ -12,34 +12,34 @@ export class MiningController {
 
   @Get('state')
   @ApiOperation({ summary: 'Get current user mining session state' })
-  getMiningState(@TelegramUserId() telegramUserId: bigint) {
+  async getMiningState(@TelegramUserId() telegramUserId: bigint) {
     return {
       success: true,
-      data: this.service.getOrCreateSession(telegramUserId.toString()),
+      data: await this.service.getOrCreateSession(telegramUserId.toString()),
     };
   }
 
   @Post('tap')
   @ApiOperation({ summary: 'Tap the mining cooler to increase speed multiplier' })
-  tapCooler(
+  async tapCooler(
     @TelegramUserId() telegramUserId: bigint,
     @Body('yield') tapYield?: number,
   ) {
     return {
       success: true,
-      data: this.service.tap(telegramUserId.toString(), tapYield),
+      data: await this.service.tap(telegramUserId.toString(), tapYield),
     };
   }
 
   @Post('toggle')
   @ApiOperation({ summary: 'Toggle active mining asset between USDT and TON' })
-  toggleCurrency(
+  async toggleCurrency(
     @TelegramUserId() telegramUserId: bigint,
     @Body('currency') currency: 'USDT' | 'TON',
   ) {
     return {
       success: true,
-      data: this.service.toggleCurrency(telegramUserId.toString(), currency),
+      data: await this.service.toggleCurrency(telegramUserId.toString(), currency),
     };
   }
 

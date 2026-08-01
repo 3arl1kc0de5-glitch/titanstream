@@ -323,6 +323,7 @@ model User {
   qualificationHistory   ReferralQualificationHistory[]
   paymentInvoices       PaymentInvoice[]
   channelVerificationEvents ChannelVerificationEvent[]
+  miningState           UserMiningState?
   productSubscriptions  ProductSubscription[]
 
   @@index([state])
@@ -1636,6 +1637,20 @@ model ProductSubscription {
   @@index([productCode])
   @@index([status])
   @@map("product_subscriptions")
+}
+
+model UserMiningState {
+  telegramUserId   BigInt   @id @map("telegram_user_id")
+  activeCurrency   String   @default("USDT") @map("active_currency")
+  baseSpeedGhs     Decimal  @default(1.0) @map("base_speed_ghs")
+  coolerMultiplier Decimal  @default(1.0) @map("cooler_multiplier")
+  unclaimedBalance Decimal  @default(0.0) @map("unclaimed_balance")
+  lastTappedAt     DateTime? @map("last_tapped_at")
+  lastUpdatedAt    DateTime? @map("last_updated_at")
+
+  user User @relation(fields: [telegramUserId], references: [telegramUserId], onDelete: Cascade)
+
+  @@map("user_mining_states")
 }
 
 
