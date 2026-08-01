@@ -4,7 +4,6 @@ import { Gamepad2, HelpCircle, LogOut, Bell } from 'lucide-react';
 import { useWalletStore } from '../store/useWalletStore';
 import { useNavigationStore } from '../store/useNavigationStore';
 import { HelpModal } from '../components/HelpModal';
-import { UserNotificationModal } from '../components/UserNotificationModal';
 import { useUserNotificationStore } from '../store/useUserNotificationStore';
 import { useTelegram } from '../context/TelegramContext';
 import { useSettingsStore } from '../store/useSettingsStore';
@@ -15,8 +14,7 @@ export const Header: React.FC = () => {
   const { openGames, setActiveTab } = useNavigationStore();
   const { hapticFeedback, logout, user } = useTelegram();
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
-  const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
-  const { unreadCount } = useUserNotificationStore();
+  const { unreadCount, setModalOpen } = useUserNotificationStore();
   const { preferLocalCurrency, setCurrencyPreference } = useSettingsStore();
   const { selectedCountry } = useCountryStore();
 
@@ -105,7 +103,7 @@ export const Header: React.FC = () => {
         <button
           onClick={() => {
             hapticFeedback.impactOccurred('light');
-            setIsNotificationModalOpen(true);
+            setModalOpen(true);
           }}
           className="press-feedback w-9 h-9 rounded-full bg-control-bg/70 border border-white/10 flex items-center justify-center text-text-secondary hover:text-text-primary shadow-sm relative"
           title="Notifications"
@@ -179,12 +177,6 @@ export const Header: React.FC = () => {
       <HelpModal
         isOpen={isHelpModalOpen}
         onClose={() => setIsHelpModalOpen(false)}
-      />
-
-      {/* User Notification Modal */}
-      <UserNotificationModal
-        isOpen={isNotificationModalOpen}
-        onClose={() => setIsNotificationModalOpen(false)}
       />
     </header>
   );
