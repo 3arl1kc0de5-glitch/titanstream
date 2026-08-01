@@ -403,7 +403,7 @@ export class AuthService {
       if (payload.type !== 'refresh') throw new UnauthorizedException('INVALID_REFRESH_TOKEN');
       const telegramUserId = BigInt(payload.sub);
 
-      let userState = UserState.READY;
+      let userState: any = UserState.READY;
       try {
         const user = await this.prisma.user.findUnique({
           where: { telegramUserId },
