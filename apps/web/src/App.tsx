@@ -82,23 +82,20 @@ function MainApp() {
       const boostMultiplier = treasury.dailyBoostActive ? 1.5 : 1.0;
       
       // Calibrated passive stream yield rate per 100ms
-      const baseYieldRate = state.hasPurchasedMachine ? 0.0001 : 0.00005;
+      const isUsdt = state.activeCurrency === 'USDT';
+      const spinnerIdx = isUsdt ? state.usdtSpinnerIdx : state.tonSpinnerIdx;
+      const machine = MACHINE_CATALOG[spinnerIdx];
+
+      const baseYieldRate = machine.passiveYieldRate || 0.0001;
       const delta = state.baseSpeedGhs * state.coolerMultiplier * boostMultiplier * baseYieldRate;
 
-      if (state.activeCurrency === 'USDT') {
-        // Enforce 48h Free Trial $5.00 Cap for trial users
-        if (!state.hasPurchasedMachine && state.isTrialActive()) {
-          if (state.trialEarnings < 5.0) {
-            const remainingCap = Math.max(0, 5.0 - state.trialEarnings);
-            const cappedDelta = Math.min(delta, remainingCap);
-            useMiningStore.setState((s) => ({
-              unclaimedBalance: s.unclaimedBalance + cappedDelta,
-              trialEarnings: Math.min(5.0, s.trialEarnings + cappedDelta),
-            }));
-          }
-        } else {
+      if (isUsdt && machine.earningsCap && machine.earningsCap > 0) {
+        if (state.trialEarnings < machine.earningsCap) {
+          const remainingCap = Math.max(0, machine.earningsCap - state.trialEarnings);
+          const cappedDelta = Math.min(delta, remainingCap);
           useMiningStore.setState((s) => ({
-            unclaimedBalance: s.unclaimedBalance + delta,
+            unclaimedBalance: s.unclaimedBalance + cappedDelta,
+            trialEarnings: Math.min(machine.earningsCap!, s.trialEarnings + cappedDelta),
           }));
         }
       } else {

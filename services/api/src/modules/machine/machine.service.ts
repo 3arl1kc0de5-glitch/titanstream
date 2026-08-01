@@ -24,6 +24,10 @@ export interface MachineTier {
   capacityScore: number;
   recommendedFor: string;
   isPopular?: boolean;
+  
+  earningsCap?: number;
+  durationHours?: number;
+  passiveYieldRate?: number;
 }
 
 export interface UserMachineAsset {
@@ -44,6 +48,24 @@ export interface UserMachineAsset {
 export class MachineService {
   private readonly catalog: MachineTier[] = [
     {
+      tierCode: 'TS_TRIAL',
+      name: 'Free Trial Core',
+      priceUsdt: 0.0,
+      capacityGhs: 1.0,
+      powerRatingW: 10,
+      description: 'Temporary trial core with limited capability.',
+      technicalSummary: 'Limited duration testing core.',
+      simpleExplanation: 'Free entry-level node to test the streaming environment.',
+      dailyYieldEstimateUsdt: 2.0,
+      computeRating: 'Trial Queue Class 0',
+      performanceTier: 'Trial Tier',
+      capacityScore: 10,
+      recommendedFor: 'Try out the stream platform.',
+      earningsCap: 5.0,
+      durationHours: 48,
+      passiveYieldRate: 0.00005,
+    },
+    {
       tierCode: 'TS_C10',
       name: 'Ripple X14',
       priceUsdt: 10.99,
@@ -57,6 +79,7 @@ export class MachineService {
       performanceTier: 'Starter Tier',
       capacityScore: 35,
       recommendedFor: 'Perfect for getting started.',
+      passiveYieldRate: 0.0001,
     },
     {
       tierCode: 'TS_A50',
@@ -72,6 +95,7 @@ export class MachineService {
       performanceTier: 'Growth Tier',
       capacityScore: 60,
       recommendedFor: 'Designed for growing daily earnings.',
+      passiveYieldRate: 0.0001,
     },
     {
       tierCode: 'TS_P250',
@@ -88,6 +112,7 @@ export class MachineService {
       capacityScore: 82,
       recommendedFor: 'Built for users scaling cloud capacity.',
       isPopular: true,
+      passiveYieldRate: 0.0001,
     },
     {
       tierCode: 'TS_X1000',
@@ -103,6 +128,7 @@ export class MachineService {
       performanceTier: 'Professional Tier',
       capacityScore: 94,
       recommendedFor: 'Built for users seeking high-volume cloud allocation.',
+      passiveYieldRate: 0.0001,
     },
     {
       tierCode: 'TS_Q2500',
@@ -118,6 +144,7 @@ export class MachineService {
       performanceTier: 'Flagship Enterprise',
       capacityScore: 99,
       recommendedFor: 'Enterprise performance for maximum compute allocation.',
+      passiveYieldRate: 0.0001,
     },
   ];
 
@@ -138,7 +165,37 @@ export class MachineService {
   }
 
   getUserMachines(telegramUserId: string): UserMachineAsset[] {
-    return this.userMachines.get(telegramUserId) || [];
+    let list = this.userMachines.get(telegramUserId);
+    if (!list) {
+      const now = new Date();
+      const trialMachine: UserMachineAsset = {
+        id: 'mach_free_trial',
+        telegramUserId,
+        tierCode: 'TS_TRIAL',
+        name: 'Free Trial Core',
+        purchasePrice: 0.0,
+        currency: 'USDT',
+        status: 'ACTIVE',
+        capacityGhs: 1.0,
+        lifetimeEarnings: 0.0,
+        purchasedAt: now.toISOString(),
+        activatedAt: now.toISOString(),
+      };
+      list = [trialMachine];
+      this.userMachines.set(telegramUserId, list);
+    } else {
+      list = list.map((m) => {
+        if (m.tierCode === 'TS_TRIAL' && m.status === 'ACTIVE') {
+          const elapsed = Date.now() - new Date(m.activatedAt).getTime();
+          if (elapsed >= 48 * 60 * 60 * 1000) {
+            return { ...m, status: 'RETIRED' };
+          }
+        }
+        return m;
+      });
+      this.userMachines.set(telegramUserId, list);
+    }
+    return list;
   }
 
   async purchaseMachine(telegramUserId: bigint, tierCode: string) {

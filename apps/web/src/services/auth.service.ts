@@ -31,9 +31,12 @@ const createSession = (data: AuthResponse, platform: AuthProvider): SessionData 
   platform,
 });
 
-const unwrapAuthResponse = (response: { data: ApiResponse<AuthResponse> }, traceId: string, stage: string) => {
-  if (!response.data.success || !response.data.data) {
-    const message = response.data.error?.message || `${stage} failed`;
+const unwrapAuthResponse = (response: any, traceId: string, stage: string) => {
+  if (response.data && !('success' in response.data)) {
+    return response.data;
+  }
+  if (!response.data || !response.data.success || !response.data.data) {
+    const message = response.data?.error?.message || `${stage} failed`;
     trace(traceId, `${stage}.failed`, message);
     throw new Error(message);
   }
@@ -85,13 +88,14 @@ export const authService = {
   },
 
   async refresh(refreshToken: string): Promise<Pick<SessionData, 'accessToken' | 'refreshToken' | 'expiresAt'>> {
-    const response = await api.post<ApiResponse<{ accessToken: string; refreshToken: string }>>('/auth/refresh', { refreshToken });
-    if (!response.data.success || !response.data.data) {
-      throw new Error(response.data.error?.message || 'Session refresh failed');
+    const response = await api.post<any>('/auth/refresh', { refreshToken });
+    const data = response.data && !('success' in response.data) ? response.data : response.data?.data;
+    if (!data || !data.accessToken || !data.refreshToken) {
+      throw new Error(response.data?.error?.message || 'Session refresh failed');
     }
     return {
-      accessToken: response.data.data.accessToken,
-      refreshToken: response.data.data.refreshToken,
+      accessToken: data.accessToken,
+      refreshToken: data.refreshToken,
       expiresAt: Date.now() + SESSION_DURATION,
     };
   },

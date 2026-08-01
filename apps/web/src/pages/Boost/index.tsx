@@ -206,7 +206,7 @@ export const BoostScreen: React.FC = () => {
 
       {/* Machines Marketplace Cards — STRICT 7-LEVEL HIERARCHY */}
       <div className="flex flex-col gap-5">
-        {MACHINE_CATALOG.map((machine, idx) => {
+        {MACHINE_CATALOG.filter((m) => m.id !== 'free-trial').map((machine, idx) => {
           const yieldDetails = getMachineYieldDetails(machine);
 
           return (

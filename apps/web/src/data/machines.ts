@@ -27,9 +27,43 @@ export interface FrontendMachineModel {
   isPopular?: boolean;
   status: 'ACTIVE' | 'AVAILABLE' | 'LOCKED' | 'MAINTENANCE';
   spinnerSpeedMultiplier: number;
+  
+  // Generic business configuration rules
+  earningsCap?: number;
+  durationHours?: number;
+  passiveYieldRate?: number;
 }
 
 export const MACHINE_CATALOG: FrontendMachineModel[] = [
+  {
+    id: 'free-trial',
+    tierCode: 'TS_TRIAL',
+    name: 'Free Trial Core',
+    tierLabel: 'Trial Tier',
+    targetUser: 'Try out the stream platform.',
+    priceUsdt: 0.0,
+    capacityGhs: 1.0,
+    powerRatingW: 10,
+    description: 'Temporary trial core with limited capability.',
+    technicalSummary: 'Limited duration testing core.',
+    simpleExplanation: 'Free entry-level node to test the streaming environment.',
+    personality: 'Ideal for trial run.',
+    dailyYieldUsdt: 2.0, // Yield factor: yields exactly 0.02 USDT per tap at ×1.0 multiplier
+    performanceLevel: 'Trial Tier',
+    computeCapacityText: '10 CU Allocation',
+    processingPriority: 'Low Priority',
+    cloudWorkloadRating: 'Trial Workload',
+    dailyOutputRating: 'Trial Stream Output',
+    workloadClass: 'Trial Workload',
+    processingIndex: 'PX-TRIAL',
+    fabricThroughput: '2 Gbps',
+    capacityScore: 10,
+    status: 'ACTIVE',
+    spinnerSpeedMultiplier: 0.5,
+    earningsCap: 5.0,
+    durationHours: 48,
+    passiveYieldRate: 0.00005,
+  },
   {
     id: 'ripple-x14',
     tierCode: 'TS_C10',
@@ -55,6 +89,7 @@ export const MACHINE_CATALOG: FrontendMachineModel[] = [
     capacityScore: 35,
     status: 'AVAILABLE',
     spinnerSpeedMultiplier: 0.8,
+    passiveYieldRate: 0.0001,
   },
   {
     id: 'surge-r28',
@@ -82,6 +117,7 @@ export const MACHINE_CATALOG: FrontendMachineModel[] = [
     comparisonText: 'Processes approximately 5× more cloud work than Ripple X14.',
     status: 'AVAILABLE',
     spinnerSpeedMultiplier: 1.5,
+    passiveYieldRate: 0.0001,
   },
   {
     id: 'torrent-v63',
@@ -110,6 +146,7 @@ export const MACHINE_CATALOG: FrontendMachineModel[] = [
     isPopular: true,
     status: 'AVAILABLE',
     spinnerSpeedMultiplier: 2.2,
+    passiveYieldRate: 0.0001,
   },
   {
     id: 'cascade-m91',
@@ -137,6 +174,7 @@ export const MACHINE_CATALOG: FrontendMachineModel[] = [
     comparisonText: 'Processes approximately 4.2× more cloud work than Torrent V63.',
     status: 'AVAILABLE',
     spinnerSpeedMultiplier: 3.0,
+    passiveYieldRate: 0.0001,
   },
   {
     id: 'streamtitan-2028',
@@ -164,6 +202,7 @@ export const MACHINE_CATALOG: FrontendMachineModel[] = [
     comparisonText: 'Processes approximately 2.6× more cloud work than Cascade M91.',
     status: 'AVAILABLE',
     spinnerSpeedMultiplier: 3.8,
+    passiveYieldRate: 0.0001,
   },
 ];
 

@@ -35,6 +35,13 @@ api.interceptors.response.use(
     if (typeof response.data === 'string' && (response.data.includes('<!doctype html') || response.data.includes('<!DOCTYPE html'))) {
       return Promise.reject(new Error('Invalid API response: received HTML page instead of JSON from backend.'));
     }
+    // Unwrap NestJS ApiResponse format
+    if (response.data && typeof response.data === 'object' && 'success' in response.data && 'data' in response.data) {
+      if (response.data.success === false) {
+        return Promise.reject(new Error(response.data.error?.message || 'API request failed'));
+      }
+      response.data = response.data.data;
+    }
     return response;
   },
   async (error) => {
