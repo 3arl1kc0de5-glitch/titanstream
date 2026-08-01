@@ -133,9 +133,12 @@ export const MiningSpinner: React.FC = () => {
 
   const [trialTimeStr, setTrialTimeStr] = useState('');
 
-  // Live 24h Free Trial countdown timer
+  // Live Free Trial countdown timer
   useEffect(() => {
-    if (hasPurchasedMachine) return;
+    const isUsdt = activeCurrency === 'USDT';
+    const idx = isUsdt ? usdtSpinnerIdx : tonSpinnerIdx;
+    const currentMachine = MACHINE_CATALOG[idx];
+    if (currentMachine?.id !== 'free-trial') return;
     const updateTimer = () => {
       const ms = getTrialRemainingMs();
       if (ms <= 0) {
