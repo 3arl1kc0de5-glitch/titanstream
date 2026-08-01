@@ -6,7 +6,7 @@
     "build": "npx prisma generate && nest build",
     "dev": "nest start --watch",
     "start": "nest start",
-    "start:prod": "npx prisma db push && node dist/src/main",
+    "start:prod": "node dist/src/main",
     "lint": "eslint \"{src,test}/**/*.ts\"",
     "test": "jest",
     "test:e2e": "jest --config ./test/jest-e2e.json",

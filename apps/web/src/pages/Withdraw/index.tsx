@@ -28,7 +28,7 @@ export const WithdrawScreen: React.FC = () => {
       return;
     }
     if (!hasMinReferrals) {
-      showToast(`Withdrawal Locked: Need 3 referrals to unlock trial withdrawal (Current: ${invitedCount}/3)`, 'error');
+      showToast(`Withdrawal Locked: Need 3 referrals to unlock promotional withdrawal (Current: ${invitedCount}/3)`, 'error');
       return;
     }
     if (!amount || parseFloat(amount) <= 0) {
@@ -97,7 +97,7 @@ export const WithdrawScreen: React.FC = () => {
                 <span>Cloud Machine Purchase Required</span>
               </div>
               <p className="text-[11px] text-text-secondary leading-relaxed">
-                Free trial earnings ($5.00 max) are unlocked for withdrawal after acquiring a Cloud Machine.
+                Promotional phase earnings ($5.00 max) are unlocked for withdrawal after acquiring a premium Cloud Machine.
               </p>
               <button
                 onClick={() => setActiveTab('boost')}
@@ -116,7 +116,7 @@ export const WithdrawScreen: React.FC = () => {
                 <span>3 Referrals Required ({invitedCount}/3 Completed)</span>
               </div>
               <p className="text-[11px] text-text-secondary leading-relaxed">
-                Invite at least 3 friends to join your cloud network to unlock trial withdrawal privileges.
+                Invite at least 3 friends to join your cloud network to unlock promotional withdrawal privileges.
               </p>
               <button
                 onClick={() => setActiveTab('friends')}

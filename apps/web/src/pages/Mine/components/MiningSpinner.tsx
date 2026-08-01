@@ -140,35 +140,10 @@ export const MiningSpinner: React.FC = () => {
   const { selectedCountry, getLocalAmount } = useCountryStore();
   const showLocal = preferLocalCurrency && !!selectedCountry && selectedCountry.code !== 'US';
 
-  const [trialTimeStr, setTrialTimeStr] = useState('');
-
-  // Live Free Trial countdown timer
-  useEffect(() => {
-    const isUsdt = activeCurrency === 'USDT';
-    const idx = isUsdt ? usdtSpinnerIdx : tonSpinnerIdx;
-    const currentMachine = MACHINE_CATALOG[idx];
-    if (currentMachine?.id !== 'free-trial') return;
-    const updateTimer = () => {
-      const ms = getTrialRemainingMs();
-      if (ms <= 0) {
-        setTrialTimeStr('0h 0m');
-        return;
-      }
-      const totalSecs = Math.floor(ms / 1000);
-      const hrs = Math.floor(totalSecs / 3600);
-      const mins = Math.floor((totalSecs % 3600) / 60);
-      const secs = totalSecs % 60;
-      setTrialTimeStr(`${hrs}H ${mins}M ${secs}S`);
-    };
-
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
-    return () => clearInterval(interval);
-  }, [activeCurrency, usdtSpinnerIdx, tonSpinnerIdx, getTrialRemainingMs]);
-
   const isDailyLimitReached = tapsToday >= dailyTapLimit;
   const isWeeklyLimitReached = tapsThisWeek >= weeklyTapLimit;
   const isMonthlyLimitReached = tapsThisMonth >= monthlyTapLimit;
+
 
   const isAnyLimitReached = isDailyLimitReached || isWeeklyLimitReached || isMonthlyLimitReached;
   const isUsdt = activeCurrency === 'USDT';
@@ -210,8 +185,12 @@ export const MiningSpinner: React.FC = () => {
       const delta = time - lastTime;
       lastTime = time;
 
-      const baseSpeed = 0.05 * activeSpinner.baseSpeedMultiplier;
-      const rotationSpeed = (isAnyLimitReached || isOverheated || isLocked) ? 0 : (baseSpeed + coolerMultiplier * 0.08 * activeSpinner.baseSpeedMultiplier) * delta;
+      let multiplier = activeSpinner.baseSpeedMultiplier;
+      if (activeSpinner.id === 'free-trial' && machineMode === 'STANDARD') {
+        multiplier = 0.1;
+      }
+      const baseSpeed = 0.05 * multiplier;
+      const rotationSpeed = (isAnyLimitReached || isOverheated || isLocked) ? 0 : (baseSpeed + coolerMultiplier * 0.08 * multiplier) * delta;
       setFanRotation((prev) => (prev + rotationSpeed) % 360);
 
       animFrame = requestAnimationFrame(animate);
@@ -1143,9 +1122,11 @@ export const MiningSpinner: React.FC = () => {
         const getTapYield = (mult: number) => {
           const payoutMultiplier = isUsdt ? activeSpinner.payoutMultiplier : activeSpinner.payoutMultiplier * 1.15;
           let yieldVal = 0.01 * mult * payoutMultiplier;
-          if (activeSpinner.earningsCap && activeSpinner.earningsCap > 0) {
-            const remainingCap = Math.max(0, (activeSpinner.earningsCap || 5.0) - trialEarnings);
-            yieldVal = Math.min(yieldVal, remainingCap);
+          if (activeSpinner.id === 'free-trial') {
+            if (machineMode === 'PROMOTIONAL') {
+              const remainingCap = Math.max(0, 5.0 - lifetimePromotionalOutput);
+              yieldVal = Math.min(yieldVal, remainingCap);
+            }
           }
           return yieldVal;
         };
