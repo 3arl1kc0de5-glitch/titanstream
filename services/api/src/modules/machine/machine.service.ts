@@ -28,6 +28,10 @@ export interface MachineTier {
   earningsCap?: number;
   durationHours?: number;
   passiveYieldRate?: number;
+  promoYieldRate?: number;
+  promoOutputCap?: number;
+  spinnerSpeedMultiplier?: number;
+  promoSpinnerSpeedMultiplier?: number;
 }
 
 export interface UserMachineAsset {
@@ -61,7 +65,11 @@ export class MachineService {
       performanceTier: 'Baseline Tier',
       capacityScore: 10,
       recommendedFor: 'Starter core for everyone.',
-      passiveYieldRate: 0.00000289,
+      passiveYieldRate: 0.0000001929,
+      promoYieldRate: 0.00000289,
+      promoOutputCap: 5.0,
+      spinnerSpeedMultiplier: 0.1,
+      promoSpinnerSpeedMultiplier: 0.5,
     },
     {
       tierCode: 'TS_C10',

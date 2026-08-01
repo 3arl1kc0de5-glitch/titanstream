@@ -91,30 +91,23 @@ function MainApp() {
       let newLifetimePromotionalOutput = state.lifetimePromotionalOutput;
       let newMachineMode = state.machineMode;
 
-      if (machine.id === 'free-trial') {
-        if (state.machineMode === 'PROMOTIONAL') {
-          const promoRate = 0.00000289;
-          const promoDelta = state.baseSpeedGhs * state.coolerMultiplier * boostMultiplier * promoRate;
-          const remainingCap = Math.max(0, 5.0 - state.lifetimePromotionalOutput);
+      if (machine.promoOutputCap && machine.promoYieldRate && state.machineMode === 'PROMOTIONAL') {
+        const promoDelta = state.baseSpeedGhs * state.coolerMultiplier * boostMultiplier * machine.promoYieldRate;
+        const remainingCap = Math.max(0, machine.promoOutputCap - state.lifetimePromotionalOutput);
+        
+        if (promoDelta >= remainingCap && remainingCap > 0) {
+          delta += remainingCap;
+          newLifetimePromotionalOutput = machine.promoOutputCap;
+          newMachineMode = 'STANDARD';
           
-          if (promoDelta >= remainingCap && remainingCap > 0) {
-            delta += remainingCap;
-            newLifetimePromotionalOutput = 5.0;
-            newMachineMode = 'STANDARD';
-            
-            const usedFraction = remainingCap / promoDelta;
-            const remainingFraction = 1 - usedFraction;
-            const stdRate = 0.0000001929;
-            const stdDelta = state.baseSpeedGhs * state.coolerMultiplier * boostMultiplier * stdRate;
-            delta += stdDelta * remainingFraction;
-          } else {
-            delta += promoDelta;
-            newLifetimePromotionalOutput += promoDelta;
-          }
-        } else {
-          const stdRate = 0.0000001929;
+          const usedFraction = remainingCap / promoDelta;
+          const remainingFraction = 1 - usedFraction;
+          const stdRate = machine.passiveYieldRate || 0;
           const stdDelta = state.baseSpeedGhs * state.coolerMultiplier * boostMultiplier * stdRate;
-          delta += stdDelta;
+          delta += stdDelta * remainingFraction;
+        } else {
+          delta += promoDelta;
+          newLifetimePromotionalOutput += promoDelta;
         }
       } else {
         const baseYieldRate = machine.passiveYieldRate || 0.0001;

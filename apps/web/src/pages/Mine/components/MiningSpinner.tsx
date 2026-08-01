@@ -44,15 +44,17 @@ interface SpinnerModel {
   minBoostGhs: number;
   baseSpeedMultiplier: number;
   payoutMultiplier: number;
-  spinDurationSeconds: number; // Calibrated animation speed: lower duration = faster spin!
+  spinDurationSeconds: number;
   powerRatingW: number;
   dailyYieldUsdt: number;
   earningsCap?: number;
   durationHours?: number;
+  promoSpinnerSpeedMultiplier?: number;
+  promoOutputCap?: number;
+  promoYieldRate?: number;
 }
 
 const USDT_SPINNERS: SpinnerModel[] = MACHINE_CATALOG.map((m, idx) => {
-  // Calibrate spin animation duration: TS Compute C10 = 4.2s, TS Vector V1000 = 0.8s
   const spinDurationSeconds = Math.max(0.8, 4.5 / m.spinnerSpeedMultiplier);
   return {
     id: m.id,
@@ -75,11 +77,13 @@ const USDT_SPINNERS: SpinnerModel[] = MACHINE_CATALOG.map((m, idx) => {
     dailyYieldUsdt: m.dailyYieldUsdt,
     earningsCap: m.earningsCap,
     durationHours: m.durationHours,
+    promoSpinnerSpeedMultiplier: m.promoSpinnerSpeedMultiplier,
+    promoOutputCap: m.promoOutputCap,
+    promoYieldRate: m.promoYieldRate,
   };
 });
 
 const TON_SPINNERS: SpinnerModel[] = MACHINE_CATALOG.map((m, idx) => {
-  // TON mode compute characteristics: 1.3x speed boost with quantum blue pulse (duration 0.6s to 3.2s)
   const spinDurationSeconds = Math.max(0.6, 3.6 / (m.spinnerSpeedMultiplier * 1.25));
   return {
     id: `ton-${m.id}`,
@@ -102,6 +106,9 @@ const TON_SPINNERS: SpinnerModel[] = MACHINE_CATALOG.map((m, idx) => {
     dailyYieldUsdt: m.dailyYieldUsdt * 1.15,
     earningsCap: m.earningsCap,
     durationHours: m.durationHours,
+    promoSpinnerSpeedMultiplier: m.promoSpinnerSpeedMultiplier ? m.promoSpinnerSpeedMultiplier * 1.25 : undefined,
+    promoOutputCap: m.promoOutputCap,
+    promoYieldRate: m.promoYieldRate ? m.promoYieldRate * 1.15 : undefined,
   };
 });
 
@@ -127,10 +134,6 @@ export const MiningSpinner: React.FC = () => {
     setUsdtSpinnerIdx,
     setTonSpinnerIdx,
     hasPurchasedMachine,
-    isTrialActive,
-    isTrialExpired,
-    getTrialRemainingMs,
-    trialEarnings,
     isMiningLocked,
     machineMode,
     lifetimePromotionalOutput
@@ -186,8 +189,8 @@ export const MiningSpinner: React.FC = () => {
       lastTime = time;
 
       let multiplier = activeSpinner.baseSpeedMultiplier;
-      if (activeSpinner.id === 'free-trial' && machineMode === 'STANDARD') {
-        multiplier = 0.1;
+      if (machineMode === 'PROMOTIONAL' && activeSpinner.promoSpinnerSpeedMultiplier) {
+        multiplier = activeSpinner.promoSpinnerSpeedMultiplier;
       }
       const baseSpeed = 0.05 * multiplier;
       const rotationSpeed = (isAnyLimitReached || isOverheated || isLocked) ? 0 : (baseSpeed + coolerMultiplier * 0.08 * multiplier) * delta;
@@ -198,7 +201,7 @@ export const MiningSpinner: React.FC = () => {
 
     animFrame = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animFrame);
-  }, [coolerMultiplier, isAnyLimitReached, isOverheated, activeSpinner.baseSpeedMultiplier, isMiningLocked]);
+  }, [coolerMultiplier, isAnyLimitReached, isOverheated, activeSpinner.baseSpeedMultiplier, isMiningLocked, machineMode]);
 
   // Heat smoke generation when multiplier is high or overheated
   useEffect(() => {

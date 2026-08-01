@@ -32,6 +32,9 @@ export interface FrontendMachineModel {
   earningsCap?: number;
   durationHours?: number;
   passiveYieldRate?: number;
+  promoYieldRate?: number;
+  promoOutputCap?: number;
+  promoSpinnerSpeedMultiplier?: number;
 }
 
 export const MACHINE_CATALOG: FrontendMachineModel[] = [
@@ -59,8 +62,11 @@ export const MACHINE_CATALOG: FrontendMachineModel[] = [
     fabricThroughput: '2 Gbps',
     capacityScore: 10,
     status: 'ACTIVE',
-    spinnerSpeedMultiplier: 0.5,
-    passiveYieldRate: 0.00000289,
+    spinnerSpeedMultiplier: 0.1,
+    passiveYieldRate: 0.0000001929,
+    promoYieldRate: 0.00000289,
+    promoOutputCap: 5.0,
+    promoSpinnerSpeedMultiplier: 0.5,
   },
   {
     id: 'ripple-x14',

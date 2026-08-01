@@ -91,47 +91,42 @@ export class MiningService {
 
     const machines = this.machineService.getUserMachines(session.telegramUserId);
     const activeMachines = machines.filter((m) => m.status === 'ACTIVE');
+    const catalog = this.machineService.getCatalog();
 
     let totalYield = 0;
 
     for (const um of activeMachines) {
-      if (um.tierCode === 'TS_TRIAL') {
-        if (session.machineMode === 'PROMOTIONAL') {
-          const promoRate = 0.00000289;
-          const promoRatePerSec = promoRate * 10;
-          const totalPromoYield = session.baseSpeedGhs * 1.0 * promoRatePerSec * (elapsedMs / 1000);
+      const tier = catalog.find((t) => t.tierCode === um.tierCode);
+      if (!tier) continue;
+
+      if (tier.promoOutputCap && tier.promoYieldRate && session.machineMode === 'PROMOTIONAL') {
+        const promoRate = tier.promoYieldRate;
+        const promoRatePerSec = promoRate * 10;
+        const totalPromoYield = session.baseSpeedGhs * 1.0 * promoRatePerSec * (elapsedMs / 1000);
+        
+        const remainingCap = tier.promoOutputCap - session.lifetimePromotionalOutput;
+        if (totalPromoYield >= remainingCap && remainingCap > 0) {
+          totalYield += remainingCap;
+          session.lifetimePromotionalOutput = tier.promoOutputCap;
+          session.machineMode = 'STANDARD';
           
-          const remainingCap = 5.0 - session.lifetimePromotionalOutput;
-          if (totalPromoYield >= remainingCap && remainingCap > 0) {
-            totalYield += remainingCap;
-            session.lifetimePromotionalOutput = 5.0;
-            session.machineMode = 'STANDARD';
-            
-            const usedFraction = remainingCap / totalPromoYield;
-            const remainingMs = elapsedMs * (1 - usedFraction);
-            if (remainingMs > 0) {
-              const stdRate = 0.0000001929;
-              const stdRatePerSec = stdRate * 10;
-              const stdYield = session.baseSpeedGhs * 1.0 * stdRatePerSec * (remainingMs / 1000);
-              totalYield += stdYield;
-            }
-          } else {
-            totalYield += totalPromoYield;
-            session.lifetimePromotionalOutput += totalPromoYield;
+          const usedFraction = remainingCap / totalPromoYield;
+          const remainingMs = elapsedMs * (1 - usedFraction);
+          if (remainingMs > 0) {
+            const stdRate = tier.passiveYieldRate || 0;
+            const stdRatePerSec = stdRate * 10;
+            const stdYield = session.baseSpeedGhs * 1.0 * stdRatePerSec * (remainingMs / 1000);
+            totalYield += stdYield;
           }
         } else {
-          const stdRate = 0.0000001929;
-          const stdRatePerSec = stdRate * 10;
-          const stdYield = session.baseSpeedGhs * 1.0 * stdRatePerSec * (elapsedMs / 1000);
-          totalYield += stdYield;
+          totalYield += totalPromoYield;
+          session.lifetimePromotionalOutput += totalPromoYield;
         }
       } else {
-        const catalog = this.machineService.getCatalog();
-        const tier = catalog.find((t) => t.tierCode === um.tierCode);
-        const rate = tier?.passiveYieldRate || 0.00005;
-        const ratePerSec = rate * 10;
-        const machineYield = session.baseSpeedGhs * 1.0 * ratePerSec * (elapsedMs / 1000);
-        totalYield += machineYield;
+        const stdRate = tier.passiveYieldRate || 0.00005;
+        const stdRatePerSec = stdRate * 10;
+        const stdYield = session.baseSpeedGhs * 1.0 * stdRatePerSec * (elapsedMs / 1000);
+        totalYield += stdYield;
       }
     }
 
@@ -180,10 +175,22 @@ export class MiningService {
     let increment = typeof tapYield === 'number' && !isNaN(tapYield) ? tapYield : 0.05;
     
     if (session.machineMode === 'PROMOTIONAL') {
-      const remainingCap = 5.0 - session.lifetimePromotionalOutput;
+      const machines = this.machineService.getUserMachines(telegramUserId);
+      const activeMachines = machines.filter((m) => m.status === 'ACTIVE');
+      const catalog = this.machineService.getCatalog();
+      let promoCap = 5.0;
+      for (const um of activeMachines) {
+        const tier = catalog.find((t) => t.tierCode === um.tierCode);
+        if (tier?.promoOutputCap) {
+          promoCap = tier.promoOutputCap;
+          break;
+        }
+      }
+
+      const remainingCap = promoCap - session.lifetimePromotionalOutput;
       if (increment >= remainingCap) {
         increment = remainingCap;
-        session.lifetimePromotionalOutput = 5.0;
+        session.lifetimePromotionalOutput = promoCap;
         session.machineMode = 'STANDARD';
       } else {
         session.lifetimePromotionalOutput += increment;

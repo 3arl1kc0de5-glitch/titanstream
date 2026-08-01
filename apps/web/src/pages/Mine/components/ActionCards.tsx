@@ -30,13 +30,13 @@ export const ActionCards: React.FC = () => {
         <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4.5 space-y-2 text-xs relative overflow-hidden">
           <div className="flex items-center gap-2 text-amber-400 font-bold uppercase tracking-wider text-[10px]">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
-            Core Status: Standard Mode
+            Titan Core — Standard Mode
           </div>
           <div className="text-text-primary font-black text-sm">
-            Your Titan Core has completed its promotional earning phase.
+            Your Titan Core continues producing Stream Output at its standard rate.
           </div>
           <div className="text-text-secondary leading-relaxed font-medium">
-            You're still earning Stream Output every day! However, you can upgrade to a premium machine to dramatically increase your earning speed.
+            Upgrade to a premium machine to unlock dramatically higher output.
           </div>
           <button
             onClick={() => setActiveTab('boost')}

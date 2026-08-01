@@ -181,7 +181,7 @@ export const GrowthScreen: React.FC = () => {
             <div className="text-[10px] text-text-tertiary font-bold">Active Computing Capacity</div>
             <div className="font-mono font-extrabold text-usdt-green flex items-center gap-1">
               <CheckCircle2 size={12} />
-              <span>{hasPurchasedMachine ? `${((Number(baseSpeedGhs) || 0) * 10).toFixed(0)} CU Active` : 'Free Trial Node (10 CU)'}</span>
+              <span>{hasPurchasedMachine ? `${((Number(baseSpeedGhs) || 0) * 10).toFixed(0)} CU Active` : 'Titan Core (10 CU)'}</span>
             </div>
           </div>
           <div className="p-2.5 rounded-2xl bg-app-bg/50 border border-white/5 space-y-0.5">
