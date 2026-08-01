@@ -7,6 +7,7 @@ export interface MiningStateResponse {
   unclaimedBalance: number;
   machineMode: 'PROMOTIONAL' | 'STANDARD';
   lifetimePromotionalOutput: number;
+  interactivePromotionalOutput: number;
   isOverheated: boolean;
   cooldownRemaining: number;
   tapYieldPerTap: number;

@@ -30,6 +30,7 @@ export const MiningSimulatorPage: React.FC = () => {
     cooldownRemaining,
     unclaimedBalance,
     lifetimePromotionalOutput,
+    interactivePromotionalOutput,
     machineMode,
     isMiningLocked,
     tap,
@@ -55,7 +56,8 @@ export const MiningSimulatorPage: React.FC = () => {
     const rate = 0.00000289; // TS_TRIAL promotional rate
     const baseYieldRatePerSec = rate * 10;
     const seconds = hours * 3600;
-    let accrued = s.baseSpeedGhs * s.coolerMultiplier * baseYieldRatePerSec * seconds;
+    const multiplierInfluence = Math.min(s.coolerMultiplier, 1.5); // mirrors server promoMultiplierInfluence
+    let accrued = s.baseSpeedGhs * multiplierInfluence * baseYieldRatePerSec * seconds;
 
     let promo = s.lifetimePromotionalOutput;
     let mode = s.machineMode;
@@ -128,6 +130,7 @@ export const MiningSimulatorPage: React.FC = () => {
 
   // Calibration helper
   const trialProgressPercent = Math.min(100, (lifetimePromotionalOutput / 5.0) * 100);
+  const interactiveBonusPercent = Math.min(100, (interactivePromotionalOutput / 0.10) * 100);
 
   return (
     <div className="p-6 bg-slate-950 text-slate-100 min-h-screen space-y-6">
@@ -301,10 +304,12 @@ export const MiningSimulatorPage: React.FC = () => {
               Titan Core Calibration & Lifecycle
             </h3>
             <p className="text-sm text-slate-400 mb-6">
-              The Titan Core is a <strong className="text-slate-200">permanent machine</strong>. It produces at the
-              Promotional rate until it generates <strong className="text-slate-200">$5.00 lifetime promotional output</strong>,
-              then automatically continues forever in <strong className="text-slate-200">Standard Mode</strong> at a slower
-              configured rate. It never expires and never locks permanently.
+              The Titan Core is a <strong className="text-slate-200">permanent machine</strong>. During the promotion, passive
+              mining generates ~95–98% of the <strong className="text-slate-200">$5.00 lifetime promotional output</strong> while
+              tapping adds at most <strong className="text-slate-200">$0.10</strong> in interactive bonus — engagement never
+              meaningfully shortens the promotional period. After the cap it continues forever in{" "}
+              <strong className="text-slate-200">Standard Mode</strong> at a slower configured rate. It never expires and never
+              locks permanently.
             </p>
 
             <div className="space-y-5">
@@ -322,6 +327,20 @@ export const MiningSimulatorPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Interactive Bonus Progress */}
+              <div>
+                <div className="flex justify-between text-xs font-semibold mb-2">
+                  <span className="text-slate-400">Interactive Bonus (taps)</span>
+                  <span className="text-white font-mono">{interactivePromotionalOutput.toFixed(4)} / 0.1000 USDT</span>
+                </div>
+                <div className="w-full h-3 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+                  <div 
+                    className="h-full bg-gradient-to-r from-amber-500 to-orange-400 rounded-full transition-all duration-300"
+                    style={{ width: `${interactiveBonusPercent}%` }}
+                  />
+                </div>
+              </div>
+
               {/* Operating Mode */}
               <div>
                 <div className="flex justify-between text-xs font-semibold mb-2">
@@ -335,10 +354,14 @@ export const MiningSimulatorPage: React.FC = () => {
                   <div>
                     <strong className="text-slate-200">How it is Calibrated:</strong> The Titan Core has a promotional
                     yield rate of <code className="text-emerald-400 font-mono">0.00000289</code> USDT per 100ms
-                    (~0.104 USDT/hour at ×1.0). Tapping increases the cooler multiplier, accelerating output until the
-                    <code className="text-amber-400 font-mono"> $5.00 </code> lifetime cap is reached, at which point the
-                    engine automatically transitions to Standard Mode (~600 days to $100 at ×1.0). All state — including
-                    the multiplier and unclaimed output — is persisted server-side and restored on re-login.
+                    (~0.104 USDT/hour at ×1.0 — ~48 hours to the $5.00 cap passively). Tapping accelerates the cooler
+                    but the multiplier only boosts promotional output up to{" "}
+                    <code className="text-emerald-400 font-mono">×1.5</code> influence, and tap credits draw from a
+                    separate <code className="text-amber-400 font-mono">$0.10</code> interactive bonus pool — so the
+                    promotional period is never meaningfully shortened by engagement. After the{" "}
+                    <code className="text-amber-400 font-mono"> $5.00 </code> cap the engine transitions to Standard Mode
+                    (~600 days to $100 at ×1.0). All state — including the multiplier, bonus pool, and unclaimed output —
+                    is persisted server-side and restored on re-login.
                   </div>
                 </div>
               </div>

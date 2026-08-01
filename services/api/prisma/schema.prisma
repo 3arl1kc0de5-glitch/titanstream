@@ -1649,6 +1649,7 @@ model UserMiningState {
   lastUpdatedAt             DateTime? @map("last_updated_at")
   machineMode               String    @default("PROMOTIONAL") @map("machine_mode")
   lifetimePromotionalOutput Decimal   @default(0.0) @map("lifetime_promotional_output")
+  interactivePromotionalOutput Decimal @default(0.0) @map("interactive_promotional_output")
 
   user User @relation(fields: [telegramUserId], references: [telegramUserId], onDelete: Cascade)
 

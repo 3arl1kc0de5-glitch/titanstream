@@ -32,6 +32,12 @@ export interface MachineTier {
   promoOutputCap?: number;
   spinnerSpeedMultiplier?: number;
   promoSpinnerSpeedMultiplier?: number;
+  // Economic calibration knobs — tuned per machine, read by the mining engine
+  maxMultiplier?: number;
+  multiplierDecayPerSec?: number;
+  interactiveBaseRate?: number;
+  interactiveBonusCap?: number;
+  promoMultiplierInfluence?: number;
 }
 
 export interface UserMachineAsset {
@@ -70,6 +76,11 @@ export class MachineService {
       promoOutputCap: 5.0,
       spinnerSpeedMultiplier: 0.1,
       promoSpinnerSpeedMultiplier: 0.5,
+      maxMultiplier: 20.2,
+      multiplierDecayPerSec: 0.5,
+      interactiveBaseRate: 0.01,
+      interactiveBonusCap: 0.10,
+      promoMultiplierInfluence: 1.5,
     },
     {
       tierCode: 'TS_C10',

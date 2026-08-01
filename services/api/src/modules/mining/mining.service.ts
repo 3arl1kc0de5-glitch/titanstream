@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { FinancialOrchestratorService } from '../financial-orchestration/financial-orchestrator.service';
-import { FinancialOperationType } from '@prisma/client';
+import { FinancialOperationType, Prisma } from '@prisma/client';
 import { MachineService } from '../machine/machine.service';
 import type { MachineTier } from '../machine/machine.service';
 
@@ -15,6 +15,7 @@ export interface UserMiningState {
   lastUpdatedAt?: Date;
   machineMode: string;
   lifetimePromotionalOutput: number;
+  interactivePromotionalOutput: number;
   // Computed on every read — rendered by the UI but never persisted
   isOverheated: boolean;
   cooldownRemaining: number;
@@ -52,6 +53,7 @@ export class MiningService {
         lastUpdatedAt: record.lastUpdatedAt ? new Date(record.lastUpdatedAt) : undefined,
         machineMode: record.machineMode,
         lifetimePromotionalOutput: record.lifetimePromotionalOutput.toNumber(),
+        interactivePromotionalOutput: record.interactivePromotionalOutput.toNumber(),
         isOverheated: false,
         cooldownRemaining: 0,
         tapYieldPerTap: 0,
@@ -62,63 +64,52 @@ export class MiningService {
     }
   }
 
+  /**
+   * Persist the session, propagating failures to the caller. Used inside
+   * claim's transaction so a failed write rolls the whole claim back.
+   */
+  private async persistSession(session: UserMiningState, client: Prisma.TransactionClient | PrismaService = this.prisma): Promise<void> {
+    await client.userMiningState.upsert({
+      where: { telegramUserId: BigInt(session.telegramUserId) },
+      create: {
+        telegramUserId: BigInt(session.telegramUserId),
+        activeCurrency: session.activeCurrency,
+        baseSpeedGhs: session.baseSpeedGhs,
+        coolerMultiplier: session.coolerMultiplier,
+        unclaimedBalance: session.unclaimedBalance,
+        lastTappedAt: session.lastTappedAt,
+        lastUpdatedAt: session.lastUpdatedAt,
+        machineMode: session.machineMode,
+        lifetimePromotionalOutput: session.lifetimePromotionalOutput,
+        interactivePromotionalOutput: session.interactivePromotionalOutput,
+      },
+      update: {
+        activeCurrency: session.activeCurrency,
+        baseSpeedGhs: session.baseSpeedGhs,
+        coolerMultiplier: session.coolerMultiplier,
+        unclaimedBalance: session.unclaimedBalance,
+        lastTappedAt: session.lastTappedAt,
+        lastUpdatedAt: session.lastUpdatedAt,
+        machineMode: session.machineMode,
+        lifetimePromotionalOutput: session.lifetimePromotionalOutput,
+        interactivePromotionalOutput: session.interactivePromotionalOutput,
+      },
+    });
+  }
+
   private async saveToDb(session: UserMiningState): Promise<void> {
     try {
-      await this.prisma.userMiningState.upsert({
-        where: { telegramUserId: BigInt(session.telegramUserId) },
-        create: {
-          telegramUserId: BigInt(session.telegramUserId),
-          activeCurrency: session.activeCurrency,
-          baseSpeedGhs: session.baseSpeedGhs,
-          coolerMultiplier: session.coolerMultiplier,
-          unclaimedBalance: session.unclaimedBalance,
-          lastTappedAt: session.lastTappedAt,
-          lastUpdatedAt: session.lastUpdatedAt,
-          machineMode: session.machineMode,
-          lifetimePromotionalOutput: session.lifetimePromotionalOutput,
-        },
-        update: {
-          activeCurrency: session.activeCurrency,
-          baseSpeedGhs: session.baseSpeedGhs,
-          coolerMultiplier: session.coolerMultiplier,
-          unclaimedBalance: session.unclaimedBalance,
-          lastTappedAt: session.lastTappedAt,
-          lastUpdatedAt: session.lastUpdatedAt,
-          machineMode: session.machineMode,
-          lifetimePromotionalOutput: session.lifetimePromotionalOutput,
-        },
-      });
+      await this.persistSession(session);
     } catch (err) {
       console.warn('Failed to save mining state to DB:', err);
     }
   }
 
   /**
-   * Derive the thermal state of the machine. The overheat window opens when the
-   * cooler multiplier reaches its cap and closes 15s after the last tap. While
-   * overheated the multiplier is frozen and the engine pauses; when the window
-   * closes the core resets to 1.0 so tapping can resume cleanly.
+   * Highest-capacity active machine tier — the economic profile that governs
+   * tap yield, thermal limits, and promotional economics for the session.
    */
-  private applyCoolingState(session: UserMiningState, now: Date): void {
-    const lastTap = session.lastTappedAt ? new Date(session.lastTappedAt).getTime() : 0;
-    const overheated = session.coolerMultiplier >= MAX_MULTIPLIER && now.getTime() - lastTap < OVERHEAT_MS;
-    if (overheated) {
-      session.isOverheated = true;
-      session.cooldownRemaining = Math.max(0, Math.ceil((OVERHEAT_MS - (now.getTime() - lastTap)) / 1000));
-      return;
-    }
-    session.isOverheated = false;
-    session.cooldownRemaining = 0;
-    if (session.coolerMultiplier >= MAX_MULTIPLIER) {
-      session.coolerMultiplier = 1.0; // cooldown finished — core resets
-    }
-  }
-
-  /**
-   * Server-computed per-tap yield from the machine configuration. The client
-   * never supplies yield numbers — it only renders this value.
-   */
-  private computeTapYield(session: UserMiningState): number {
+  private getBestActiveTier(session: UserMiningState): MachineTier | undefined {
     const activeMachines = this.machineService.getUserMachines(session.telegramUserId).filter((m) => m.status === 'ACTIVE');
     const catalog = this.machineService.getCatalog();
 
@@ -128,14 +119,53 @@ export class MiningService {
       if (!tier) continue;
       if (!bestTier || tier.capacityGhs > bestTier.capacityGhs) bestTier = tier;
     }
+    return bestTier;
+  }
+
+  /**
+   * Derive the thermal state of the machine. The overheat window opens when the
+   * cooler multiplier reaches its cap and closes 15s after the last tap. While
+   * overheated the multiplier is frozen and the engine pauses; when the window
+   * closes the core resets to 1.0 so tapping can resume cleanly.
+   */
+  private applyCoolingState(session: UserMiningState, now: Date): void {
+    const maxMultiplier = this.getBestActiveTier(session)?.maxMultiplier ?? MAX_MULTIPLIER;
+    const lastTap = session.lastTappedAt ? new Date(session.lastTappedAt).getTime() : 0;
+    const overheated = session.coolerMultiplier >= maxMultiplier && now.getTime() - lastTap < OVERHEAT_MS;
+    if (overheated) {
+      session.isOverheated = true;
+      session.cooldownRemaining = Math.max(0, Math.ceil((OVERHEAT_MS - (now.getTime() - lastTap)) / 1000));
+      return;
+    }
+    session.isOverheated = false;
+    session.cooldownRemaining = 0;
+    if (session.coolerMultiplier >= maxMultiplier) {
+      session.coolerMultiplier = 1.0; // cooldown finished — core resets
+    }
+  }
+
+  /**
+   * Server-computed per-tap yield from the machine configuration. The client
+   * never supplies yield numbers — it only renders this value.
+   *
+   * During the promotional phase the yield is additionally capped by the
+   * configurable interactive bonus ceiling, so tapping can never materially
+   * accelerate reaching the promotional cap: passive mining stays the primary
+   * earning mechanism.
+   */
+  private computeTapYield(session: UserMiningState): number {
+    const bestTier = this.getBestActiveTier(session);
 
     const dailyYield = bestTier?.dailyYieldEstimateUsdt ?? 2.0;
     const payout = session.activeCurrency === 'TON' ? dailyYield * 1.15 : dailyYield;
-    let yieldValue = 0.01 * session.coolerMultiplier * payout;
+    const interactiveRate = bestTier?.interactiveBaseRate ?? 0.01;
+    let yieldValue = interactiveRate * session.coolerMultiplier * payout;
 
     if (bestTier?.promoOutputCap && session.machineMode === 'PROMOTIONAL') {
-      const remainingCap = Math.max(0, bestTier.promoOutputCap - session.lifetimePromotionalOutput);
-      yieldValue = Math.min(yieldValue, remainingCap);
+      const remainingPromoCap = Math.max(0, bestTier.promoOutputCap - session.lifetimePromotionalOutput);
+      const interactiveCap = bestTier.interactiveBonusCap ?? Number.MAX_SAFE_INTEGER;
+      const remainingInteractive = Math.max(0, interactiveCap - session.interactivePromotionalOutput);
+      yieldValue = Math.min(yieldValue, remainingPromoCap, remainingInteractive);
     }
 
     return yieldValue;
@@ -156,9 +186,10 @@ export class MiningService {
       return;
     }
 
-    // Cooler naturally decays toward 1.0 (0.5x per second) unless overheated
+    // Cooler naturally decays toward 1.0 (configurable rate per second) unless overheated
+    const decayPerSec = this.getBestActiveTier(session)?.multiplierDecayPerSec ?? MULTIPLIER_DECAY_PER_SEC;
     if (session.coolerMultiplier > 1.0) {
-      session.coolerMultiplier = Math.max(1.0, session.coolerMultiplier - MULTIPLIER_DECAY_PER_SEC * (elapsedMs / 1000));
+      session.coolerMultiplier = Math.max(1.0, session.coolerMultiplier - decayPerSec * (elapsedMs / 1000));
     }
 
     const machines = this.machineService.getUserMachines(session.telegramUserId);
@@ -174,10 +205,17 @@ export class MiningService {
       if (tier.promoOutputCap && tier.promoYieldRate && session.machineMode === 'PROMOTIONAL') {
         const promoRate = tier.promoYieldRate;
         const promoRatePerSec = promoRate * 10;
-        const totalPromoYield = session.baseSpeedGhs * session.coolerMultiplier * promoRatePerSec * (elapsedMs / 1000);
+        // The cooler multiplier only nudges promotional output up to the
+        // configured influence ceiling — engagement feels responsive without
+        // letting the multiplier materially shorten the promotional period.
+        const multiplierInfluence = Math.min(session.coolerMultiplier, tier.promoMultiplierInfluence ?? Number.POSITIVE_INFINITY);
+        const totalPromoYield = session.baseSpeedGhs * multiplierInfluence * promoRatePerSec * (elapsedMs / 1000);
 
         const remainingCap = tier.promoOutputCap - session.lifetimePromotionalOutput;
-        if (totalPromoYield >= remainingCap && remainingCap > 0) {
+        if (remainingCap <= 0) {
+          // Defensive: never accrue promotional output past the cap
+          session.machineMode = 'STANDARD';
+        } else if (totalPromoYield >= remainingCap) {
           totalYield += remainingCap;
           session.lifetimePromotionalOutput = tier.promoOutputCap;
           session.machineMode = 'STANDARD';
@@ -226,6 +264,7 @@ export class MiningService {
         unclaimedBalance: 0.0,
         machineMode: 'PROMOTIONAL',
         lifetimePromotionalOutput: 0.0,
+        interactivePromotionalOutput: 0.0,
         isOverheated: false,
         cooldownRemaining: 0,
         tapYieldPerTap: 0.01 * 2.0,
@@ -253,30 +292,31 @@ export class MiningService {
     // so the credited amount matches the value the UI displayed.
     const increment = this.computeTapYield(session);
 
-    session.coolerMultiplier = Math.min(MAX_MULTIPLIER, session.coolerMultiplier + 0.6);
+    session.coolerMultiplier = Math.min(this.getBestActiveTier(session)?.maxMultiplier ?? MAX_MULTIPLIER, session.coolerMultiplier + 0.6);
     session.lastTappedAt = new Date();
 
     let credit = increment;
     if (session.machineMode === 'PROMOTIONAL') {
-      const machines = this.machineService.getUserMachines(telegramUserId);
-      const activeMachines = machines.filter((m) => m.status === 'ACTIVE');
-      const catalog = this.machineService.getCatalog();
-      let promoCap = 5.0;
-      for (const um of activeMachines) {
-        const tier = catalog.find((t) => t.tierCode === um.tierCode);
-        if (tier?.promoOutputCap) {
-          promoCap = tier.promoOutputCap;
-          break;
-        }
-      }
+      const bestTier = this.getBestActiveTier(session);
+      const promoCap = bestTier?.promoOutputCap ?? 5.0;
+      const interactiveCap = bestTier?.interactiveBonusCap ?? Number.MAX_SAFE_INTEGER;
 
       const remainingCap = promoCap - session.lifetimePromotionalOutput;
-      if (increment >= remainingCap) {
-        credit = remainingCap;
-        session.lifetimePromotionalOutput = promoCap;
+      const remainingInteractive = interactiveCap - session.interactivePromotionalOutput;
+
+      if (remainingCap <= 0) {
+        credit = 0;
         session.machineMode = 'STANDARD';
       } else {
-        session.lifetimePromotionalOutput += increment;
+        // The interactive bonus pool is a ceiling of its own: taps draw from it,
+        // never from the promotional period the passive yield is building toward.
+        credit = Math.min(increment, remainingInteractive, remainingCap);
+        session.lifetimePromotionalOutput += credit;
+        session.interactivePromotionalOutput += credit;
+        if (session.lifetimePromotionalOutput >= promoCap) {
+          session.lifetimePromotionalOutput = promoCap;
+          session.machineMode = 'STANDARD';
+        }
       }
     }
 
@@ -305,30 +345,51 @@ export class MiningService {
       return { success: false, amount: '0.00', session };
     }
 
-    // Reset unclaimed balance
+    const reference = `mining_claim_${telegramUserId}_${Date.now()}`;
+    const amount = claimAmount.toFixed(6);
+    const resetState: UserMiningState = {
+      ...session,
+      unclaimedBalance: 0.0,
+      coolerMultiplier: 1.0, // Reset multiplier on claim
+      isOverheated: false,
+      cooldownRemaining: 0,
+      lastUpdatedAt: new Date(),
+    };
+
+    // ONE database transaction: the ledger credit, the financial operation
+    // bookkeeping, and the mining-state reset commit together or not at all.
+    // Any failure rolls everything back — no credited-wallet-without-reset and
+    // no reset-without-credit can ever be observed, so retries cannot double-credit.
+    await this.prisma.$transaction(
+      async (tx) => {
+        await this.orchestrator.requestOperation(
+          {
+            telegramUserId: BigInt(telegramUserId),
+            operationType: FinancialOperationType.SYSTEM_ALLOCATION,
+            assetCode: session.activeCurrency,
+            amount,
+            idempotencyKey: reference,
+            reference,
+            metadata: { source: 'mining_claim', claimAmount },
+          },
+          tx,
+        );
+        await this.persistSession(resetState, tx);
+      },
+      { timeout: 15000, maxWait: 10000 },
+    );
+
+    // Transaction committed — the in-memory session now mirrors the persisted state
     session.unclaimedBalance = 0.0;
-    session.coolerMultiplier = 1.0; // Reset multiplier on claim
+    session.coolerMultiplier = 1.0;
     session.isOverheated = false;
     session.cooldownRemaining = 0;
+    session.lastUpdatedAt = resetState.lastUpdatedAt;
     session.tapYieldPerTap = this.computeTapYield(session);
-
-    // Allocate USDT reward via FinancialOrchestrator (balanced double-entry)
-    const reference = `mining_claim_${telegramUserId}_${Date.now()}`;
-    await this.orchestrator.requestOperation({
-      telegramUserId: BigInt(telegramUserId),
-      operationType: FinancialOperationType.SYSTEM_ALLOCATION,
-      assetCode: session.activeCurrency,
-      amount: claimAmount.toFixed(6),
-      idempotencyKey: reference,
-      reference,
-      metadata: { source: 'mining_claim', claimAmount },
-    });
-
-    await this.saveToDb(session);
 
     return {
       success: true,
-      amount: claimAmount.toFixed(6),
+      amount,
       session,
     };
   }

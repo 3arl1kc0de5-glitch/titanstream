@@ -14,6 +14,7 @@ export interface MiningState {
   unclaimedBalance: number;
   machineMode: string;
   lifetimePromotionalOutput: number;
+  interactivePromotionalOutput: number;
   isOverheated: boolean;
   cooldownRemaining: number;
   tapYieldPerTap: number;
@@ -79,6 +80,7 @@ export const useMiningStore = create<MiningState>((set, get) => {
     unclaimedBalance: 0.0,
     machineMode: 'PROMOTIONAL',
     lifetimePromotionalOutput: 0.0,
+    interactivePromotionalOutput: 0.0,
     isOverheated: false,
     cooldownRemaining: 0,
     tapYieldPerTap: 0,
@@ -116,6 +118,7 @@ export const useMiningStore = create<MiningState>((set, get) => {
         unclaimedBalance: session.unclaimedBalance,
         machineMode: session.machineMode,
         lifetimePromotionalOutput: session.lifetimePromotionalOutput,
+        interactivePromotionalOutput: session.interactivePromotionalOutput,
         isOverheated: session.isOverheated,
         cooldownRemaining: session.cooldownRemaining,
         tapYieldPerTap: session.tapYieldPerTap,
