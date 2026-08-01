@@ -1,7 +1,17 @@
 import type React from 'react';
-import { Zap, Play, Pause, Copy, Eye, FileText } from 'lucide-react';
-import type { AutomationRule } from '@/data/mock/automation';
+import { Zap, Play, Pause, Copy, Eye } from 'lucide-react';
 import { StatusBadge } from '@/components/admin/StatusBadge';
+
+export interface AutomationRule {
+  id: string;
+  name: string;
+  description: string;
+  trigger: string;
+  status: 'enabled' | 'disabled' | 'error';
+  executionCount: number;
+  successRate: number;
+  lastExecution: string;
+}
 
 interface RuleCardProps {
   rule: AutomationRule;

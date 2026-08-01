@@ -86,6 +86,43 @@ export class UserService {
     return this.sanitize(updated);
   }
 
+  async getTrustProfile(telegramUserId: bigint) {
+    const user = await this.prisma.user.findUnique({
+      where: { telegramUserId },
+      include: {
+        educationCompletions: true,
+        financialAccounts: true,
+      },
+    });
+
+    if (!user) throw new NotFoundException('USER_NOT_FOUND');
+
+    // Real Trust Score calculation based on user state & platform activity
+    let trustScore = 20; // baseline
+    if (['READY', 'READY_FOR_PLATFORM', 'ELIGIBLE_USER', 'ACTIVE_USER'].includes(user.state)) {
+      trustScore += 40;
+    }
+    trustScore += Math.min(20, (user.educationScore || 0) / 5);
+    trustScore += Math.min(20, user.loginCount * 2);
+    trustScore = Math.min(100, Math.max(0, trustScore));
+
+    let reputationRank: 'Builder' | 'Guardian' | 'Architect' | 'Grandmaster' = 'Builder';
+    if (trustScore >= 90) reputationRank = 'Grandmaster';
+    else if (trustScore >= 75) reputationRank = 'Architect';
+    else if (trustScore >= 50) reputationRank = 'Guardian';
+
+    return {
+      telegramUserId: Number(user.telegramUserId),
+      trustScore,
+      reputationRank,
+      loginCount: user.loginCount,
+      educationScore: user.educationScore,
+      isReady: user.isReady,
+      operatorAccess: trustScore >= 50 ? 'Unlocked' : 'Locked',
+      createdAt: user.createdAt,
+    };
+  }
+
   private sanitize(user: any) {
     return {
       telegramUserId: Number(user.telegramUserId),

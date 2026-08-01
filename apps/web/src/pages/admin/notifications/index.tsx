@@ -1,9 +1,20 @@
 import type React from 'react';
-import { notifications } from '@/data/mock/notifications';
 import { StatusBadge } from '@/components/admin/StatusBadge';
-import { ShoppingCart, Store, Settings, ShieldAlert, ArrowUpFromLine, ChevronDown, Send } from 'lucide-react';
-import { useState } from 'react';
+import { ShoppingCart, Store, Settings, ShieldAlert, ArrowUpFromLine, Send } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { MetricCard, MetricCardGrid } from '@/components/admin/MetricCard';
+import { useUserNotificationStore } from '@/store/useUserNotificationStore';
+
+export interface AdminNotificationRecord {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  channel: string;
+  status: string;
+  read: boolean;
+  createdAt: string;
+}
 
 const typeIcons: Record<string, React.ReactNode> = {
   order: <ShoppingCart size={16} />,
@@ -29,17 +40,14 @@ const statusVariant: Record<string, 'success' | 'default' | 'danger' | 'info'> =
 };
 
 export const NotificationsPage: React.FC = () => {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const { notifications, fetchNotifications, markAllAsRead } = useUserNotificationStore();
   const [targetAudience, setTargetAudience] = useState('Public Channel');
   const [broadcastText, setBroadcastText] = useState('');
   const [isSending, setIsSending] = useState(false);
 
-  const announcementTemplates = [
-    { title: '🔥 Power Machine Activated', text: '🔥 A new Power Machine has been activated on the TitanStream network!' },
-    { title: '📈 Daily Cloud Activity Report', text: '📈 Today\'s cloud activity report is ready. All daily rewards processed.' },
-    { title: '🌍 Uganda Milestone', text: '🌍 Uganda users crossed 5,000 active cloud computing members!' },
-    { title: '⚡ Reward Distribution', text: '⚡ Reward distribution cycle completed. Check your derived wallet balance.' },
-  ];
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
 
   const handleBroadcast = (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,21 +100,6 @@ export const NotificationsPage: React.FC = () => {
             ))}
           </div>
 
-          {/* Announcement Templates Quick Selector */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-            <span className="text-[10px] font-bold uppercase text-text-tertiary shrink-0">Templates:</span>
-            {announcementTemplates.map((t, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => setBroadcastText(t.text)}
-                className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-text-secondary hover:text-text-primary hover:border-usdt-green shrink-0"
-              >
-                {t.title}
-              </button>
-            ))}
-          </div>
-
           <form onSubmit={handleBroadcast} className="space-y-2">
             <textarea
               rows={3}
@@ -133,46 +126,42 @@ export const NotificationsPage: React.FC = () => {
       </div>
 
       <div className="space-y-2">
-        <h4 className="text-xs font-extrabold uppercase tracking-wider text-text-tertiary pt-2">System Notification Log</h4>
-        {notifications.map((n) => {
-          const isExpanded = expandedId === n.id;
-          return (
+        <div className="flex items-center justify-between pt-2">
+          <h4 className="text-xs font-extrabold uppercase tracking-wider text-text-tertiary">System Notification Log</h4>
+          {notifications.length > 0 && (
+            <button onClick={markAllAsRead} className="text-xs text-usdt-green font-bold hover:underline">
+              Mark all as read
+            </button>
+          )}
+        </div>
+
+        {notifications.length === 0 ? (
+          <div className="p-8 text-center bg-card-bg rounded-xl border border-white/5 space-y-1">
+            <p className="text-xs font-bold text-text-primary">No notifications recorded yet</p>
+            <p className="text-[11px] text-text-tertiary">System events and alerts will appear here in real-time.</p>
+          </div>
+        ) : (
+          notifications.map((n) => (
             <div
               key={n.id}
-              className={`bg-card-bg rounded-xl border border-border/50 ${!n.read ? 'border-l-2 border-l-usdt-green' : ''}`}
+              className={`bg-card-bg rounded-xl border border-border/50 p-4 ${!n.read ? 'border-l-2 border-l-usdt-green' : ''}`}
             >
-              <div
-                onClick={() => setExpandedId(isExpanded ? null : n.id)}
-                className="flex items-start gap-3 p-3 sm:p-4 cursor-pointer active:bg-white/[0.02]"
-              >
-                <div className={`p-2 rounded-lg flex-shrink-0 ${typeStyles[n.type]}`}>
-                  {typeIcons[n.type]}
+              <div className="flex items-start gap-3">
+                <div className={`p-2 rounded-lg flex-shrink-0 ${typeStyles[n.type] || 'text-text-secondary bg-white/10'}`}>
+                  {typeIcons[n.type] || <Settings size={16} />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
                     <h4 className="text-sm font-semibold text-text-primary truncate">{n.title}</h4>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-control-bg text-text-tertiary uppercase hidden sm:inline">{n.channel}</span>
-                      <StatusBadge label={n.status} variant={statusVariant[n.status]} />
-                    </div>
+                    <StatusBadge label={n.type} variant="info" />
                   </div>
-                  <p className="text-sm text-text-secondary mt-1 line-clamp-2">{n.message}</p>
-                  <div className="flex items-center justify-between mt-1">
-                    <span className="text-xs text-text-tertiary">{n.createdAt}</span>
-                    <ChevronDown size={14} className={`text-text-tertiary transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                  </div>
+                  <p className="text-xs text-text-secondary mt-1">{n.message}</p>
+                  <span className="text-[10px] text-text-tertiary block mt-1">{n.timestamp}</span>
                 </div>
               </div>
-              {isExpanded && (
-                <div className="px-3 sm:px-4 pb-3 sm:pb-4 border-t border-border pt-3 flex flex-wrap gap-2">
-                  <button className="px-4 py-2.5 rounded-lg bg-usdt-green/15 text-usdt-green text-xs font-semibold min-h-[36px]">Mark Read</button>
-                  <button className="px-4 py-2.5 rounded-lg bg-control-bg text-text-secondary text-xs min-h-[36px]">View Details</button>
-                  <button className="px-4 py-2.5 rounded-lg bg-control-bg text-text-secondary text-xs min-h-[36px]">Retry</button>
-                </div>
-              )}
             </div>
-          );
-        })}
+          ))
+        )}
       </div>
     </div>
   );

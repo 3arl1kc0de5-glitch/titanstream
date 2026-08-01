@@ -1,10 +1,23 @@
 import type React from 'react';
-import { Wallet, ExternalLink } from 'lucide-react';
-import type { Wallet as WalletType } from '@/data/mock/treasury';
+import { Wallet as WalletIcon, ExternalLink } from 'lucide-react';
 import { StatusBadge } from '@/components/admin/StatusBadge';
 
+export interface Wallet {
+  id: string;
+  network: string;
+  address: string;
+  health: 'healthy' | 'warning' | 'critical';
+  balance: number;
+  available: number;
+  reserved: number;
+  pending: number;
+  incoming: number;
+  outgoing: number;
+  lastSync: string;
+}
+
 interface WalletSummaryProps {
-  wallet: WalletType;
+  wallet: Wallet;
   className?: string;
 }
 

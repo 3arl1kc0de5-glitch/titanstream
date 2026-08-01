@@ -3,14 +3,11 @@ import { useState, useEffect } from 'react';
 import { api } from '@/services/api';
 import { treasuryOperatorService, type TreasuryOperatorProfile } from '@/services/treasuryOperatorService';
 import { type PaymentOrderRecord } from '@/services/paymentOrderService';
-import { wallets } from '@/data/mock/treasury';
-import { WalletSummary } from '@/components/admin/WalletSummary';
+import { WalletSummary, type Wallet } from '@/components/admin/WalletSummary';
 import { DetailDrawer } from '@/components/admin/DetailDrawer';
-import { NetworkBadge } from '@/components/admin/NetworkBadge';
 import { StatusBadge } from '@/components/admin/StatusBadge';
 import { MetricCard, MetricCardGrid } from '@/components/admin/MetricCard';
-import type { Wallet } from '@/data/mock/treasury';
-import { ChevronDown, ShieldCheck, AlertCircle, RefreshCw, BarChart2, CheckCircle2, XCircle, UserCheck } from 'lucide-react';
+import { ChevronDown, ShieldCheck, AlertCircle, RefreshCw, CheckCircle2, XCircle, UserCheck } from 'lucide-react';
 import { showToast } from '@/components/Toast';
 
 interface TreasuryMetrics {
@@ -82,19 +79,17 @@ export const TreasuryPage: React.FC = () => {
     }
   };
 
-  const totalBalance = wallets.reduce((s, w) => s + w.balance, 0);
-
   const displayMetrics: TreasuryMetrics = metrics || {
-    totalLiquidity: totalBalance,
-    userLiabilities: totalBalance / 1.48,
-    reserveRatio: 148,
-    projectedPayouts: 150.00,
-    settlementExposure: 320.00,
-    capacityRemaining: 62,
+    totalLiquidity: 0,
+    userLiabilities: 0,
+    reserveRatio: 100,
+    projectedPayouts: 0,
+    settlementExposure: 0,
+    capacityRemaining: 100,
     healthStatus: 'HEALTHY',
     riskScore: 'LOW',
-    forecastDays: 7,
-    countryAllocation: { UG: 12500, KE: 8400, TZ: 4100 },
+    forecastDays: 30,
+    countryAllocation: {},
   };
 
   return (

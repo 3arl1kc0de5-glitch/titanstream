@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '@/services/api';
 import { operationsService, type MissionControlData } from '@/services/operationsService';
 import { ActivityFeed } from '@/components/admin/ActivityFeed';
-import { recentActivity } from '@/data/mock/overview';
 import { 
   ShieldCheck, 
   TrendingUp, 
@@ -267,7 +266,7 @@ export const OverviewPage: React.FC = () => {
         </div>
 
         {/* Real-time Activity Feed / Timeline logs */}
-        <ActivityFeed events={recentActivity.slice(0, 6)} />
+        <ActivityFeed events={[]} />
       </div>
     </div>
   );

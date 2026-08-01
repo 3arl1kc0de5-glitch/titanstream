@@ -1,19 +1,21 @@
 import type React from 'react';
-import { useState } from 'react';
-import { paymentRails } from '@/data/mock/paymentRails';
+import { useState, useEffect } from 'react';
 import { StatusBadge } from '@/components/admin/StatusBadge';
 import { MetricCard, MetricCardGrid } from '@/components/admin/MetricCard';
 import { useSettingsStore } from '@/store/useSettingsStore';
-
-const healthVariant: Record<string, 'success' | 'warning' | 'danger'> = {
-  operational: 'success',
-  degraded: 'warning',
-  down: 'danger',
-};
+import { paymentOrderService, type PaymentDestinationConfig } from '@/services/paymentOrderService';
 
 export const PaymentRailsPage: React.FC = () => {
   const { adminPhoneNumbers, activeAdminPhone, setActiveAdminPhone, addAdminPhoneNumber, removeAdminPhoneNumber } = useSettingsStore();
   const [newPhone, setNewPhone] = useState('');
+  const [rails, setRails] = useState<PaymentDestinationConfig[]>([]);
+
+  useEffect(() => {
+    paymentOrderService
+      .getDestinations()
+      .then((data) => setRails(data || []))
+      .catch(() => setRails([]));
+  }, []);
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,8 +28,8 @@ export const PaymentRailsPage: React.FC = () => {
   return (
     <div className="space-y-4 sm:space-y-6">
       <MetricCardGrid columns={2}>
-        <MetricCard label="Active Rails" value={paymentRails.filter(r => r.status === 'active').length.toString()} icon="CreditCard" variant="green" />
-        <MetricCard label="24h Volume" value={`$${paymentRails.reduce((s, r) => s + r.volume24h, 0).toLocaleString()}`} change={4.2} icon="DollarSign" variant="blue" />
+        <MetricCard label="Active Payment Rails" value={rails.filter(r => r.isActive).length.toString()} icon="CreditCard" variant="green" />
+        <MetricCard label="Destinations Loaded" value={`${rails.length} Channels`} icon="DollarSign" variant="blue" />
       </MetricCardGrid>
 
       {/* Admin Phone Numbers Configuration Card */}
@@ -105,55 +107,23 @@ export const PaymentRailsPage: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-        {paymentRails.map((rail) => (
+        {rails.map((rail) => (
           <div key={rail.id} className="bg-card-bg rounded-xl p-3 sm:p-4 border border-border/50 active:scale-[0.99] transition-transform">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full ${rail.health === 'operational' ? 'bg-usdt-green' : rail.health === 'degraded' ? 'bg-gold' : 'bg-error-red'}`} />
-                <span className="text-sm font-bold text-text-primary">{rail.name}</span>
+                <span className={`w-2 h-2 rounded-full ${rail.isActive ? 'bg-usdt-green' : 'bg-error-red'}`} />
+                <span className="text-sm font-bold text-text-primary">{rail.network} ({rail.country})</span>
               </div>
-              <StatusBadge label={rail.health} variant={healthVariant[rail.health]} dot />
+              <StatusBadge label={rail.isActive ? 'active' : 'disabled'} variant={rail.isActive ? 'success' : 'danger'} dot />
             </div>
             <div className="grid grid-cols-2 gap-2 sm:gap-3 text-sm">
-              <div><span className="text-text-tertiary text-xs">Status</span><div className="text-text-primary capitalize">{rail.status}</div></div>
-              <div><span className="text-text-tertiary text-xs">Success</span><div className="text-text-primary font-semibold">{rail.successRate}%</div></div>
-              <div><span className="text-text-tertiary text-xs">Latency</span><div className="text-text-primary">{rail.latency}</div></div>
-              <div><span className="text-text-tertiary text-xs">Volume</span><div className="text-text-primary font-semibold">${rail.volume24h.toLocaleString()}</div></div>
-              <div className="col-span-2"><span className="text-text-tertiary text-xs">Failures</span><div className="text-error-red font-semibold">{rail.failures24h}</div></div>
+              <div><span className="text-text-tertiary text-xs">Currency</span><div className="text-text-primary font-semibold">{rail.currency}</div></div>
+              <div><span className="text-text-tertiary text-xs">USDT Rate</span><div className="text-text-primary font-semibold">{rail.exchangeRateUsdt}</div></div>
+              <div><span className="text-text-tertiary text-xs">Receiving No.</span><div className="text-text-primary font-mono text-xs">{rail.receivingNumber}</div></div>
+              <div><span className="text-text-tertiary text-xs">Recipient</span><div className="text-text-primary font-semibold">{rail.receivingName}</div></div>
             </div>
           </div>
         ))}
-      </div>
-
-      {/* Desktop table */}
-      <div className="hidden sm:block bg-card-bg rounded-xl p-3 sm:p-4">
-        <h3 className="text-sm font-bold text-text-primary mb-4">Performance Summary</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="text-left text-xs font-semibold text-text-secondary uppercase tracking-wider px-3 py-2">Rail</th>
-                <th className="text-left text-xs font-semibold text-text-secondary uppercase tracking-wider px-3 py-2">Health</th>
-                <th className="text-left text-xs font-semibold text-text-secondary uppercase tracking-wider px-3 py-2">Success</th>
-                <th className="text-left text-xs font-semibold text-text-secondary uppercase tracking-wider px-3 py-2">Latency</th>
-                <th className="text-left text-xs font-semibold text-text-secondary uppercase tracking-wider px-3 py-2">Volume</th>
-                <th className="text-left text-xs font-semibold text-text-secondary uppercase tracking-wider px-3 py-2">Failures</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border/40">
-              {paymentRails.map((rail) => (
-                <tr key={rail.id} className="hover:bg-white/[0.02] transition-colors">
-                  <td className="px-3 py-3 text-sm text-text-primary font-semibold">{rail.name}</td>
-                  <td className="px-3 py-3"><StatusBadge label={rail.health} variant={healthVariant[rail.health]} dot /></td>
-                  <td className="px-3 py-3 text-sm text-text-primary">{rail.successRate}%</td>
-                  <td className="px-3 py-3 text-sm text-text-primary">{rail.latency}</td>
-                  <td className="px-3 py-3 text-sm text-text-primary font-semibold">${rail.volume24h.toLocaleString()}</td>
-                  <td className="px-3 py-3 text-sm text-error-red">{rail.failures24h}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
       </div>
     </div>
   );

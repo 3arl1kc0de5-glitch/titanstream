@@ -25,4 +25,10 @@ export class UserController {
   ) {
     return this.userService.updateProfile(telegramUserId, dto);
   }
+
+  @Get(['user/trust', 'user/trust-profile'])
+  @ApiOperation({ summary: 'Get current user trust profile' })
+  async getTrustProfile(@TelegramUserId() telegramUserId: bigint) {
+    return this.userService.getTrustProfile(telegramUserId);
+  }
 }

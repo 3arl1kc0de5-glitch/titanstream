@@ -1,6 +1,13 @@
 import type React from 'react';
 import { ActivityItem } from './ActivityItem';
-import type { ActivityEvent } from '@/data/mock/overview';
+
+export interface ActivityEvent {
+  id: string;
+  type: string;
+  message: string;
+  timestamp: string;
+  severity?: 'info' | 'success' | 'warning' | 'error';
+}
 
 interface ActivityFeedProps {
   events: ActivityEvent[];

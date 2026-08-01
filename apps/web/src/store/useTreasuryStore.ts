@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { useAuthStore } from './useAuthStore';
+import { treasuryService } from '../services/treasuryService';
 
 export type CycleStatus =
   | 'NEW_DAY'
@@ -57,8 +58,10 @@ interface TreasuryState {
   // Missions & Events
   missions: MissionItem[];
   events: CommunityEvent[];
+  isLoading: boolean;
 
   // Actions
+  fetchTreasuryState: () => Promise<void>;
   takeSnapshot: () => void;
   incrementMissionProgress: (type: MissionItem['type'], amount?: number) => void;
   claimMissionReward: (id: string) => void;
@@ -66,7 +69,6 @@ interface TreasuryState {
   startNewDay: () => void;
   resetSeason: () => void;
   simulateOperatorTrade: (operatorName: string, amount: number) => void;
-  tickEconomyValues: () => void;
   adjustTreasuryStats: (type: 'DEPOSIT' | 'WITHDRAW' | 'BOOST', amount: number) => void;
   adjustTrustScore: (delta: number) => void;
 }
@@ -122,7 +124,7 @@ const INITIAL_MISSIONS: MissionItem[] = [
     title: 'Stay active 7 consecutive days',
     subtitle: 'Build long-term treasury reputation',
     rewardPower: 500,
-    progress: 6,
+    progress: 0,
     target: 7,
     status: 'IN_PROGRESS',
     actionLabel: 'Active Streak',
@@ -132,24 +134,17 @@ const INITIAL_MISSIONS: MissionItem[] = [
 const INITIAL_EVENTS: CommunityEvent[] = [
   {
     id: 'e1',
-    title: 'Weekend Operator Bonus',
-    description: 'Get +20% power on all verified P2P operator orders.',
+    title: 'P2P Operator Processing',
+    description: 'Verified P2P operator orders active on settlement rails.',
     status: 'ACTIVE',
-    badge: 'Active Now',
+    badge: 'Live',
   },
   {
     id: 'e2',
-    title: 'Referral Week Madness',
-    description: 'Double treasury power payouts for all verified invites.',
+    title: 'Treasury Liquidity League',
+    description: 'Real-time liquidity verification and double-entry ledger audits active.',
     status: 'ACTIVE',
-    badge: 'X2 Power',
-  },
-  {
-    id: 'e3',
-    title: 'Treasury Race League',
-    description: 'Compete for the top growth percentage slot in Season 2.',
-    status: 'UPCOMING',
-    badge: 'In 3 Days',
+    badge: 'Verified',
   },
 ];
 
@@ -158,33 +153,55 @@ export const useTreasuryStore = create<TreasuryState>((set, get) => ({
   dailyBoostActive: false,
   powerEarnedToday: 0,
 
-  // Permanent Reputation
-  reputationPower: 2400,
-  trustScore: 98,
+  // Production initial values - Sourced live from Treasury & Balance Engine
+  reputationPower: 0,
+  trustScore: 20,
   reputationRank: 'Builder',
-  operatorAccess: 'Unlocked',
+  operatorAccess: 'Locked',
 
-  // Live Economy initial values
-  treasuryToday: 84000.0,
-  depositsToday: 84000.0,
-  withdrawalsToday: 53000.0,
-  operatorVolume: 410000.0,
-  topGrowth: 12.4,
+  // Live Economy stats
+  treasuryToday: 0.0,
+  depositsToday: 0.0,
+  withdrawalsToday: 0.0,
+  operatorVolume: 0.0,
+  topGrowth: 0.0,
 
   // Season
   seasonNumber: 1,
   seasonTitle: 'Treasury Expansion',
   daysRemaining: 30,
   seasonTargetPower: 10000,
-  seasonProgressPower: 2400,
+  seasonProgressPower: 0,
 
   missions: INITIAL_MISSIONS,
   events: INITIAL_EVENTS,
+  isLoading: false,
+
+  fetchTreasuryState: async () => {
+    set({ isLoading: true });
+    try {
+      const [metrics, trustProfile] = await Promise.all([
+        treasuryService.getMetrics(),
+        treasuryService.getUserTrustProfile(),
+      ]);
+
+      set({
+        treasuryToday: metrics.totalLiquidity,
+        depositsToday: metrics.settlementExposure,
+        withdrawalsToday: metrics.projectedPayouts,
+        trustScore: trustProfile.trustScore,
+        reputationRank: trustProfile.reputationRank,
+        operatorAccess: trustProfile.operatorAccess,
+        isLoading: false,
+      });
+    } catch {
+      set({ isLoading: false });
+    }
+  },
 
   takeSnapshot: () => {
     if (get().cycleStatus !== 'NEW_DAY') return;
     set({ cycleStatus: 'SNAPSHOT_TAKEN' });
-    // Advance to active opportunities shortly
     setTimeout(() => {
       set({ cycleStatus: 'OPPORTUNITIES_ACTIVE' });
     }, 1200);
@@ -207,12 +224,10 @@ export const useTreasuryStore = create<TreasuryState>((set, get) => ({
     const mission = state.missions.find((m) => m.id === id);
     if (!mission || mission.status !== 'CLAIMABLE') return;
 
-    // Grant reward power
     const reward = mission.rewardPower;
     const newReputationPower = state.reputationPower + reward;
     const newSeasonPower = Math.min(state.seasonTargetPower, state.seasonProgressPower + reward);
 
-    // Apply special mission benefits
     let boostActive = state.dailyBoostActive;
     let trust = state.trustScore;
 
@@ -223,7 +238,6 @@ export const useTreasuryStore = create<TreasuryState>((set, get) => ({
       trust = Math.min(100, trust + 1);
     }
 
-    // Recalculate Rank
     let rank = state.reputationRank;
     if (newReputationPower >= 5000) rank = 'Grandmaster';
     else if (newReputationPower >= 4000) rank = 'Architect';
@@ -249,49 +263,18 @@ export const useTreasuryStore = create<TreasuryState>((set, get) => ({
   },
 
   startNewDay: () => {
-    // Reset missions and update snapshot values, keeping reputation intact
-    const randomMultiplier = 0.98 + Math.random() * 0.04; // small fluctuation
-    set((state) => {
-      const isAuthenticated = useAuthStore.getState().isAuthenticated;
-      let newTreasury = state.treasuryToday * randomMultiplier;
-      if (!isAuthenticated && newTreasury > 99500) {
-        newTreasury = 99500 + (Math.random() * 100 - 50);
-      }
-
-      return {
-        cycleStatus: 'NEW_DAY',
-        dailyBoostActive: false,
-        powerEarnedToday: 0,
-        treasuryToday: newTreasury,
-        depositsToday: state.depositsToday * randomMultiplier,
-        withdrawalsToday: state.withdrawalsToday * randomMultiplier,
-        operatorVolume: state.operatorVolume * randomMultiplier,
-        topGrowth: parseFloat((10 + Math.random() * 5).toFixed(1)),
-        daysRemaining: Math.max(1, state.daysRemaining - 1),
-        missions: INITIAL_MISSIONS.map((m) => {
-          // preserve 7-day streak progress but increment it if completed yesterday
-          if (m.type === 'STAY_ACTIVE') {
-            const oldStreak = state.missions.find((old) => old.type === 'STAY_ACTIVE');
-            const oldProgress = oldStreak ? oldStreak.progress : 6;
-            const wasClaimed = oldStreak?.status === 'CLAIMED';
-            const newProg = wasClaimed ? 1 : Math.min(7, oldProgress + 1);
-            return {
-              ...m,
-              progress: newProg,
-              status: newProg >= 7 ? 'CLAIMABLE' : 'IN_PROGRESS',
-            };
-          }
-          return m;
-        }),
-      };
-    });
+    set((state) => ({
+      cycleStatus: 'NEW_DAY',
+      dailyBoostActive: false,
+      powerEarnedToday: 0,
+      daysRemaining: Math.max(1, state.daysRemaining - 1),
+    }));
   },
 
   resetSeason: () => {
-    // Reset season target and numbers, keep trustScore & reputationPower
     set((state) => ({
       seasonNumber: state.seasonNumber + 1,
-      seasonTitle: state.seasonNumber === 1 ? 'Treasury Expansion II' : `Liquidity Frontier ${state.seasonNumber + 1}`,
+      seasonTitle: `Liquidity Frontier ${state.seasonNumber + 1}`,
       daysRemaining: 30,
       seasonProgressPower: 0,
       seasonTargetPower: state.seasonTargetPower + 2000,
@@ -299,45 +282,14 @@ export const useTreasuryStore = create<TreasuryState>((set, get) => ({
   },
 
   simulateOperatorTrade: (_operatorName, amount) => {
-    // Complete the Operator Daily Mission
     get().incrementMissionProgress('OPERATIONS', 1);
-    // Increase Operator Volume
     set((state) => ({
       operatorVolume: state.operatorVolume + amount,
     }));
   },
 
-  tickEconomyValues: () => {
-    set((state) => {
-      const isAuthenticated = useAuthStore.getState().isAuthenticated;
-      const growthMultiplier = isAuthenticated ? 2.5 : 1.0;
-
-      // Simulate slow realistic live ticking
-      const depositTick = Math.random() * 0.45 * growthMultiplier;
-      const withdrawTick = Math.random() * 0.25;
-      const volumeTick = Math.random() * 1.20 * growthMultiplier;
-      
-      const newDeposits = state.depositsToday + depositTick;
-      const newWithdrawals = state.withdrawalsToday + withdrawTick;
-      let newTreasury = state.treasuryToday + (depositTick - withdrawTick);
-
-      // Capped below 100k if not authenticated
-      if (!isAuthenticated && newTreasury > 99500) {
-        newTreasury = 99500 + (Math.random() * 100 - 50); // hover around 99.5k
-      }
-
-      return {
-        depositsToday: newDeposits,
-        withdrawalsToday: newWithdrawals,
-        treasuryToday: newTreasury,
-        operatorVolume: state.operatorVolume + volumeTick,
-      };
-    });
-  },
-
   adjustTreasuryStats: (type, amount) => {
     set((state) => {
-      const isAuthenticated = useAuthStore.getState().isAuthenticated;
       let newTreasury = state.treasuryToday;
       let newDeposits = state.depositsToday;
       let newWithdrawals = state.withdrawalsToday;
@@ -349,14 +301,10 @@ export const useTreasuryStore = create<TreasuryState>((set, get) => ({
       } else if (type === 'WITHDRAW') {
         newWithdrawals += amount;
         newTreasury = Math.max(0, newTreasury - amount);
-      } else { // BOOST
+      } else {
         newDeposits += amount;
         newTreasury += amount;
         newVolume += amount;
-      }
-
-      if (!isAuthenticated && newTreasury > 99500) {
-        newTreasury = 99500 + (Math.random() * 100 - 50);
       }
 
       return {

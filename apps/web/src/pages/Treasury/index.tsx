@@ -42,18 +42,18 @@ export const TreasuryScreen: React.FC = () => {
     seasonProgressPower,
     missions,
     events,
+    fetchTreasuryState,
     takeSnapshot,
     claimMissionReward,
     calculateGrowthShare,
     startNewDay,
     resetSeason,
-    tickEconomyValues
   } = useTreasuryStore();
 
   const { setActiveTab } = useNavigationStore();
   const { baseSpeedGhs } = useMiningStore();
 
-  // Modals simulation state
+  // Modals state
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [depositAmount, setDepositAmount] = useState('100');
 
@@ -61,13 +61,10 @@ export const TreasuryScreen: React.FC = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [isCalculating, setIsCalculating] = useState(false);
 
-  // Economy live ticker loop
+  // Fetch real treasury state from backend on mount
   useEffect(() => {
-    const interval = setInterval(() => {
-      tickEconomyValues();
-    }, 1500);
-    return () => clearInterval(interval);
-  }, [tickEconomyValues]);
+    fetchTreasuryState();
+  }, [fetchTreasuryState]);
 
   const handleCaptureSnapshot = () => {
     setIsScanning(true);
@@ -396,7 +393,7 @@ export const TreasuryScreen: React.FC = () => {
               className="relative w-full max-w-[360px] glass-panel border border-white/15 p-5 rounded-3xl shadow-2xl bg-[#0d0e15] z-10"
             >
               <h3 className="text-base font-extrabold text-text-primary flex items-center gap-1.5">
-                📥 USDT Deposit Portal (Simulated)
+                📥 USDT Deposit Portal
               </h3>
               <p className="text-xs text-text-secondary mt-1">
                 Deposit USDT to earn +200 daily power and active compute speed multiplier boost (1.5× yield boost).

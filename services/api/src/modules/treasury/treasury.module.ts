@@ -5,6 +5,7 @@ import { PaymentOrderModule } from '../payment-order/payment-order.module';
 import { AuditModule } from '../audit/audit.module';
 import { TreasuryService } from './treasury.service';
 import { TreasuryController } from './treasury.controller';
+import { PublicTreasuryController } from './public-treasury.controller';
 import { TreasuryOperatorService } from './treasury-operator.service';
 import { TreasuryOperatorController } from './treasury-operator.controller';
 
@@ -15,7 +16,7 @@ import { TreasuryOperatorController } from './treasury-operator.controller';
     PaymentOrderModule,
     forwardRef(() => AdminModule),
   ],
-  controllers: [TreasuryController, TreasuryOperatorController],
+  controllers: [TreasuryController, PublicTreasuryController, TreasuryOperatorController],
   providers: [TreasuryService, TreasuryOperatorService],
   exports: [TreasuryService, TreasuryOperatorService],
 })
