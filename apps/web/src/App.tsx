@@ -38,6 +38,7 @@ import { AuthGate } from './components/AuthGate';
 import { OnboardingOverlay } from './components/OnboardingOverlay';
 import { CountrySelector } from './components/CountrySelector';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { MACHINE_CATALOG } from './data/machines';
 
 // ─── Admin Routes (accessible without user auth) ─────────────────────────────
 

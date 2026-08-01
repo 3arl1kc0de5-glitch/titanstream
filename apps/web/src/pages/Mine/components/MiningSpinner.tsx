@@ -47,6 +47,8 @@ interface SpinnerModel {
   spinDurationSeconds: number; // Calibrated animation speed: lower duration = faster spin!
   powerRatingW: number;
   dailyYieldUsdt: number;
+  earningsCap?: number;
+  durationHours?: number;
 }
 
 const USDT_SPINNERS: SpinnerModel[] = MACHINE_CATALOG.map((m, idx) => {
@@ -71,6 +73,8 @@ const USDT_SPINNERS: SpinnerModel[] = MACHINE_CATALOG.map((m, idx) => {
     spinDurationSeconds,
     powerRatingW: m.powerRatingW,
     dailyYieldUsdt: m.dailyYieldUsdt,
+    earningsCap: m.earningsCap,
+    durationHours: m.durationHours,
   };
 });
 
@@ -96,6 +100,8 @@ const TON_SPINNERS: SpinnerModel[] = MACHINE_CATALOG.map((m, idx) => {
     spinDurationSeconds,
     powerRatingW: Math.round(m.powerRatingW * 1.1),
     dailyYieldUsdt: m.dailyYieldUsdt * 1.15,
+    earningsCap: m.earningsCap,
+    durationHours: m.durationHours,
   };
 });
 
@@ -155,7 +161,7 @@ export const MiningSpinner: React.FC = () => {
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
-  }, [hasPurchasedMachine, getTrialRemainingMs]);
+  }, [activeCurrency, usdtSpinnerIdx, tonSpinnerIdx, getTrialRemainingMs]);
 
   const isDailyLimitReached = tapsToday >= dailyTapLimit;
   const isWeeklyLimitReached = tapsThisWeek >= weeklyTapLimit;
@@ -368,25 +374,25 @@ export const MiningSpinner: React.FC = () => {
         }}
       />
 
-      {/* Overheat warning / Free Trial banner overlay */}
+      {/* Overheat warning / Machine status banner overlay */}
       {isOverheated ? (
         <div className="mb-3.5 z-20 bg-rose-600/30 border border-rose-500 text-rose-300 text-[10px] font-black px-4 py-1.5 rounded-full flex items-center gap-1.5 uppercase tracking-widest shadow-xl animate-pulse backdrop-blur-md">
           <Flame size={14} className="animate-bounce text-rose-400" />
           <span>OVERHEATED — COOLING DOWN ({cooldownTimer}s)</span>
         </div>
-      ) : !hasPurchasedMachine ? (
+      ) : activeSpinner?.earningsCap ? (
         <div className={`mb-3.5 z-20 text-[10px] font-black px-4 py-1.5 rounded-full flex items-center gap-1.5 uppercase tracking-wider shadow-lg backdrop-blur-md transition-all ${
-          isTrialActive() 
+          !isTrialExpired()
             ? 'bg-usdt-green/15 border border-usdt-green/40 text-usdt-green shadow-[0_0_12px_rgba(38,161,123,0.25)]' 
             : 'bg-rose-500/20 border border-rose-500/40 text-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.25)]'
         }`}>
-          {isTrialActive() ? (
+          {!isTrialExpired() ? (
             <>
               <Clock size={13} className="animate-pulse text-usdt-green shrink-0" />
               <span>
-                {trialEarnings >= 5.0
-                  ? `FREE TRIAL CAP REACHED (${showLocal ? getLocalAmount(5.0) : '$5.00'} MAX)`
-                  : `FREE TRIAL ACTIVE • ${trialTimeStr} LEFT (${showLocal ? `${getLocalAmount(trialEarnings)} / ${getLocalAmount(5.0)}` : `$${(Number(trialEarnings) || 0).toFixed(2)} / $5.00`})`}
+                {trialEarnings >= (activeSpinner.earningsCap || 5.0)
+                  ? `CAP REACHED (${showLocal ? getLocalAmount(activeSpinner.earningsCap || 5.0) : `$${(activeSpinner.earningsCap || 5.0).toFixed(2)}`} MAX)`
+                  : `${activeSpinner.name.toUpperCase()} • ${trialTimeStr} LEFT (${showLocal ? `${getLocalAmount(trialEarnings)} / ${getLocalAmount(activeSpinner.earningsCap || 5.0)}` : `$${(Number(trialEarnings) || 0).toFixed(2)} / $${(activeSpinner.earningsCap || 5.0).toFixed(2)}`})`}
               </span>
             </>
           ) : (
@@ -1069,8 +1075,8 @@ export const MiningSpinner: React.FC = () => {
             </span>
           </div>
 
-          {/* Free Trial Expired Overlay */}
-          {!hasPurchasedMachine && isTrialExpired() && (
+          {/* Machine Expired Overlay (config-driven: shows when earningsCap machine expires) */}
+          {activeSpinner?.earningsCap && isTrialExpired() && (
             <div className="absolute inset-0 rounded-full bg-black/90 backdrop-blur-[5px] flex flex-col items-center justify-center z-30 text-center p-4 border border-rose-500/40 animate-fade-in">
               <div className="w-9 h-9 rounded-full bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 mb-2 animate-bounce">
                 <Lock size={16} />
@@ -1152,12 +1158,13 @@ export const MiningSpinner: React.FC = () => {
       {/* Live Stream Stats Panel below Spinner Wheel */}
       {(() => {
         const getTapYield = (mult: number) => {
-          if (!hasPurchasedMachine && isTrialActive()) {
-            const remainingCap = Math.max(0, 5.0 - trialEarnings);
-            return Math.min(0.02, remainingCap);
-          }
           const payoutMultiplier = isUsdt ? activeSpinner.payoutMultiplier : activeSpinner.payoutMultiplier * 1.15;
-          return 0.01 * mult * payoutMultiplier;
+          let yieldVal = 0.01 * mult * payoutMultiplier;
+          if (activeSpinner.earningsCap && activeSpinner.earningsCap > 0) {
+            const remainingCap = Math.max(0, (activeSpinner.earningsCap || 5.0) - trialEarnings);
+            yieldVal = Math.min(yieldVal, remainingCap);
+          }
+          return yieldVal;
         };
 
         const currentTapYieldVal = getTapYield(coolerMultiplier);

@@ -33,14 +33,23 @@ export class MiningService {
     const elapsedMs = now.getTime() - lastUpdate.getTime();
     if (elapsedMs <= 0) return;
 
-    // Passive rate matches the frontend:
-    // 0.0001 per 100ms (0.001 per second) for active machines, 
-    // 0.00005 per 100ms (0.0005 per second) for trial/starter speed.
-    const isTrial = session.baseSpeedGhs <= 1.0;
-    const baseYieldRatePerSec = isTrial ? 0.0005 : 0.001;
+    // Use the highest passiveYieldRate from the user's active machines
+    const machines = this.machineService.getUserMachines(session.telegramUserId);
+    const activeMachines = machines.filter((m) => m.status === 'ACTIVE');
+    const catalog = this.machineService.getCatalog();
     
-    // delta = speed * multiplier * yieldRate
-    // For passive background mining, we assume a baseline multiplier of 1.0
+    // Find the best passiveYieldRate across the user's active fleet
+    let bestPassiveRate = 0.00005; // default fallback
+    for (const um of activeMachines) {
+      const tier = catalog.find((t) => t.tierCode === um.tierCode);
+      if (tier?.passiveYieldRate && tier.passiveYieldRate > bestPassiveRate) {
+        bestPassiveRate = tier.passiveYieldRate;
+      }
+    }
+
+    // Passive yield: speed * multiplier * yieldRate * elapsed
+    // For passive background mining, baseline multiplier of 1.0
+    const baseYieldRatePerSec = bestPassiveRate * 10; // convert per-100ms to per-second
     const deltaPerSec = session.baseSpeedGhs * 1.0 * baseYieldRatePerSec;
     const accumulated = (elapsedMs / 1000) * deltaPerSec;
 
@@ -50,12 +59,11 @@ export class MiningService {
   getOrCreateSession(telegramUserId: string): UserMiningState {
     let session = this.sessions.get(telegramUserId);
     
-    // Sync speed dynamically with user purchased machines
+    // Sync speed dynamically with user's active machines from MachineService
     const machines = this.machineService.getUserMachines(telegramUserId);
     const activeMachines = machines.filter((m) => m.status === 'ACTIVE');
     const totalGhs = activeMachines.reduce((sum, m) => sum + m.capacityGhs, 0);
-    const hasPurchasedMachine = machines.length > 0;
-    const baseSpeed = totalGhs > 0 ? totalGhs : (hasPurchasedMachine ? 5.0 : 1.0);
+    const baseSpeed = totalGhs > 0 ? totalGhs : 1.0;
 
     if (!session) {
       session = {

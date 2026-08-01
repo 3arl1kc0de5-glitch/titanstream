@@ -67,9 +67,6 @@ const getStoredTrialEarnings = (): number => {
   return stored ? parseFloat(stored) : 0.0;
 };
 
-const DURATION_48H_MS = 48 * 60 * 60 * 1000;
-const TRIAL_EARNINGS_CAP_USDT = 5.0;
-
 export const useMiningStore = create<MiningState>((set, get) => {
   const initialPurchased = localStorage.getItem('has_purchased_machine') === 'true';
   const initialTrialStartedAt = getStoredTrialStartedAt();
