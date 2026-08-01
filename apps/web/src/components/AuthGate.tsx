@@ -210,24 +210,21 @@ export const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
   useEffect(() => {
     if (!isReady) return; // Wait for Telegram SDK to initialize
 
+    // If the user is already authenticated, do nothing.
+    // Token refresh is handled transparently by the API interceptor in api.ts.
     const authState = useAuthStore.getState();
-    if (authState.isAuthenticated && !authState.isSessionExpired() && authState.session?.accessToken) {
-      console.info(`[AUTH_GATE] session.active_and_valid userId=${authState.session.user.telegramUserId}`);
-      return; // Already authenticated cleanly
+    if (authState.isAuthenticated && authState.session?.accessToken) {
+      console.info(`[AUTH_GATE] session.active userId=${authState.session.user.telegramUserId}`);
+      return;
     }
 
     if (authAttempted.current) return;
     authAttempted.current = true;
 
-    if (authState.isSessionExpired() && authState.session) {
-      console.info('[AUTH_GATE] session.expired clearing');
-      clearSession();
-    }
-
     if (isMiniApp) {
       authenticateMiniApp();
     }
-  }, [isReady, isMiniApp, authenticateMiniApp, clearSession]);
+  }, [isReady, isMiniApp, authenticateMiniApp]);
 
   // Mount widget for web context after render
   useEffect(() => {
@@ -246,7 +243,16 @@ export const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
     }
   };
 
-  // ── Render: waiting for Zustand hydration or Telegram SDK ─────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+  //  RENDER DECISION TREE
+  //
+  //  Order matters. Each condition is mutually exclusive with those above it.
+  //  The "Connecting…" screen ONLY appears during genuine initial bootstrap.
+  //  Once isAuthenticated is true, children are ALWAYS rendered — the API
+  //  interceptor handles token refresh transparently in the background.
+  // ══════════════════════════════════════════════════════════════════════════
+
+  // 1. Waiting for Zustand hydration or Telegram SDK — genuine initial bootstrap
   if (!hasHydrated || !isReady) {
     return (
       <div className="fixed inset-0 z-50 bg-[#06070b] flex flex-col items-center justify-center select-none">
@@ -256,13 +262,15 @@ export const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
     );
   }
 
-  // ── Render: authenticated → show app ──────────────────────────────────────
-  const sessionExpired = useAuthStore.getState().isSessionExpired();
-  if (isAuthenticated && !sessionExpired) {
+  // 2. Authenticated — render the app. Period.
+  //    No isSessionExpired() check here. Token refresh is handled by api.ts interceptor.
+  //    If the refresh fails (401), the interceptor calls clearSession() → isAuthenticated
+  //    becomes false → next render will show login/error screen.
+  if (isAuthenticated) {
     return <>{children}</>;
   }
 
-  // ── Render: loading ────────────────────────────────────────────────────────
+  // 3. Loading — auth in progress
   if (isAuthLoading) {
     return (
       <div className="fixed inset-0 z-50 bg-[#06070b] flex flex-col items-center justify-center select-none">
@@ -275,7 +283,7 @@ export const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
     );
   }
 
-  // ── Render: error ──────────────────────────────────────────────────────────
+  // 4. Error
   if (authError) {
     return (
       <div className="fixed inset-0 z-50 bg-[#06070b] flex flex-col items-center justify-center select-none px-8">
@@ -303,8 +311,8 @@ export const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
     );
   }
 
-  // ── Render: web login screen with Telegram Widget ─────────────────────────
-  if (!isMiniApp && !isAuthenticated) {
+  // 5. Web — not authenticated, show Telegram login screen
+  if (!isMiniApp) {
     return (
       <div className="fixed inset-0 z-50 bg-[#06070b] flex flex-col items-center select-none overflow-hidden">
         {/* Ambient glow */}
@@ -382,11 +390,17 @@ export const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
     );
   }
 
-  // ── Render: mini app — auth not yet started (should not normally reach here) ──
+  // 6. Mini App — not authenticated, no loading, no error.
+  //    This only happens on first launch before auth starts. Auto-trigger auth.
+  if (!authAttempted.current) {
+    authAttempted.current = true;
+    authenticateMiniApp();
+  }
+
   return (
     <div className="fixed inset-0 z-50 bg-[#06070b] flex flex-col items-center justify-center select-none">
       <Loader2 size={28} className="text-usdt-green animate-spin mb-4" />
-      <p className="text-text-secondary text-sm">Initializing…</p>
+      <p className="text-text-secondary text-sm">Verifying your identity…</p>
     </div>
   );
 };
