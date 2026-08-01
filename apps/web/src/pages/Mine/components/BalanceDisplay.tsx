@@ -3,6 +3,7 @@ import { useWalletStore } from '../../../store/useWalletStore';
 import { useMiningStore } from '../../../store/useMiningStore';
 import { useSettingsStore } from '../../../store/useSettingsStore';
 import { useCountryStore } from '../../../store/useCountryStore';
+import { formatAdaptiveCounter } from '../../../utils/format';
 
 export const BalanceDisplay: React.FC = () => {
   const { usdtBalance, tonBalance } = useWalletStore();
@@ -20,12 +21,12 @@ export const BalanceDisplay: React.FC = () => {
       const rate = Number(selectedCountry.exchangeRate) || 1;
       const localVal = currentDisplay * rate;
       return {
-        value: (Number(localVal) || 0).toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 }),
+        value: formatAdaptiveCounter(localVal),
         label: selectedCountry.currencyCode,
       };
     }
     return {
-      value: (Number(currentDisplay) || 0).toFixed(8),
+      value: formatAdaptiveCounter(currentDisplay),
       label: activeCurrency,
     };
   };

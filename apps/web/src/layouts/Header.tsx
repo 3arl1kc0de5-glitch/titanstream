@@ -8,6 +8,7 @@ import { useUserNotificationStore } from '../store/useUserNotificationStore';
 import { useTelegram } from '../context/TelegramContext';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { useCountryStore } from '../store/useCountryStore';
+import { formatAdaptiveCounter } from '../utils/format';
 
 export const Header: React.FC = () => {
   const { usdtBalance, crystalsBalance } = useWalletStore();
@@ -45,7 +46,7 @@ export const Header: React.FC = () => {
         const rate = Number(selectedCountry.exchangeRate) || 1;
         const localVal = safeUsdt * rate;
         return {
-          value: (Number(localVal) || 0).toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 }),
+          value: formatAdaptiveCounter(localVal),
           symbol: selectedCountry.currencySymbol || 'USh',
           flag: selectedCountry.flag || '🇺🇬',
         };
@@ -54,7 +55,7 @@ export const Header: React.FC = () => {
       console.warn('[HEADER] displayBalance formatting error:', err);
     }
     return {
-      value: safeUsdt.toFixed(4),
+      value: formatAdaptiveCounter(safeUsdt),
       symbol: '₮',
       flag: '🇺🇸',
     };
