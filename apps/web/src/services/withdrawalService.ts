@@ -47,7 +47,7 @@ export const withdrawalService = {
    */
   async createWithdrawal(request: WithdrawalRequest): Promise<WithdrawalSession> {
     const response = await api.post('/financial/withdrawal', request);
-    return response.data;
+    return response.data.data;
   },
 
   /**
@@ -56,7 +56,7 @@ export const withdrawalService = {
    */
   async getWithdrawal(withdrawalId: string): Promise<WithdrawalSession> {
     const response = await api.get(`/financial/withdrawal/${withdrawalId}`);
-    return response.data;
+    return response.data.data;
   },
 
   /**
@@ -67,7 +67,7 @@ export const withdrawalService = {
     const response = await api.get('/financial/withdrawal/history', {
       params: { limit, offset },
     });
-    return response.data;
+    return response.data.data;
   },
 
   /**
@@ -76,7 +76,7 @@ export const withdrawalService = {
    */
   async getLimits(): Promise<WithdrawalLimits> {
     const response = await api.get('/financial/withdrawal/limits');
-    return response.data;
+    return response.data.data;
   },
 
   /**
@@ -85,6 +85,6 @@ export const withdrawalService = {
    */
   async cancelWithdrawal(withdrawalId: string): Promise<WithdrawalSession> {
     const response = await api.post(`/financial/withdrawal/${withdrawalId}/cancel`);
-    return response.data;
+    return response.data.data;
   },
 };

@@ -103,14 +103,13 @@ export const useMiningStore = create<MiningState>((set, get) => {
     fetchMiningState: async () => {
       try {
         const res = await miningService.getMiningState();
-        const state = res as any;
-        if (state && typeof state === 'object') {
+        if (res.success && res.data) {
           set({
-            activeCurrency: state.activeCurrency,
-            baseSpeedGhs: state.baseSpeedGhs || (get().hasPurchasedMachine ? 5.0 : 1.0),
-            unclaimedBalance: state.unclaimedBalance,
-            machineMode: state.machineMode || 'PROMOTIONAL',
-            lifetimePromotionalOutput: state.lifetimePromotionalOutput || 0.0,
+            activeCurrency: res.data.activeCurrency,
+            baseSpeedGhs: res.data.baseSpeedGhs || (get().hasPurchasedMachine ? 5.0 : 1.0),
+            unclaimedBalance: res.data.unclaimedBalance,
+            machineMode: res.data.machineMode || 'PROMOTIONAL',
+            lifetimePromotionalOutput: res.data.lifetimePromotionalOutput || 0.0,
           });
         }
       } catch (err) {
@@ -121,8 +120,7 @@ export const useMiningStore = create<MiningState>((set, get) => {
     claimMinedYield: async () => {
       try {
         const res = await miningService.claimRewards();
-        const data = res as any;
-        if (data && data.success) {
+        if (res && res.success) {
           await useWalletStore.getState().fetchBalanceFromEngine();
           set({
             unclaimedBalance: 0.0,
@@ -199,10 +197,9 @@ export const useMiningStore = create<MiningState>((set, get) => {
       }
 
       miningService.tapCooler(tapYield).then((res) => {
-        const state = res as any;
-        if (state && typeof state === 'object') {
+        if (res && res.success && res.data) {
           set({
-            unclaimedBalance: state.unclaimedBalance,
+            unclaimedBalance: res.data.unclaimedBalance,
           });
         }
       }).catch((err) => {

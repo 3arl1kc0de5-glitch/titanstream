@@ -119,7 +119,7 @@ export const useUserNotificationStore = create<UserNotificationState>((set, get)
     set({ isLoading: true, error: null });
     try {
       const response = await api.get('/notifications');
-      const data = response.data || [];
+      const data = response.data?.data || [];
       
       const mapped: UserNotification[] = data.map((record: any) => {
         const meta = getNotificationMetadata(record.templateCode);

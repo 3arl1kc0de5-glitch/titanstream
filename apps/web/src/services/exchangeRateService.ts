@@ -29,7 +29,7 @@ export const exchangeRateService = {
    */
   async getRates(): Promise<ExchangeRatesResponse> {
     const response = await api.get('/financial/exchange-rates');
-    return response.data;
+    return response.data.data;
   },
 
   /**
@@ -38,7 +38,7 @@ export const exchangeRateService = {
    */
   async getRate(currencyCode: string): Promise<ExchangeRate> {
     const response = await api.get(`/financial/exchange-rate/${currencyCode}`);
-    return response.data;
+    return response.data.data;
   },
 
   /**

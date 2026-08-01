@@ -68,7 +68,7 @@ export const settlementService = {
    */
   async getProviders(params?: { asset?: string; country?: string }): Promise<SettlementProviderItem[]> {
     const response = await api.get('/settlement/providers', { params });
-    return response.data;
+    return response.data.data;
   },
 
   /**
@@ -78,7 +78,7 @@ export const settlementService = {
    */
   async createSession(payload: CreateSettlementPayload): Promise<SettlementSessionView> {
     const response = await api.post('/settlement/session', payload);
-    return response.data;
+    return response.data.data;
   },
 
   /**
@@ -87,7 +87,7 @@ export const settlementService = {
    */
   async getSession(settlementId: string): Promise<SettlementSessionView> {
     const response = await api.get(`/settlement/session/${settlementId}`);
-    return response.data;
+    return response.data.data;
   },
 
   /**
@@ -96,7 +96,7 @@ export const settlementService = {
    */
   async cancelSession(settlementId: string): Promise<SettlementSessionView> {
     const response = await api.post(`/settlement/session/${settlementId}/cancel`);
-    return response.data;
+    return response.data.data;
   },
 
   /**
@@ -105,6 +105,6 @@ export const settlementService = {
    */
   async getHistory(): Promise<SettlementSessionView[]> {
     const response = await api.get('/settlement/history');
-    return response.data;
+    return response.data.data;
   },
 };

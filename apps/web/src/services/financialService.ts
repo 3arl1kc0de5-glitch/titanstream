@@ -51,7 +51,7 @@ export const financialService = {
    */
   async getBalance(): Promise<UserBalance> {
     const response = await api.get('/financial/balance');
-    return response.data;
+    return response.data.data;
   },
 
   /**
@@ -62,7 +62,7 @@ export const financialService = {
     const response = await api.get('/financial/transactions', {
       params: { limit, offset },
     });
-    return response.data;
+    return response.data.data;
   },
 
   /**
@@ -73,6 +73,6 @@ export const financialService = {
     const response = await api.get('/financial/ledger', {
       params: { limit, offset },
     });
-    return response.data;
+    return response.data.data;
   },
 };

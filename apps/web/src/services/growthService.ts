@@ -94,22 +94,22 @@ export interface QualificationStatus {
 export const growthService = {
   async getProfile(): Promise<GrowthProfile> {
     const res = await api.get('/growth/profile');
-    return res.data;
+    return res.data.data;
   },
 
   async getReferrals(): Promise<ReferralSummary> {
     const res = await api.get('/growth/referrals');
-    return res.data;
+    return res.data.data;
   },
 
   async getRewards(): Promise<RewardItem[]> {
     const res = await api.get('/growth/rewards');
-    return res.data;
+    return res.data.data;
   },
 
   async getQualification(): Promise<QualificationStatus> {
     const res = await api.get('/growth/qualification');
-    return res.data;
+    return res.data.data;
   },
 
   async getAnalyticsOverview(): Promise<GrowthAnalyticsOverview> {
