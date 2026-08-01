@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
+import { isProduction } from '../common/config/env.util';
 
 const getDatabaseUrl = (): string => {
   const envUrl =
@@ -30,9 +31,17 @@ const getDatabaseUrl = (): string => {
     return constructed;
   }
 
+  if (isProduction()) {
+    throw new Error(
+      '[Config] FATAL: No PostgreSQL connection configuration found ' +
+        '(DATABASE_URL / DATABASE_PRIVATE_URL / POSTGRES_URL / PGHOST). ' +
+        'Refusing to start against the localhost fallback in production.',
+    );
+  }
+
   Logger.warn(
     `[PrismaService] WARNING: DATABASE_URL environment variable is missing on startup. ` +
-    `Prisma initialized with fallback string until DATABASE_URL is saved in Railway Variables.`,
+    `Prisma initialized with local fallback string (development only).`,
     'PrismaService',
   );
 
@@ -58,6 +67,10 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       await this.$connect();
       this.logger.log('Successfully connected to production PostgreSQL database.');
     } catch (err: any) {
+      if (isProduction()) {
+        this.logger.error(`[PrismaService] FATAL: Database connection failed: ${err.message}`);
+        throw err;
+      }
       this.logger.warn(`Database connection pending. NestJS server running with fallback auth resilience: ${err.message}`);
     }
   }

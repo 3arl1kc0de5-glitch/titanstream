@@ -52,6 +52,10 @@ export class ProviderRegistryService implements OnModuleInit {
     try {
       await Promise.all([...this.adapters.values()].map((provider) => this.ensureProvider(provider)));
     } catch (err: any) {
+      if (process.env.NODE_ENV === 'production') {
+        console.error('FATAL: Failed to seed default settlement providers on startup:', err?.message);
+        throw err;
+      }
       console.warn('Failed to seed default settlement providers on startup:', err?.message);
     }
   }

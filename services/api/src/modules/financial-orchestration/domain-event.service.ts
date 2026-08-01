@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { DomainEventType, Prisma } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
 
+type DbClient = Prisma.TransactionClient | PrismaService;
+
 @Injectable()
 export class DomainEventService {
   constructor(private readonly prisma: PrismaService) {}
@@ -13,8 +15,8 @@ export class DomainEventService {
     financialAccountId?: string;
     transactionId?: string;
     payload?: Record<string, unknown>;
-  }) {
-    return this.prisma.financialDomainEvent.create({
+  }, client: DbClient = this.prisma) {
+    return client.financialDomainEvent.create({
       data: {
         eventType: params.eventType,
         operationId: params.operationId,

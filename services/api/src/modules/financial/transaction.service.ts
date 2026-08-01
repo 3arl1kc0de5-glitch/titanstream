@@ -5,6 +5,8 @@ import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../../database/prisma.service';
 import { AssetRegistryService } from './asset-registry.service';
 
+type DbClient = Prisma.TransactionClient | PrismaService;
+
 const ALLOWED_TRANSITIONS: Record<TransactionStatus, TransactionStatus[]> = {
   CREATED: [TransactionStatus.PENDING, TransactionStatus.PROCESSING, TransactionStatus.FAILED],
   PENDING: [TransactionStatus.PROCESSING, TransactionStatus.FAILED],
@@ -30,15 +32,15 @@ export class TransactionService {
     amount: string;
     reference: string;
     metadata?: Record<string, unknown>;
-  }) {
-    await this.assets.getEnabled(params.assetCode);
-    const account = await this.prisma.financialAccount.findUnique({ where: { id: params.financialAccountId } });
+  }, client: DbClient = this.prisma) {
+    await this.assets.getEnabled(params.assetCode, client);
+    const account = await client.financialAccount.findUnique({ where: { id: params.financialAccountId } });
     if (!account || account.status !== FinancialAccountStatus.ACTIVE) throw new BadRequestException('INVALID_FINANCIAL_ACCOUNT_STATE');
 
     const amount = new Prisma.Decimal(params.amount);
     if (amount.lte(0)) throw new BadRequestException('INVALID_TRANSACTION_AMOUNT');
 
-    const transaction = await this.prisma.financialTransaction.create({
+    const transaction = await client.financialTransaction.create({
       data: {
         financialAccountId: params.financialAccountId,
         transactionType: params.transactionType,
@@ -50,7 +52,7 @@ export class TransactionService {
       },
     });
 
-    await this.auditService.create({
+    await this.auditService.createWithClient(client, {
       telegramUserId: params.telegramUserId,
       eventType: AuditEventType.TRANSACTION_CREATED,
       description: 'Financial framework transaction created',
@@ -61,14 +63,14 @@ export class TransactionService {
     return transaction;
   }
 
-  async transition(transactionId: string, nextStatus: TransactionStatus, telegramUserId: bigint) {
-    const transaction = await this.prisma.financialTransaction.findUnique({ where: { id: transactionId } });
+  async transition(transactionId: string, nextStatus: TransactionStatus, telegramUserId: bigint, client: DbClient = this.prisma) {
+    const transaction = await client.financialTransaction.findUnique({ where: { id: transactionId } });
     if (!transaction) throw new BadRequestException('TRANSACTION_NOT_FOUND');
     if (!ALLOWED_TRANSITIONS[transaction.status].includes(nextStatus)) {
       throw new BadRequestException(`INVALID_TRANSACTION_TRANSITION:${transaction.status}->${nextStatus}`);
     }
 
-    const updated = await this.prisma.financialTransaction.update({
+    const updated = await client.financialTransaction.update({
       where: { id: transactionId },
       data: {
         status: nextStatus,
@@ -80,7 +82,7 @@ export class TransactionService {
     });
 
     if (nextStatus === TransactionStatus.COMPLETED || nextStatus === TransactionStatus.FAILED) {
-      await this.auditService.create({
+      await this.auditService.createWithClient(client, {
         telegramUserId,
         eventType: nextStatus === TransactionStatus.COMPLETED ? AuditEventType.TRANSACTION_COMPLETED : AuditEventType.TRANSACTION_FAILED,
         description: `Transaction ${nextStatus.toLowerCase()}`,

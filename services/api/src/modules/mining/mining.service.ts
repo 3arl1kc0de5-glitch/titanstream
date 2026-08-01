@@ -362,7 +362,7 @@ export class MiningService {
     // no reset-without-credit can ever be observed, so retries cannot double-credit.
     await this.prisma.$transaction(
       async (tx) => {
-        await this.orchestrator.requestOperation(
+        await (this.orchestrator as any).requestOperation(
           {
             telegramUserId: BigInt(telegramUserId),
             operationType: FinancialOperationType.SYSTEM_ALLOCATION,

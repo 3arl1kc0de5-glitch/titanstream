@@ -23,7 +23,7 @@ describe('LedgerService', () => {
       prisma as any,
       { getEnabled: jest.fn(async () => ({ assetCode: 'USDT' })) } as any,
       { getRequired: jest.fn(async (code: string) => ({ id: `${code}-id`, code })) } as any,
-      { create: jest.fn(async () => ({})) } as any,
+      { create: jest.fn(async () => ({})), createWithClient: jest.fn(async () => ({})) } as any,
     );
     return { service, prisma, tx };
   }

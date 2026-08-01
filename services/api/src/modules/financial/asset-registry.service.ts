@@ -1,5 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
+
+type DbClient = Prisma.TransactionClient | PrismaService;
 
 const DEFAULT_ASSETS = [
   { assetCode: 'USDT', name: 'Tether USD', symbol: 'USDT', decimals: 6 },
@@ -21,8 +24,8 @@ export class AssetRegistryService {
     }
   }
 
-  async getEnabled(assetCode: string) {
-    const asset = await this.prisma.asset.findUnique({ where: { assetCode } });
+  async getEnabled(assetCode: string, client: DbClient = this.prisma) {
+    const asset = await client.asset.findUnique({ where: { assetCode } });
     if (!asset || !asset.enabled) throw new NotFoundException(`ASSET_NOT_FOUND:${assetCode}`);
     return asset;
   }

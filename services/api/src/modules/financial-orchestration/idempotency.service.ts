@@ -3,6 +3,8 @@ import { createHash } from 'crypto';
 import { IdempotencyStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
 
+type DbClient = Prisma.TransactionClient | PrismaService;
+
 @Injectable()
 export class IdempotencyService {
   constructor(private readonly prisma: PrismaService) {}
@@ -11,16 +13,16 @@ export class IdempotencyService {
     return createHash('sha256').update(JSON.stringify(payload)).digest('hex');
   }
 
-  async begin(telegramUserId: bigint, idempotencyKey: string, payload: unknown) {
+  async begin(telegramUserId: bigint, idempotencyKey: string, payload: unknown, client: DbClient = this.prisma) {
     const requestHash = this.hashPayload(payload);
-    const existing = await this.prisma.financialIdempotencyRecord.findUnique({
+    const existing = await client.financialIdempotencyRecord.findUnique({
       where: { telegramUserId_idempotencyKey: { telegramUserId, idempotencyKey } },
     });
 
     if (!existing) {
       return {
         replay: false,
-        record: await this.prisma.financialIdempotencyRecord.create({
+        record: await client.financialIdempotencyRecord.create({
           data: { telegramUserId, idempotencyKey, requestHash, status: IdempotencyStatus.STARTED },
         }),
       };
@@ -30,15 +32,15 @@ export class IdempotencyService {
     if (existing.status === IdempotencyStatus.COMPLETED) return { replay: true, record: existing };
     if (existing.status === IdempotencyStatus.STARTED) throw new BadRequestException('IDEMPOTENT_OPERATION_IN_PROGRESS');
 
-    await this.prisma.financialIdempotencyRecord.update({
+    await client.financialIdempotencyRecord.update({
       where: { id: existing.id },
       data: { status: IdempotencyStatus.STARTED, requestHash },
     });
     return { replay: false, record: existing };
   }
 
-  complete(id: string, operationId: string, responsePayload: unknown) {
-    return this.prisma.financialIdempotencyRecord.update({
+  complete(id: string, operationId: string, responsePayload: unknown, client: DbClient = this.prisma) {
+    return client.financialIdempotencyRecord.update({
       where: { id },
       data: {
         operationId,
@@ -48,8 +50,8 @@ export class IdempotencyService {
     });
   }
 
-  fail(id: string, operationId?: string) {
-    return this.prisma.financialIdempotencyRecord.update({
+  fail(id: string, operationId?: string, client: DbClient = this.prisma) {
+    return client.financialIdempotencyRecord.update({
       where: { id },
       data: { operationId, status: IdempotencyStatus.FAILED },
     });

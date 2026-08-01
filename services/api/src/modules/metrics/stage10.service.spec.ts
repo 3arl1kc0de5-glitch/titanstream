@@ -25,6 +25,12 @@ describe('Stage 10 — Production Readiness, Metrics & Ledger Reconciliation Tes
     transactionGroup: {
       findMany: jest.fn(),
     },
+    ledgerAccount: {
+      findMany: jest.fn().mockResolvedValue([
+        { code: 'PLATFORM_RESERVE' },
+        { code: 'USER_ASSET_LIABILITY' },
+      ]),
+    },
     riskEvent: {
       create: jest.fn().mockImplementation((args) => Promise.resolve({ id: 'risk_1', ...args.data })),
     },
@@ -127,9 +133,21 @@ describe('Stage 10 — Production Readiness, Metrics & Ledger Reconciliation Tes
     });
 
     it('should return READY status for /health/readiness probe when DB query succeeds', async () => {
-      const result = await healthController.getReadiness();
-      expect(result.status).toBe('READY');
-      expect(result.checks.database).toBe('UP');
+      process.env.DATABASE_URL = 'postgres://test';
+      process.env.JWT_SECRET = 'test';
+      process.env.JWT_REFRESH_SECRET = 'test';
+      process.env.TELEGRAM_BOT_TOKEN = 'test';
+      try {
+        const result = await healthController.getReadiness();
+        expect(result.status).toBe('READY');
+        expect(result.checks.database).toBe('UP');
+        expect(result.checks.ledger).toBe('UP');
+      } finally {
+        delete process.env.DATABASE_URL;
+        delete process.env.JWT_SECRET;
+        delete process.env.JWT_REFRESH_SECRET;
+        delete process.env.TELEGRAM_BOT_TOKEN;
+      }
     });
   });
 });

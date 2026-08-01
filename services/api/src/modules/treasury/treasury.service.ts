@@ -2,6 +2,7 @@ import { Injectable, Logger, OnModuleInit, Optional } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { EventBusService, PlatformEvent } from '../automation/event-bus.service';
 import { LedgerEntryType, SettlementStatus, TransactionType } from '@prisma/client';
+import { isProduction } from '../../common/config/env.util';
 
 export interface TreasuryMetrics {
   totalLiquidity: number;       // Cash reserves in system (USDT)
@@ -50,12 +51,12 @@ export class TreasuryService implements OnModuleInit {
       const ledgerCredits = await this.prisma.ledgerEntry.aggregate({
         where: { ledgerAccount: { code: 'USER_ASSET_LIABILITY' }, entryType: LedgerEntryType.CREDIT },
         _sum: { amount: true },
-      }).catch(() => null);
+      });
 
       const ledgerDebits = await this.prisma.ledgerEntry.aggregate({
         where: { ledgerAccount: { code: 'USER_ASSET_LIABILITY' }, entryType: LedgerEntryType.DEBIT },
         _sum: { amount: true },
-      }).catch(() => null);
+      });
 
       const credits = Number(ledgerCredits?._sum?.amount || 0);
       const debits = Number(ledgerDebits?._sum?.amount || 0);
@@ -107,7 +108,7 @@ export class TreasuryService implements OnModuleInit {
       // Let's assume a total pool of 500 active machine nodes. Count completed purchases.
       const leasedUnits = await this.prisma.financialTransaction.count({
         where: { transactionType: TransactionType.SYSTEM_ALLOCATION }, // representing purchased packages
-      }).catch(() => 120) || 120;
+      }) || 120;
       
       const maxUnits = 500;
       const capacityRemaining = Math.max(0, Math.round(((maxUnits - leasedUnits) / maxUnits) * 100));
@@ -156,6 +157,9 @@ export class TreasuryService implements OnModuleInit {
       };
     } catch (err: any) {
       this.logger.error(`Failed to load Treasury metrics: ${err.message}`);
+      if (isProduction()) {
+        throw err;
+      }
       return {
         totalLiquidity: 25000,
         userLiabilities: 16800,

@@ -1,5 +1,6 @@
 import { Module, OnModuleInit, forwardRef } from '@nestjs/common';
 import { PrismaModule } from '../../database/prisma.module';
+import { isProduction } from '../../common/config/env.util';
 import { FinancialModule } from '../financial/financial.module';
 import { CommandProcessorService } from './command-processor.service';
 import { DomainEventService } from './domain-event.service';
@@ -34,6 +35,10 @@ export class FinancialOrchestrationModule implements OnModuleInit {
     try {
       await this.rules.ensureDefaults();
     } catch (err: any) {
+      if (isProduction()) {
+        console.error('FATAL: Failed to seed default financial rules:', err?.message);
+        throw err;
+      }
       console.warn('Failed to seed default financial rules on startup:', err?.message);
     }
   }

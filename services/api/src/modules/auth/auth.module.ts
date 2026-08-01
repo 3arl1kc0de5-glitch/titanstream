@@ -6,13 +6,14 @@ import { WebAuthSessionService } from './web-auth-session.service';
 import { TelegramAuthService } from './strategies/telegram-auth.service';
 import { AuditModule } from '../audit/audit.module';
 import { PrismaModule } from '../../database/prisma.module';
+import { requiredEnv } from '../../common/config/env.util';
 
 @Module({
   imports: [
     PrismaModule,
     JwtModule.register({
       global: true,
-      secret: process.env.JWT_SECRET || 'super-secret-jwt-key',
+      secret: process.env.JWT_SECRET || requiredEnv('JWT_SECRET', 'dev-jwt-secret'),
       signOptions: { expiresIn: '15m' },
     }),
     AuditModule,
@@ -24,7 +25,7 @@ import { PrismaModule } from '../../database/prisma.module';
     {
       provide: TelegramAuthService,
       useFactory: () => {
-        const botToken = process.env.TELEGRAM_BOT_TOKEN || '';
+        const botToken = process.env.TELEGRAM_BOT_TOKEN || requiredEnv('TELEGRAM_BOT_TOKEN', '');
         return new TelegramAuthService(botToken);
       },
     },
