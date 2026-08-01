@@ -30,7 +30,7 @@ const columns: Column<PaymentOrderRecord>[] = [
   },
   {
     key: 'amount', label: 'Amount', sortable: true, width: 'w-[100px]',
-    render: (o) => <span className="font-semibold">${o.amount.toLocaleString()} USDT</span>,
+    render: (o) => <span className="font-semibold">${(Number(o.amount) || 0).toLocaleString()} USDT</span>,
   },
   {
     key: 'status', label: 'Status', sortable: true, width: 'w-[120px]',

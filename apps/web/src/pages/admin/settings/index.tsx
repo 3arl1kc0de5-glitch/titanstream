@@ -149,7 +149,7 @@ export const SettingsPage: React.FC = () => {
                     USSD Template: <code>{cfg.ussdTemplate}</code>
                   </div>
                   <div className="text-[10px] text-text-tertiary">
-                    Priority: {cfg.priority} | Daily Capacity: ${cfg.dailyCapacityUsdt.toLocaleString()} USDT | Notes: {cfg.notes}
+                    Priority: {cfg.priority} | Daily Capacity: ${(Number(cfg.dailyCapacityUsdt) || 0).toLocaleString()} USDT | Notes: {cfg.notes}
                   </div>
                 </div>
 

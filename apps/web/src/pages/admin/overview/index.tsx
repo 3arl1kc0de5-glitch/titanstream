@@ -60,7 +60,7 @@ export const OverviewPage: React.FC = () => {
   const capabilities = [
     {
       label: 'Revenue Today',
-      value: `$${displayData.revenue.toLocaleString()}`,
+      value: `$${(Number(displayData.revenue) || 0).toLocaleString()}`,
       sub: '5% yield baseline',
       icon: TrendingUp,
       color: 'border-usdt-green/20 text-usdt-green',

@@ -313,7 +313,7 @@ export const GrowthScreen: React.FC = () => {
                   <div className="p-2 rounded-xl bg-white/5">
                     <div className="text-text-tertiary text-[10px] uppercase font-bold">Total Volume</div>
                     <div className="font-mono font-extrabold text-usdt-green text-sm mt-0.5">
-                      ${(profile?.totalVolumeUSDT || 0).toLocaleString()}
+                      ${(Number(profile?.totalVolumeUSDT) || 0).toLocaleString()}
                     </div>
                   </div>
                 </div>

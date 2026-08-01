@@ -47,7 +47,7 @@ export const RuleCard: React.FC<RuleCardProps> = ({ rule, className = '' }) => (
     </div>
     <div className="space-y-1.5 mb-3">
       <div className="text-xs"><span className="text-text-tertiary">Trigger:</span> <code className="text-usdt-green font-mono">{rule.trigger}</code></div>
-      <div className="text-xs"><span className="text-text-tertiary">Executions:</span> <span className="text-text-primary font-semibold">{rule.executionCount.toLocaleString()}</span></div>
+      <div className="text-xs"><span className="text-text-tertiary">Executions:</span> <span className="text-text-primary font-semibold">{(Number(rule?.executionCount) || 0).toLocaleString()}</span></div>
       <div className="text-xs"><span className="text-text-tertiary">Success Rate:</span> <span className="text-text-primary font-semibold">{rule.successRate}%</span></div>
       <div className="text-xs"><span className="text-text-tertiary">Last Exec:</span> <span className="text-text-primary">{rule.lastExecution}</span></div>
     </div>

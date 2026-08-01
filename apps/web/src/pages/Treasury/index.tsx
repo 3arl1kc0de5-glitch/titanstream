@@ -208,7 +208,7 @@ export const TreasuryScreen: React.FC = () => {
           <div className="bg-control-bg/30 p-3 rounded-xl border border-white/5 relative overflow-hidden">
             <div className="text-[10px] text-text-secondary font-bold">Treasury Size</div>
             <div className="text-base font-extrabold font-mono text-text-primary mt-1">
-              ₮{treasuryToday.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              ₮{(Number(treasuryToday) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
             <div className="text-[9px] text-usdt-green mt-1 flex items-center gap-0.5 font-bold font-mono">
               <TrendingUp size={10} /> Active Pool
@@ -218,7 +218,7 @@ export const TreasuryScreen: React.FC = () => {
           <div className="bg-control-bg/30 p-3 rounded-xl border border-white/5 relative overflow-hidden">
             <div className="text-[10px] text-text-secondary font-bold">Merchant Vol (24H)</div>
             <div className="text-base font-extrabold font-mono text-text-primary mt-1">
-              ₮{operatorVolume.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              ₮{(Number(operatorVolume) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
             <div className="text-[9px] text-text-tertiary mt-1 flex items-center gap-0.5 font-bold">
               <Globe size={10} /> Global OTC Desks
@@ -228,14 +228,14 @@ export const TreasuryScreen: React.FC = () => {
           <div className="bg-control-bg/30 p-3 rounded-xl border border-white/5 relative overflow-hidden">
             <div className="text-[10px] text-text-secondary font-bold">Deposits Today</div>
             <div className="text-base font-extrabold font-mono text-usdt-green mt-1">
-              ₮{depositsToday.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              ₮{(Number(depositsToday) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
           </div>
 
           <div className="bg-control-bg/30 p-3 rounded-xl border border-white/5 relative overflow-hidden">
             <div className="text-[10px] text-text-secondary font-bold">Withdrawals Today</div>
             <div className="text-base font-extrabold font-mono text-error-red mt-1">
-              ₮{withdrawalsToday.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              ₮{(Number(withdrawalsToday) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
           </div>
 

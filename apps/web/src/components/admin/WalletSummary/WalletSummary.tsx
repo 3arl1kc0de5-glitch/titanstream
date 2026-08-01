@@ -48,15 +48,15 @@ export const WalletSummary: React.FC<WalletSummaryProps> = ({ wallet, className 
       <ExternalLink size={14} className="text-text-tertiary flex-shrink-0" />
     </div>
     <div className="grid grid-cols-2 gap-2 text-sm">
-      <div><span className="text-text-tertiary text-xs">Balance</span><div className="text-text-primary font-bold">${wallet.balance.toLocaleString()}</div></div>
-      <div><span className="text-text-tertiary text-xs">Available</span><div className="text-text-primary font-bold">${wallet.available.toLocaleString()}</div></div>
-      <div><span className="text-text-tertiary text-xs">Reserved</span><div className="text-usdt-green font-bold">${wallet.reserved.toLocaleString()}</div></div>
-      <div><span className="text-text-tertiary text-xs">Pending</span><div className="text-gold font-bold">${wallet.pending.toLocaleString()}</div></div>
+      <div><span className="text-text-tertiary text-xs">Balance</span><div className="text-text-primary font-bold">${(Number(wallet?.balance) || 0).toLocaleString()}</div></div>
+      <div><span className="text-text-tertiary text-xs">Available</span><div className="text-text-primary font-bold">${(Number(wallet?.available) || 0).toLocaleString()}</div></div>
+      <div><span className="text-text-tertiary text-xs">Reserved</span><div className="text-usdt-green font-bold">${(Number(wallet?.reserved) || 0).toLocaleString()}</div></div>
+      <div><span className="text-text-tertiary text-xs">Pending</span><div className="text-gold font-bold">${(Number(wallet?.pending) || 0).toLocaleString()}</div></div>
     </div>
     <div className="mt-3 pt-3 border-t border-border flex items-center justify-between text-xs text-text-tertiary">
-      <span>In: ${wallet.incoming.toLocaleString()}</span>
-      <span>Out: ${wallet.outgoing.toLocaleString()}</span>
-      <span>Sync: {wallet.lastSync}</span>
+      <span>In: ${(Number(wallet?.incoming) || 0).toLocaleString()}</span>
+      <span>Out: ${(Number(wallet?.outgoing) || 0).toLocaleString()}</span>
+      <span>Sync: {wallet?.lastSync || 'N/A'}</span>
     </div>
   </div>
 );

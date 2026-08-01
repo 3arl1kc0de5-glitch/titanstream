@@ -25,10 +25,10 @@ export const RevenuePage: React.FC = () => {
   return (
     <div className="space-y-4 sm:space-y-6">
       <MetricCardGrid columns={2}>
-        <MetricCard label="Total Platform Users" value={data?.totalUsers.toLocaleString() || '1,245'} icon="Users" variant="blue" />
+        <MetricCard label="Total Platform Users" value={(Number(data?.totalUsers) || 0).toLocaleString() || '1,245'} icon="Users" variant="blue" />
         <MetricCard label="Viral K-Factor" value={`K=${data?.kFactorViralCoefficient || '1.42'}`} icon="Share2" variant="green" />
-        <MetricCard label="Monthly Active Users (MAU)" value={data?.activeUsersMonthly.toLocaleString() || '890'} icon="TrendingUp" variant="gold" />
-        <MetricCard label="Referral Yield Distributed" value={`$${data?.totalReferralBonusDistributedUsdt.toLocaleString() || '1,845'} USDT`} icon="Award" variant="default" />
+        <MetricCard label="Monthly Active Users (MAU)" value={(Number(data?.activeUsersMonthly) || 0).toLocaleString() || '890'} icon="TrendingUp" variant="gold" />
+        <MetricCard label="Referral Yield Distributed" value={`$${(Number(data?.totalReferralBonusDistributedUsdt) || 0).toLocaleString() || '1,845'} USDT`} icon="Award" variant="default" />
       </MetricCardGrid>
 
       {/* Business Intelligence Reports & Export Engine */}

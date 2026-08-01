@@ -182,7 +182,7 @@ export const TreasuryPage: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <span className="font-mono font-extrabold text-sm text-text-primary">{order.reference}</span>
                     <span className="px-2 py-0.5 rounded bg-usdt-green/15 text-usdt-green font-bold text-[10px]">
-                      ${order.amount.toFixed(2)} USDT ({order.localAmount?.toLocaleString()} {order.currency})
+                      ${order.amount.toFixed(2)} USDT ({(Number(order.localAmount?) || 0).toLocaleString()} {order.currency})
                     </span>
                     <span className="text-[10px] text-text-tertiary font-mono">[{order.status}]</span>
                   </div>
@@ -221,10 +221,10 @@ export const TreasuryPage: React.FC = () => {
 
       {/* Core Balances Grid */}
       <MetricCardGrid columns={2}>
-        <MetricCard label="System Reserves" value={`$${displayMetrics.totalLiquidity.toLocaleString()}`} change={1.2} icon="Wallet" variant="green" />
-        <MetricCard label="Customer Liabilities" value={`$${displayMetrics.userLiabilities.toLocaleString()}`} change={2.1} icon="DollarSign" variant="blue" />
-        <MetricCard label="Active Exposure" value={`$${displayMetrics.settlementExposure.toLocaleString()}`} change={-0.5} icon="Shield" variant="gold" />
-        <MetricCard label="Projected Payouts" value={`$${displayMetrics.projectedPayouts.toLocaleString()}`} change={5.3} icon="Clock" variant="default" />
+        <MetricCard label="System Reserves" value={`$${(Number(displayMetrics.totalLiquidity) || 0).toLocaleString()}`} change={1.2} icon="Wallet" variant="green" />
+        <MetricCard label="Customer Liabilities" value={`$${(Number(displayMetrics.userLiabilities) || 0).toLocaleString()}`} change={2.1} icon="DollarSign" variant="blue" />
+        <MetricCard label="Active Exposure" value={`$${(Number(displayMetrics.settlementExposure) || 0).toLocaleString()}`} change={-0.5} icon="Shield" variant="gold" />
+        <MetricCard label="Projected Payouts" value={`$${(Number(displayMetrics.projectedPayouts) || 0).toLocaleString()}`} change={5.3} icon="Clock" variant="default" />
       </MetricCardGrid>
     </div>
   );
