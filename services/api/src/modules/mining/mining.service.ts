@@ -107,7 +107,7 @@ export class MiningService {
   async getOrCreateSession(telegramUserId: string): Promise<UserMiningState> {
     let session = this.sessions.get(telegramUserId);
     if (!session) {
-      session = await this.loadFromDb(telegramUserId);
+      session = (await this.loadFromDb(telegramUserId)) ?? undefined;
     }
     
     // Sync speed dynamically with user's active machines from MachineService
