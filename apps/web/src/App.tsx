@@ -29,7 +29,6 @@ import { AdminSupportPage } from './pages/admin/support';
 import { useNavigationStore } from './store/useNavigationStore';
 import { useMiningStore } from './store/useMiningStore';
 import { useWalletStore } from './store/useWalletStore';
-import { useReferralStore } from './store/useReferralStore';
 import { useTreasuryStore } from './store/useTreasuryStore';
 import { useAuthStore, detectUserCountry } from './store/useAuthStore';
 import { useCountryStore, SUPPORTED_COUNTRIES } from './store/useCountryStore';
@@ -38,7 +37,6 @@ import { AuthGate } from './components/AuthGate';
 import { OnboardingOverlay } from './components/OnboardingOverlay';
 import { CountrySelector } from './components/CountrySelector';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { MACHINE_CATALOG } from './data/machines';
 
 // ─── Admin Routes (accessible without user auth) ─────────────────────────────
 
@@ -71,62 +69,9 @@ function AdminRoutes() {
 
 function MainApp() {
   const { activeTab } = useNavigationStore();
-  const { updateBalance } = useWalletStore();
 
-  // Live balance & yield ticking engine
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const state = useMiningStore.getState();
-      if (state.isMiningLocked()) return;
-
-      const treasury = useTreasuryStore.getState();
-      const boostMultiplier = treasury.dailyBoostActive ? 1.5 : 1.0;
-      
-      // Calibrated passive stream yield rate per 100ms
-      const isUsdt = state.activeCurrency === 'USDT';
-      const spinnerIdx = isUsdt ? state.usdtSpinnerIdx : state.tonSpinnerIdx;
-      const machine = MACHINE_CATALOG[spinnerIdx];
-
-      let delta = 0;
-      let newLifetimePromotionalOutput = state.lifetimePromotionalOutput;
-      let newMachineMode = state.machineMode;
-
-      if (machine.promoOutputCap && machine.promoYieldRate && state.machineMode === 'PROMOTIONAL') {
-        const promoDelta = state.baseSpeedGhs * state.coolerMultiplier * boostMultiplier * machine.promoYieldRate;
-        const remainingCap = Math.max(0, machine.promoOutputCap - state.lifetimePromotionalOutput);
-        
-        if (promoDelta >= remainingCap && remainingCap > 0) {
-          delta += remainingCap;
-          newLifetimePromotionalOutput = machine.promoOutputCap;
-          newMachineMode = 'STANDARD';
-          
-          const usedFraction = remainingCap / promoDelta;
-          const remainingFraction = 1 - usedFraction;
-          const stdRate = machine.passiveYieldRate || 0;
-          const stdDelta = state.baseSpeedGhs * state.coolerMultiplier * boostMultiplier * stdRate;
-          delta += stdDelta * remainingFraction;
-        } else {
-          delta += promoDelta;
-          newLifetimePromotionalOutput += promoDelta;
-        }
-      } else {
-        const baseYieldRate = machine.passiveYieldRate || 0.0001;
-        delta = state.baseSpeedGhs * state.coolerMultiplier * boostMultiplier * baseYieldRate;
-      }
-
-      useMiningStore.setState((s) => ({
-        unclaimedBalance: s.unclaimedBalance + delta,
-        lifetimePromotionalOutput: newLifetimePromotionalOutput,
-        machineMode: newMachineMode,
-      }));
-
-      useReferralStore.getState().tickEarnings(delta * 0.01, delta * 0.005);
-    }, 100);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // Periodic background state synchronizer (every 5 seconds)
+  // Single unified mining state synchronizer. The mining engine owns all
+  // earnings; this loop only renders what the backend publishes.
   useEffect(() => {
     const syncState = async () => {
       try {
@@ -139,12 +84,15 @@ function MainApp() {
         console.warn('[SYNC] Periodic background synchronization notice:', err);
       }
     };
-    
-    // Initial sync
+
+    useMiningStore.getState().startDisplayTicker();
     syncState();
-    
+
     const interval = setInterval(syncState, 5000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      useMiningStore.getState().stopDisplayTicker();
+    };
   }, []);
 
   const renderTabContent = () => {

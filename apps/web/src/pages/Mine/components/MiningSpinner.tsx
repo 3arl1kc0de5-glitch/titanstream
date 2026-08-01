@@ -5,7 +5,7 @@ import { useWalletStore } from '../../../store/useWalletStore';
 import { useQuestStore } from '../../../store/useQuestStore';
 import { useTreasuryStore } from '../../../store/useTreasuryStore';
 import { useHaptics } from '../../../hooks/useHaptics';
-import { Flame, Thermometer, ChevronLeft, ChevronRight, Lock, Clock } from 'lucide-react';
+import { Flame, Thermometer, ChevronLeft, ChevronRight, Lock, Clock, Sparkles, CheckCircle2 } from 'lucide-react';
 import { showToast } from '../../../components/Toast';
 import { useNavigationStore } from '../../../store/useNavigationStore';
 import { useCountryStore } from '../../../store/useCountryStore';
@@ -119,9 +119,7 @@ export const MiningSpinner: React.FC = () => {
     coolerMultiplier, 
     maxMultiplier,
     isOverheated,
-    cooldownTimer,
-    tickCooldown,
-    decay, 
+    cooldownRemaining,
     baseSpeedGhs,
     tapsToday,
     tapsThisWeek,
@@ -136,7 +134,9 @@ export const MiningSpinner: React.FC = () => {
     hasPurchasedMachine,
     isMiningLocked,
     machineMode,
-    lifetimePromotionalOutput
+    displayPromoOutput,
+    tapYieldPerTap,
+    upgradeLimits,
   } = useMiningStore();
   const { setActiveTab } = useNavigationStore();
   const { preferLocalCurrency } = useSettingsStore();
@@ -161,24 +161,10 @@ export const MiningSpinner: React.FC = () => {
 
   const [fanRotation, setFanRotation] = useState(0);
 
-  // Smooth decay mechanism (ticks down every 100ms)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      decay();
-    }, 100);
-    return () => clearInterval(interval);
-  }, [decay]);
-
-  // Cooldown interval timer (ticks down every 1 second when overheated)
-  useEffect(() => {
-    if (!isOverheated) return;
-    const timer = setInterval(() => {
-      tickCooldown();
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [isOverheated, tickCooldown]);
-
-  // Fan spinning speed matching multiplier - currency-specific
+  // Fan spinning speed — driven entirely by unified mining state.
+  // Base speed comes from the machine configuration (spinnerSpeedMultiplier /
+  // promoSpinnerSpeedMultiplier); the cooler multiplier adds acceleration and
+  // the machine mode selects which configured speed profile is active.
   useEffect(() => {
     let animFrame: number;
     let lastTime = performance.now();
@@ -188,12 +174,14 @@ export const MiningSpinner: React.FC = () => {
       const delta = time - lastTime;
       lastTime = time;
 
-      let multiplier = activeSpinner.baseSpeedMultiplier;
-      if (machineMode === 'PROMOTIONAL' && activeSpinner.promoSpinnerSpeedMultiplier) {
-        multiplier = activeSpinner.promoSpinnerSpeedMultiplier;
-      }
-      const baseSpeed = 0.05 * multiplier;
-      const rotationSpeed = (isAnyLimitReached || isOverheated || isLocked) ? 0 : (baseSpeed + coolerMultiplier * 0.08 * multiplier) * delta;
+      const configMultiplier =
+        machineMode === 'PROMOTIONAL' && activeSpinner.promoSpinnerSpeedMultiplier
+          ? activeSpinner.promoSpinnerSpeedMultiplier
+          : activeSpinner.baseSpeedMultiplier;
+
+      const intensity = 0.2 + 0.8 * Math.min(1, (Number(coolerMultiplier) || 1) / maxMultiplier);
+      const revolutionsPerSec = configMultiplier * intensity;
+      const rotationSpeed = (isAnyLimitReached || isOverheated || isLocked) ? 0 : ((revolutionsPerSec * 360) / 1000) * delta;
       setFanRotation((prev) => (prev + rotationSpeed) % 360);
 
       animFrame = requestAnimationFrame(animate);
@@ -201,7 +189,7 @@ export const MiningSpinner: React.FC = () => {
 
     animFrame = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animFrame);
-  }, [coolerMultiplier, isAnyLimitReached, isOverheated, activeSpinner.baseSpeedMultiplier, isMiningLocked, machineMode]);
+  }, [coolerMultiplier, isAnyLimitReached, isOverheated, activeSpinner.baseSpeedMultiplier, activeSpinner.promoSpinnerSpeedMultiplier, isMiningLocked, machineMode, maxMultiplier]);
 
   // Heat smoke generation when multiplier is high or overheated
   useEffect(() => {
@@ -256,7 +244,7 @@ export const MiningSpinner: React.FC = () => {
   const handleTap = (e: React.MouseEvent<HTMLDivElement>) => {
     if (isOverheated) {
       impactOccurred('heavy');
-      showToast(`🔥 Spinner overheated! Cool down period active (${cooldownTimer || 15}s). No funds credited.`, 'error');
+      showToast(`🔥 Spinner overheated! Cool down period active (${cooldownRemaining || 15}s). No funds credited.`, 'error');
       return;
     }
 
@@ -273,8 +261,8 @@ export const MiningSpinner: React.FC = () => {
       return;
     }
 
-    const tapYield = tap(); // Triggers store tap action, which also updates the wallet store balances.
-    if (tapYield <= 0) {
+    const tapYield = tap(); // Triggers store tap action; server state becomes authoritative.
+    if (tapYield < 0) {
       impactOccurred('heavy');
       showToast(`🔥 Spinner overheated! Cooler bar is full. Waiting for cool down.`, 'error');
       return;
@@ -364,7 +352,7 @@ export const MiningSpinner: React.FC = () => {
       {isOverheated ? (
         <div className="mb-3.5 z-20 bg-rose-600/30 border border-rose-500 text-rose-300 text-[10px] font-black px-4 py-1.5 rounded-full flex items-center gap-1.5 uppercase tracking-widest shadow-xl animate-pulse backdrop-blur-md">
           <Flame size={14} className="animate-bounce text-rose-400" />
-          <span>OVERHEATED — COOLING DOWN ({cooldownTimer}s)</span>
+          <span>OVERHEATED — COOLING DOWN ({Math.ceil(cooldownRemaining)}s)</span>
         </div>
       ) : activeSpinner.id === 'free-trial' ? (
         <div className="mb-3.5 z-20 text-[10px] font-black px-4 py-1.5 rounded-full flex items-center gap-1.5 uppercase tracking-wider shadow-lg backdrop-blur-md transition-all bg-usdt-green/15 border border-usdt-green/40 text-usdt-green shadow-[0_0_12px_rgba(38,161,123,0.25)]">
@@ -372,7 +360,7 @@ export const MiningSpinner: React.FC = () => {
             <>
               <Clock size={13} className="animate-pulse text-usdt-green shrink-0" />
               <span>
-                TITAN CORE • PROMOTIONAL ({showLocal ? `${getLocalAmount(lifetimePromotionalOutput)} / ${getLocalAmount(5.0)}` : `$${(Number(lifetimePromotionalOutput) || 0).toFixed(2)} / $5.00`})
+                TITAN CORE • PROMOTIONAL ({showLocal ? `${getLocalAmount(displayPromoOutput)} / ${getLocalAmount(5.0)}` : `$${(Number(displayPromoOutput) || 0).toFixed(2)} / $5.00`})
               </span>
             </>
           ) : (
@@ -1122,19 +1110,8 @@ export const MiningSpinner: React.FC = () => {
 
       {/* Live Stream Stats Panel below Spinner Wheel */}
       {(() => {
-        const getTapYield = (mult: number) => {
-          const payoutMultiplier = isUsdt ? activeSpinner.payoutMultiplier : activeSpinner.payoutMultiplier * 1.15;
-          let yieldVal = 0.01 * mult * payoutMultiplier;
-          if (activeSpinner.id === 'free-trial') {
-            if (machineMode === 'PROMOTIONAL') {
-              const remainingCap = Math.max(0, 5.0 - lifetimePromotionalOutput);
-              yieldVal = Math.min(yieldVal, remainingCap);
-            }
-          }
-          return yieldVal;
-        };
-
-        const currentTapYieldVal = getTapYield(coolerMultiplier);
+        // Output / Tap is published by the mining engine — the UI only renders it
+        const currentTapYieldVal = Number(tapYieldPerTap) || 0;
 
         const formatOutputPerTap = (val: number) => {
           if (isUsdt && showLocal && selectedCountry) {

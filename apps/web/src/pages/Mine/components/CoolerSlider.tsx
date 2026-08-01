@@ -3,12 +3,12 @@ import { useMiningStore } from '../../../store/useMiningStore';
 import { Thermometer, Flame, ShieldAlert } from 'lucide-react';
 
 export const CoolerSlider: React.FC = () => {
-  const { coolerMultiplier, maxMultiplier, setMultiplier, isOverheated, cooldownTimer } = useMiningStore();
+  const { displayMultiplier, maxMultiplier, isOverheated, cooldownRemaining } = useMiningStore();
 
-  const percentage = isOverheated ? 100 : Math.min(100, Math.max(0, ((coolerMultiplier - 1) / (maxMultiplier - 1)) * 100));
-  const temperature = isOverheated ? 99.9 : Math.min(99.9, 30 + (coolerMultiplier - 1.0) * 3.2);
+  const percentage = isOverheated ? 100 : Math.min(100, Math.max(0, ((displayMultiplier - 1) / (maxMultiplier - 1)) * 100));
+  const temperature = isOverheated ? 99.9 : Math.min(99.9, 30 + (displayMultiplier - 1.0) * 3.2);
 
-  const safeCooler = Number(coolerMultiplier) || 1.0;
+  const safeCooler = Number(displayMultiplier) || 1.0;
   const safeTemp = Number(temperature) || 30;
 
   return (
@@ -21,7 +21,7 @@ export const CoolerSlider: React.FC = () => {
             : 'text-usdt-green bg-usdt-green/10 border-usdt-green/30'
         }`}>
           {(isOverheated || safeTemp > 70) && <Flame size={12} className="text-error-red animate-bounce" />}
-          {isOverheated ? `Core Cooling Active (${cooldownTimer}s)` : `×${safeCooler.toFixed(1)} Core Multiplier`}
+          {isOverheated ? `Core Cooling Active (${Math.ceil(cooldownRemaining)}s)` : `×${safeCooler.toFixed(1)} Core Multiplier`}
         </span>
         <span className={`flex items-center gap-0.5 ${isOverheated ? 'text-rose-400 font-bold' : 'text-text-tertiary'}`}>
           <Thermometer size={12} className={isOverheated ? 'text-rose-400' : 'text-text-secondary'} />
@@ -33,7 +33,7 @@ export const CoolerSlider: React.FC = () => {
       <div className={`relative w-full h-3 bg-control-bg/80 border rounded-full p-0.5 flex items-center shadow-inner overflow-hidden ${
         isOverheated ? 'border-rose-500/50 shadow-[0_0_10px_rgba(244,63,94,0.4)]' : 'border-white/10'
       }`}>
-        {/* Glowing filled track */}
+        {/* Glowing filled track — driven entirely by mining state */}
         <div
           className={`h-full rounded-full transition-all duration-75 ${
             isOverheated || temperature > 70
@@ -42,22 +42,12 @@ export const CoolerSlider: React.FC = () => {
           }`}
           style={{ width: `${percentage}%` }}
         />
-        <input
-          type="range"
-          min="1"
-          max={maxMultiplier}
-          step="0.1"
-          disabled={isOverheated}
-          value={coolerMultiplier}
-          onChange={(e) => setMultiplier(parseFloat(e.target.value))}
-          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
-        />
       </div>
 
       <div className="text-center text-[10px] font-bold uppercase tracking-wider">
         {isOverheated ? (
           <span className="text-rose-400 flex items-center justify-center gap-1">
-            <ShieldAlert size={12} /> Cooling system active. Core is cooling down ({cooldownTimer}s).
+            <ShieldAlert size={12} /> Cooling system active. Core is cooling down ({Math.ceil(cooldownRemaining)}s).
           </span>
         ) : (
           <span className="text-text-tertiary">Tap the Titan Core to boost active processing throughput.</span>
@@ -66,4 +56,3 @@ export const CoolerSlider: React.FC = () => {
     </div>
   );
 };
-

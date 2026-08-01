@@ -12,20 +12,14 @@ export class MachineController {
   @Get('catalog')
   @ApiOperation({ summary: 'Get available Cloud Machine capacity catalog' })
   getCatalog() {
-    return {
-      success: true,
-      data: this.service.getCatalog(),
-    };
+    return this.service.getCatalog();
   }
 
   @Get('my')
   @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Get active user cloud machines and capacity telemetry' })
   getMyMachines(@TelegramUserId() telegramUserId: bigint) {
-    return {
-      success: true,
-      data: this.service.getUserMachines(telegramUserId.toString()),
-    };
+    return this.service.getUserMachines(telegramUserId.toString());
   }
 
   @Post('purchase')
@@ -35,10 +29,6 @@ export class MachineController {
     @TelegramUserId() telegramUserId: bigint,
     @Body('tierCode') tierCode: string,
   ) {
-    const result = await this.service.purchaseMachine(telegramUserId, tierCode);
-    return {
-      success: true,
-      data: result,
-    };
+    return this.service.purchaseMachine(telegramUserId, tierCode);
   }
 }

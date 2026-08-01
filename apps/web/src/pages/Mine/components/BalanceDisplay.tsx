@@ -6,11 +6,11 @@ import { useCountryStore } from '../../../store/useCountryStore';
 
 export const BalanceDisplay: React.FC = () => {
   const { usdtBalance, tonBalance } = useWalletStore();
-  const { activeCurrency, baseSpeedGhs, coolerMultiplier, unclaimedBalance } = useMiningStore();
+  const { activeCurrency, baseSpeedGhs, displayMultiplier, displayUnclaimed } = useMiningStore();
   const { preferLocalCurrency } = useSettingsStore();
   const { selectedCountry, getLocalAmount } = useCountryStore();
   
-  const currentDisplay = (Number(activeCurrency === 'USDT' ? usdtBalance : tonBalance) || 0) + (Number(unclaimedBalance) || 0);
+  const currentDisplay = (Number(activeCurrency === 'USDT' ? usdtBalance : tonBalance) || 0) + (Number(displayUnclaimed) || 0);
   const isUsdt = activeCurrency === 'USDT';
   const showLocal = preferLocalCurrency && !!selectedCountry && selectedCountry.code !== 'US';
 
@@ -35,7 +35,7 @@ export const BalanceDisplay: React.FC = () => {
   const bal = formatBalance();
 
   // Convert GH/s to CU (Compute Units) — 1 GH/s = 10 CU
-  const computeUnits = ((Number(baseSpeedGhs) || 0) * (Number(coolerMultiplier) || 1) * 10).toFixed(0);
+  const computeUnits = ((Number(baseSpeedGhs) || 0) * (Number(displayMultiplier) || 1) * 10).toFixed(0);
 
   return (
     <div className="flex flex-col items-center justify-center gap-2 my-2">

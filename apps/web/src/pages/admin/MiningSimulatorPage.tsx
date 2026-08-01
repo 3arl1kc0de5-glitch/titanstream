@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useMiningStore } from '../../store/useMiningStore';
 import { useWalletStore } from '../../store/useWalletStore';
 import { useCountryStore } from '../../store/useCountryStore';
@@ -27,16 +27,12 @@ export const MiningSimulatorPage: React.FC = () => {
     coolerMultiplier, 
     maxMultiplier,
     isOverheated,
-    cooldownTimer,
+    cooldownRemaining,
     unclaimedBalance,
-    trialEarnings,
-    isTrialActive,
-    isTrialExpired,
-    getTrialRemainingMs,
+    lifetimePromotionalOutput,
+    machineMode,
     isMiningLocked,
     tap,
-    tickCooldown,
-    decay,
     claimMinedYield,
     fetchMiningState
   } = useMiningStore();
@@ -45,67 +41,42 @@ export const MiningSimulatorPage: React.FC = () => {
   const { selectedCountry } = useCountryStore();
   const { preferLocalCurrency } = useSettingsStore();
 
-  const [simulatedTimeOffset, setSimulatedTimeOffset] = useState<number>(0);
   const [ledgerLogs, setLedgerLogs] = useState<LedgerLog[]>([]);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
   // Active state calculations
   const safeUnclaimed = Number(unclaimedBalance) || 0;
   const isLocked = isMiningLocked();
-  
-  // Real-time ticking for local emulation (similar to App.tsx)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (isLocked) return;
-      // Normal decay
-      decay();
-    }, 100);
-    return () => clearInterval(interval);
-  }, [decay, isLocked]);
 
-  // Cooldown ticking
-  useEffect(() => {
-    if (!isOverheated) return;
-    const timer = setInterval(() => {
-      tickCooldown();
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [isOverheated, tickCooldown]);
-
-  // Handle mock time fast-forward
+  // Handle mock time fast-forward (admin-only simulation; the live backend
+  // remains the authoritative source and reconciles on the next sync)
   const fastForward = (hours: number) => {
-    const msToAdd = hours * 60 * 60 * 1000;
-    setSimulatedTimeOffset((prev) => prev + msToAdd);
-
-    // Calculate accrued amount: baseSpeedGhs * 1.0 * (rate * 10) * seconds
-    // Calibration rate: 0.00000289
-    const rate = 0.00000289;
+    const s = useMiningStore.getState();
+    const rate = 0.00000289; // TS_TRIAL promotional rate
     const baseYieldRatePerSec = rate * 10;
-    const deltaPerSec = baseSpeedGhs * 1.0 * baseYieldRatePerSec;
     const seconds = hours * 3600;
-    const accrued = seconds * deltaPerSec;
+    let accrued = s.baseSpeedGhs * s.coolerMultiplier * baseYieldRatePerSec * seconds;
 
-    // Apply cap if trial is active
-    let finalAccrued = accrued;
-    if (isTrialActive() && !isTrialExpired()) {
-      const remainingCap = Math.max(0, 5.0 - trialEarnings);
-      finalAccrued = Math.min(remainingCap, accrued);
-      
-      // Update local storage representation of trial start time/earnings
-      const originalStart = localStorage.getItem('trial_started_at');
-      if (originalStart) {
-        // Shift start time back to simulate elapsed time
-        localStorage.setItem('trial_started_at', String(parseInt(originalStart, 10) - msToAdd));
+    let promo = s.lifetimePromotionalOutput;
+    let mode = s.machineMode;
+    if (mode === 'PROMOTIONAL') {
+      const remainingCap = Math.max(0, 5.0 - promo);
+      if (accrued >= remainingCap) {
+        accrued = remainingCap;
+        promo = 5.0;
+        mode = 'STANDARD';
+      } else {
+        promo += accrued;
       }
-      localStorage.setItem('trial_earnings', (trialEarnings + finalAccrued).toFixed(6));
     }
 
-    useMiningStore.setState((s) => ({
-      unclaimedBalance: s.unclaimedBalance + finalAccrued,
-      trialEarnings: s.trialEarnings + (isTrialActive() ? finalAccrued : 0)
-    }));
+    useMiningStore.setState({
+      unclaimedBalance: s.unclaimedBalance + accrued,
+      lifetimePromotionalOutput: promo,
+      machineMode: mode,
+    });
 
-    showToast(`Simulated time advanced by +${hours} hours. Accrued +${finalAccrued.toFixed(4)} ${activeCurrency}.`, 'success');
+    showToast(`Simulated time advanced by +${hours} hours. Accrued +${accrued.toFixed(4)} ${activeCurrency}.`, 'success');
   };
 
   // Simulate server crash / re-login
@@ -113,12 +84,12 @@ export const MiningSimulatorPage: React.FC = () => {
     setIsSyncing(true);
     showToast('Simulating logout & cache flush...', 'info');
     
-    // Clear only local memory state (keep localStorage to simulate DB session restoration)
+    // Clear only local memory state (keep backend session to simulate DB restoration)
     useMiningStore.setState({
       unclaimedBalance: 0.0,
       coolerMultiplier: 1.0,
       isOverheated: false,
-      cooldownTimer: 0
+      cooldownRemaining: 0
     });
 
     setTimeout(async () => {
@@ -156,8 +127,7 @@ export const MiningSimulatorPage: React.FC = () => {
   };
 
   // Calibration helper
-  const trialProgressPercent = Math.min(100, (trialEarnings / 5.0) * 100);
-  const remainingHours = Math.max(0, (48 * 3600 * 1000 - (getTrialRemainingMs() - simulatedTimeOffset)) / (3600 * 1000)).toFixed(1);
+  const trialProgressPercent = Math.min(100, (lifetimePromotionalOutput / 5.0) * 100);
 
   return (
     <div className="p-6 bg-slate-950 text-slate-100 min-h-screen space-y-6">
@@ -225,7 +195,7 @@ export const MiningSimulatorPage: React.FC = () => {
               </span>
             ) : isOverheated ? (
               <span className="text-amber-400 flex items-center gap-1.5 text-lg">
-                <RefreshCw size={18} className="animate-spin" /> COOLING DOWN ({cooldownTimer}s)
+                <RefreshCw size={18} className="animate-spin" /> COOLING DOWN ({cooldownRemaining}s)
               </span>
             ) : (
               <span className="text-emerald-400 flex items-center gap-1.5 text-lg">
@@ -324,22 +294,25 @@ export const MiningSimulatorPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Trial Calibration & Lifecycle Card */}
+          {/* Titan Core Calibration & Lifecycle Card */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
             <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
               <Award size={18} className="text-indigo-400" />
-              Free Trial Calibration & Lifecycle
+              Titan Core Calibration & Lifecycle
             </h3>
             <p className="text-sm text-slate-400 mb-6">
-              The Free Trial is calibrated to accumulate up to a maximum cap of <strong>5.00 USDT</strong> over <strong>48 hours</strong>.
+              The Titan Core is a <strong className="text-slate-200">permanent machine</strong>. It produces at the
+              Promotional rate until it generates <strong className="text-slate-200">$5.00 lifetime promotional output</strong>,
+              then automatically continues forever in <strong className="text-slate-200">Standard Mode</strong> at a slower
+              configured rate. It never expires and never locks permanently.
             </p>
 
             <div className="space-y-5">
-              {/* Earnings Cap Progress */}
+              {/* Promotional Output Progress */}
               <div>
                 <div className="flex justify-between text-xs font-semibold mb-2">
-                  <span className="text-slate-400">Earnings Progress to Cap</span>
-                  <span className="text-white font-mono">{trialEarnings.toFixed(4)} / 5.0000 USDT</span>
+                  <span className="text-slate-400">Lifetime Promotional Output</span>
+                  <span className="text-white font-mono">{lifetimePromotionalOutput.toFixed(4)} / 5.0000 USDT</span>
                 </div>
                 <div className="w-full h-3 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
                   <div 
@@ -349,24 +322,24 @@ export const MiningSimulatorPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Time Remaining Progress */}
+              {/* Operating Mode */}
               <div>
                 <div className="flex justify-between text-xs font-semibold mb-2">
-                  <span className="text-slate-400">Time Elapsed / Total Trial Duration</span>
-                  <span className="text-white font-mono">{remainingHours} / 48.0 Hours</span>
+                  <span className="text-slate-400">Operating Mode</span>
+                  <span className={`font-mono ${machineMode === 'PROMOTIONAL' ? 'text-emerald-400' : 'text-amber-400'}`}>
+                    {machineMode === 'PROMOTIONAL' ? 'PROMOTIONAL (fast)' : 'STANDARD (permanent)'}
+                  </span>
                 </div>
-                <div className="w-full h-3 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
-                  <div 
-                    className="h-full bg-gradient-to-r from-indigo-500 to-purple-400 rounded-full transition-all duration-300"
-                    style={{ width: `${Math.min(100, (parseFloat(remainingHours) / 48) * 100)}%` }}
-                  />
-                </div>
-              </div>
-
-              <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-4 flex gap-3 text-xs leading-relaxed text-slate-400">
-                <Database size={18} className="text-indigo-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  <strong className="text-slate-200">How it is Calibrated:</strong> Under the new unified architecture, the Free Trial has a passive yield rate of <code className="text-emerald-400 font-mono">0.00000289</code> USDT/100ms. Passive mining generates <code className="text-slate-300">~0.104 USDT/hour</code>, allowing the trial to stay active for the entire 48-hour duration and hit the cap exactly when the trial expires. Tapping increases efficiency, reaching the cap earlier.
+                <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-4 flex gap-3 text-xs leading-relaxed text-slate-400">
+                  <Database size={18} className="text-indigo-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="text-slate-200">How it is Calibrated:</strong> The Titan Core has a promotional
+                    yield rate of <code className="text-emerald-400 font-mono">0.00000289</code> USDT per 100ms
+                    (~0.104 USDT/hour at ×1.0). Tapping increases the cooler multiplier, accelerating output until the
+                    <code className="text-amber-400 font-mono"> $5.00 </code> lifetime cap is reached, at which point the
+                    engine automatically transitions to Standard Mode (~600 days to $100 at ×1.0). All state — including
+                    the multiplier and unclaimed output — is persisted server-side and restored on re-login.
+                  </div>
                 </div>
               </div>
             </div>

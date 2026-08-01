@@ -5,6 +5,11 @@ export interface MiningStateResponse {
   baseSpeedGhs: number;
   coolerMultiplier: number;
   unclaimedBalance: number;
+  machineMode: 'PROMOTIONAL' | 'STANDARD';
+  lifetimePromotionalOutput: number;
+  isOverheated: boolean;
+  cooldownRemaining: number;
+  tapYieldPerTap: number;
 }
 
 export const miningService = {
@@ -18,11 +23,11 @@ export const miningService = {
   },
 
   /**
-   * Tap the cooling multiplier.
+   * Tap the cooling multiplier. The backend computes the credited yield.
    * Backend endpoint: POST /mining/tap
    */
-  async tapCooler(tapYield?: number): Promise<ApiResponse<MiningStateResponse>> {
-    const response = await api.post('/mining/tap', { yield: tapYield });
+  async tapCooler(): Promise<ApiResponse<MiningStateResponse>> {
+    const response = await api.post('/mining/tap');
     return response.data;
   },
 
