@@ -182,7 +182,7 @@ export const TreasuryPage: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <span className="font-mono font-extrabold text-sm text-text-primary">{order.reference}</span>
                     <span className="px-2 py-0.5 rounded bg-usdt-green/15 text-usdt-green font-bold text-[10px]">
-                      ${order.amount.toFixed(2)} USDT ({(Number(order.localAmount?) || 0).toLocaleString()} {order.currency})
+                      ${(Number(order?.amount) || 0).toFixed(2)} USDT ({(Number(order?.localAmount) || 0).toLocaleString()} {order.currency})
                     </span>
                     <span className="text-[10px] text-text-tertiary font-mono">[{order.status}]</span>
                   </div>
