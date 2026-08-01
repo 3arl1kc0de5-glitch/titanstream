@@ -113,6 +113,27 @@ function MainApp() {
     return () => clearInterval(interval);
   }, []);
 
+  // Periodic background state synchronizer (every 5 seconds)
+  useEffect(() => {
+    const syncState = async () => {
+      try {
+        await Promise.all([
+          useWalletStore.getState().fetchBalanceFromEngine(),
+          useMiningStore.getState().fetchMiningState(),
+          useTreasuryStore.getState().fetchTreasuryState(),
+        ]);
+      } catch (err) {
+        console.warn('[SYNC] Periodic background synchronization notice:', err);
+      }
+    };
+    
+    // Initial sync
+    syncState();
+    
+    const interval = setInterval(syncState, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 'friends': return <FriendsScreen />;

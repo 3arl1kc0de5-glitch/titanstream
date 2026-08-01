@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { FinancialOrchestratorService } from '../financial-orchestration/financial-orchestrator.service';
 import { FinancialOperationType } from '@prisma/client';
+import { MachineService } from '../machine/machine.service';
 
 export interface UserMiningState {
   telegramUserId: string;
@@ -21,6 +22,7 @@ export class MiningService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly orchestrator: FinancialOrchestratorService,
+    private readonly machineService: MachineService,
   ) {}
 
   private accruePassiveYield(session: UserMiningState) {
@@ -47,17 +49,26 @@ export class MiningService {
 
   getOrCreateSession(telegramUserId: string): UserMiningState {
     let session = this.sessions.get(telegramUserId);
+    
+    // Sync speed dynamically with user purchased machines
+    const machines = this.machineService.getUserMachines(telegramUserId);
+    const activeMachines = machines.filter((m) => m.status === 'ACTIVE');
+    const totalGhs = activeMachines.reduce((sum, m) => sum + m.capacityGhs, 0);
+    const hasPurchasedMachine = machines.length > 0;
+    const baseSpeed = totalGhs > 0 ? totalGhs : (hasPurchasedMachine ? 5.0 : 1.0);
+
     if (!session) {
       session = {
         telegramUserId,
         activeCurrency: 'USDT',
-        baseSpeedGhs: 2.6,
+        baseSpeedGhs: baseSpeed,
         coolerMultiplier: 1.0,
         unclaimedBalance: 0.0,
         lastUpdatedAt: new Date(),
       };
       this.sessions.set(telegramUserId, session);
     } else {
+      session.baseSpeedGhs = baseSpeed;
       this.accruePassiveYield(session);
     }
     return session;

@@ -8,6 +8,8 @@ import { useHaptics } from '../../../hooks/useHaptics';
 import { Flame, Thermometer, ChevronLeft, ChevronRight, Lock, Clock } from 'lucide-react';
 import { showToast } from '../../../components/Toast';
 import { useNavigationStore } from '../../../store/useNavigationStore';
+import { useCountryStore } from '../../../store/useCountryStore';
+import { useSettingsStore } from '../../../store/useSettingsStore';
 
 interface Particle {
   id: number;
@@ -125,6 +127,9 @@ export const MiningSpinner: React.FC = () => {
     trialEarnings
   } = useMiningStore();
   const { setActiveTab } = useNavigationStore();
+  const { preferLocalCurrency } = useSettingsStore();
+  const { selectedCountry, getLocalAmount } = useCountryStore();
+  const showLocal = preferLocalCurrency && !!selectedCountry && selectedCountry.code !== 'US';
 
   const [trialTimeStr, setTrialTimeStr] = useState('');
 
@@ -304,7 +309,9 @@ export const MiningSpinner: React.FC = () => {
       vy: -Math.random() * 5 - 4,
       rotation: Math.random() * 360,
       rotSpeed: (Math.random() - 0.5) * 12,
-      text: `+${(Number(tapYield) || 0).toFixed(4)} ${activeCurrency}`,
+      text: isUsdt && showLocal && selectedCountry
+        ? `+${selectedCountry.currencySymbol}${(tapYield * (Number(selectedCountry.exchangeRate) || 1)).toLocaleString(undefined, selectedCountry.numberFormat || { maximumFractionDigits: 2 })}`
+        : `+${(Number(tapYield) || 0).toFixed(4)} ${activeCurrency}`,
     };
 
     setParticles((prev) => [...prev.slice(-12), newParticle]);
@@ -375,8 +382,8 @@ export const MiningSpinner: React.FC = () => {
               <Clock size={13} className="animate-pulse text-usdt-green shrink-0" />
               <span>
                 {trialEarnings >= 5.0
-                  ? `FREE TRIAL CAP REACHED ($5.00 MAX)`
-                  : `FREE TRIAL ACTIVE • ${trialTimeStr} LEFT ($${(Number(trialEarnings) || 0).toFixed(2)}/$5.00)`}
+                  ? `FREE TRIAL CAP REACHED (${showLocal ? getLocalAmount(5.0) : '$5.00'} MAX)`
+                  : `FREE TRIAL ACTIVE • ${trialTimeStr} LEFT (${showLocal ? `${getLocalAmount(trialEarnings)} / ${getLocalAmount(5.0)}` : `$${(Number(trialEarnings) || 0).toFixed(2)} / $5.00`})`}
               </span>
             </>
           ) : (
@@ -415,7 +422,7 @@ export const MiningSpinner: React.FC = () => {
                 boxShadow: `0 0 10px ${dynamicColor}40`,
               }}
             >
-              {isUsdt ? '₮' : '�'}
+              {isUsdt ? (showLocal ? selectedCountry.currencySymbol : '₮') : '💎'}
             </div>
 
             {/* Float value text tag */}
@@ -1140,20 +1147,46 @@ export const MiningSpinner: React.FC = () => {
       </div>
 
       {/* Live Stream Stats Panel below Spinner Wheel */}
-      <div className="w-full max-w-[320px] mt-4 grid grid-cols-3 gap-2 text-center text-xs font-mono">
-        <div className="bg-control-bg/70 border border-white/10 rounded-2xl p-2 flex flex-col items-center justify-center shadow-sm">
-          <span className="text-[9px] text-text-tertiary font-bold font-sans uppercase">Daily Taps</span>
-          <span className="font-extrabold text-text-primary text-xs mt-0.5">{tapsToday} / {dailyTapLimit}</span>
-        </div>
-        <div className="bg-control-bg/70 border border-white/10 rounded-2xl p-2 flex flex-col items-center justify-center shadow-sm">
-          <span className="text-[9px] text-text-tertiary font-bold font-sans uppercase">Output / Tap</span>
-          <span className="font-extrabold text-usdt-green text-xs mt-0.5">+₮0.0200</span>
-        </div>
-        <div className="bg-control-bg/70 border border-white/10 rounded-2xl p-2 flex flex-col items-center justify-center shadow-sm">
-          <span className="text-[9px] text-text-tertiary font-bold font-sans uppercase">Core Multiplier</span>
-          <span className="font-extrabold text-gold text-xs mt-0.5">×{(Number(coolerMultiplier) || 1).toFixed(1)}</span>
-        </div>
-      </div>
+      {(() => {
+        const getTapYield = (mult: number) => {
+          if (!hasPurchasedMachine && isTrialActive()) {
+            const remainingCap = Math.max(0, 5.0 - trialEarnings);
+            return Math.min(0.02, remainingCap);
+          }
+          const payoutMultiplier = isUsdt ? activeSpinner.payoutMultiplier : activeSpinner.payoutMultiplier * 1.15;
+          return 0.01 * mult * payoutMultiplier;
+        };
+
+        const currentTapYieldVal = getTapYield(coolerMultiplier);
+
+        const formatOutputPerTap = (val: number) => {
+          if (isUsdt && showLocal && selectedCountry) {
+            const localVal = val * (Number(selectedCountry.exchangeRate) || 1);
+            const fmt = selectedCountry.numberFormat && typeof selectedCountry.numberFormat === 'object'
+              ? selectedCountry.numberFormat
+              : { maximumFractionDigits: 2 };
+            return `+${selectedCountry.currencySymbol}${localVal.toLocaleString(undefined, fmt)}`;
+          }
+          return `+${isUsdt ? '₮' : '💎'}${val.toFixed(4)}`;
+        };
+
+        return (
+          <div className="w-full max-w-[320px] mt-4 grid grid-cols-3 gap-2 text-center text-xs font-mono">
+            <div className="bg-control-bg/70 border border-white/10 rounded-2xl p-2 flex flex-col items-center justify-center shadow-sm">
+              <span className="text-[9px] text-text-tertiary font-bold font-sans uppercase">Daily Taps</span>
+              <span className="font-extrabold text-text-primary text-xs mt-0.5">{tapsToday} / {dailyTapLimit}</span>
+            </div>
+            <div className="bg-control-bg/70 border border-white/10 rounded-2xl p-2 flex flex-col items-center justify-center shadow-sm">
+              <span className="text-[9px] text-text-tertiary font-bold font-sans uppercase">Output / Tap</span>
+              <span className="font-extrabold text-usdt-green text-xs mt-0.5">{formatOutputPerTap(currentTapYieldVal)}</span>
+            </div>
+            <div className="bg-control-bg/70 border border-white/10 rounded-2xl p-2 flex flex-col items-center justify-center shadow-sm">
+              <span className="text-[9px] text-text-tertiary font-bold font-sans uppercase">Core Multiplier</span>
+              <span className="font-extrabold text-gold text-xs mt-0.5">×{(Number(coolerMultiplier) || 1).toFixed(1)}</span>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };
