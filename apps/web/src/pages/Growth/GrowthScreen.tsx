@@ -27,9 +27,12 @@ import { useNotificationStore } from '../../store/useNotificationStore';
 import { useWalletStore } from '../../store/useWalletStore';
 import { useNavigationStore } from '../../store/useNavigationStore';
 import { useTreasuryStore } from '../../store/useTreasuryStore';
+import { useMiningStore } from '../../store/useMiningStore';
+import { CurrencyDisplay } from '../../components/DualCurrencyDisplay';
 import { showToast } from '../../components/Toast';
 
 export const GrowthScreen: React.FC = () => {
+  const { hasPurchasedMachine, baseSpeedGhs, unclaimedBalance } = useMiningStore();
   const { profile, referrals, rewards, qualification, isLoading, fetchGrowthProfile, fetchReferrals, fetchRewards, fetchQualification } = useGrowthStore();
   const { hapticFeedback, webApp } = useTelegram();
   const [activeTab, setActiveTab] = useState<'trust' | 'referrals' | 'rewards'>('trust');
@@ -175,15 +178,17 @@ export const GrowthScreen: React.FC = () => {
         {/* Daily Cloud Status */}
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div className="p-2.5 rounded-2xl bg-app-bg/50 border border-white/5 space-y-0.5">
-            <div className="text-[10px] text-text-tertiary font-bold">Machines Running</div>
+            <div className="text-[10px] text-text-tertiary font-bold">Active Computing Capacity</div>
             <div className="font-mono font-extrabold text-usdt-green flex items-center gap-1">
-              <CheckCircle2 size={12} /> 3 Cloud Units
+              <CheckCircle2 size={12} />
+              <span>{hasPurchasedMachine ? `${(baseSpeedGhs * 10).toFixed(0)} CU Active` : 'Free Trial Node (10 CU)'}</span>
             </div>
           </div>
           <div className="p-2.5 rounded-2xl bg-app-bg/50 border border-white/5 space-y-0.5">
-            <div className="text-[10px] text-text-tertiary font-bold">Yesterday's Rewards</div>
+            <div className="text-[10px] text-text-tertiary font-bold font-sans">Accumulated Yield</div>
             <div className="font-mono font-extrabold text-text-primary flex items-center gap-1">
-              <CheckCircle2 size={12} className="text-usdt-green" /> $12.40 USDT
+              <CheckCircle2 size={12} className="text-usdt-green" />
+              <CurrencyDisplay amount={unclaimedBalance + (Number(usdtBalance) || 0)} size="sm" />
             </div>
           </div>
         </div>
