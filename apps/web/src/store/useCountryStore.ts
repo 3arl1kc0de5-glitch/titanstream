@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { useSettingsStore } from './useSettingsStore';
 
 // ─── Country Configuration ───────────────────────────────────────────────────
 // No country-specific values are hardcoded in components.
@@ -290,8 +291,9 @@ export const useCountryStore = create<CountryState>()(
       },
 
       getLocalAmount: (usdtAmount: number): string => {
+        const preferLocal = useSettingsStore.getState().preferLocalCurrency;
         const { selectedCountry } = get();
-        if (!selectedCountry || selectedCountry.code === 'US') {
+        if (!preferLocal || !selectedCountry || selectedCountry.code === 'US') {
           return `$${usdtAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         }
         const localValue = usdtAmount * selectedCountry.exchangeRate;
@@ -299,8 +301,9 @@ export const useCountryStore = create<CountryState>()(
       },
 
       getLocalAmountRaw: (usdtAmount: number): number => {
+        const preferLocal = useSettingsStore.getState().preferLocalCurrency;
         const { selectedCountry } = get();
-        if (!selectedCountry) return usdtAmount;
+        if (!preferLocal || !selectedCountry) return usdtAmount;
         return usdtAmount * selectedCountry.exchangeRate;
       },
 

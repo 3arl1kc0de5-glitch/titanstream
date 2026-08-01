@@ -25,11 +25,12 @@ export interface MiningState {
   unclaimedBalance: number;
   hasPurchasedMachine: boolean;
   trialStartedAt: number;
+  trialEarnings: number;
   
   toggleCurrency: (currency: Currency) => Promise<void>;
   setUsdtSpinnerIdx: (idx: number) => void;
   setTonSpinnerIdx: (idx: number) => void;
-  tap: () => boolean; // returns false if overheated/locked
+  tap: () => boolean; // returns false if overheated/locked/capped
   setMultiplier: (value: number) => void;
   decay: () => void;
   triggerOverheat: () => void;
@@ -59,11 +60,18 @@ const getStoredTrialStartedAt = (): number => {
   return now;
 };
 
-const DURATION_24H_MS = 24 * 60 * 60 * 1000;
+const getStoredTrialEarnings = (): number => {
+  const stored = localStorage.getItem('trial_earnings');
+  return stored ? parseFloat(stored) : 0.0;
+};
+
+const DURATION_48H_MS = 48 * 60 * 60 * 1000;
+const TRIAL_EARNINGS_CAP_USDT = 5.0;
 
 export const useMiningStore = create<MiningState>((set, get) => {
   const initialPurchased = localStorage.getItem('has_purchased_machine') === 'true';
   const initialTrialStartedAt = getStoredTrialStartedAt();
+  const initialTrialEarnings = getStoredTrialEarnings();
   const initialBaseSpeed = initialPurchased ? 5.0 : 1.0;
 
   return {
@@ -87,6 +95,7 @@ export const useMiningStore = create<MiningState>((set, get) => {
     unclaimedBalance: 0.0,
     hasPurchasedMachine: initialPurchased,
     trialStartedAt: initialTrialStartedAt,
+    trialEarnings: initialTrialEarnings,
 
     fetchMiningState: async () => {
       try {
@@ -139,8 +148,26 @@ export const useMiningStore = create<MiningState>((set, get) => {
       if (state.isOverheated || state.isMiningLocked()) {
         return false;
       }
+
+      // Check 48h Free Trial Cap ($5.00 USDT maximum accumulation)
+      if (!state.hasPurchasedMachine && state.isTrialActive()) {
+        if (state.trialEarnings >= TRIAL_EARNINGS_CAP_USDT) {
+          return false;
+        }
+      }
+
       const nextMultiplier = Math.min(state.coolerMultiplier + 0.6, state.maxMultiplier);
       const willOverheat = nextMultiplier >= state.maxMultiplier;
+
+      let tapYield = 0.02;
+      let newTrialEarnings = state.trialEarnings;
+
+      if (!state.hasPurchasedMachine && state.isTrialActive()) {
+        const remainingCap = Math.max(0, TRIAL_EARNINGS_CAP_USDT - state.trialEarnings);
+        tapYield = Math.min(0.02, remainingCap);
+        newTrialEarnings = Math.min(TRIAL_EARNINGS_CAP_USDT, state.trialEarnings + tapYield);
+        localStorage.setItem('trial_earnings', newTrialEarnings.toString());
+      }
 
       set({
         coolerMultiplier: nextMultiplier,
@@ -149,7 +176,8 @@ export const useMiningStore = create<MiningState>((set, get) => {
         tapsToday: state.tapsToday + 1,
         tapsThisWeek: state.tapsThisWeek + 1,
         tapsThisMonth: state.tapsThisMonth + 1,
-        unclaimedBalance: state.unclaimedBalance + 0.02,
+        unclaimedBalance: state.unclaimedBalance + tapYield,
+        trialEarnings: newTrialEarnings,
       });
 
       miningService.tapCooler().catch((err) => {
@@ -215,23 +243,22 @@ export const useMiningStore = create<MiningState>((set, get) => {
       const s = get();
       if (s.hasPurchasedMachine) return false;
       const elapsed = Date.now() - s.trialStartedAt;
-      return elapsed < DURATION_24H_MS;
+      return elapsed < DURATION_48H_MS;
     },
     isTrialExpired: () => {
       const s = get();
       if (s.hasPurchasedMachine) return false;
       const elapsed = Date.now() - s.trialStartedAt;
-      return elapsed >= DURATION_24H_MS;
+      return elapsed >= DURATION_48H_MS;
     },
     getTrialRemainingMs: () => {
       const s = get();
       if (s.hasPurchasedMachine) return 0;
-      const expiresAt = s.trialStartedAt + DURATION_24H_MS;
+      const expiresAt = s.trialStartedAt + DURATION_48H_MS;
       return Math.max(0, expiresAt - Date.now());
     },
     isMiningLocked: () => {
       const s = get();
-      // If user hasn't purchased a machine and trial is expired -> locked!
       if (!s.hasPurchasedMachine && s.isTrialExpired()) {
         return true;
       }

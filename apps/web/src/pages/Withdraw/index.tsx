@@ -2,22 +2,33 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useWalletStore } from '../../store/useWalletStore';
 import { useTreasuryStore } from '../../store/useTreasuryStore';
-import { useGrowthStore } from '../../store/useGrowthStore';
+import { useMiningStore } from '../../store/useMiningStore';
+import { useReferralStore } from '../../store/useReferralStore';
+import { useNavigationStore } from '../../store/useNavigationStore';
 import { showToast } from '../../components/Toast';
-import { ArrowUpRight, ShieldCheck, Wallet, Lock } from 'lucide-react';
+import { ArrowUpRight, ShieldCheck, Wallet, Lock, UserPlus, Zap } from 'lucide-react';
+import { CurrencyDisplay } from '../../components/DualCurrencyDisplay';
 
 export const WithdrawScreen: React.FC = () => {
   const { usdtBalance } = useWalletStore();
-  const { qualification } = useGrowthStore();
+  const { hasPurchasedMachine } = useMiningStore();
+  const { invitedCount } = useReferralStore();
+  const { setActiveTab } = useNavigationStore();
+
   const [amount, setAmount] = useState('');
   const [address, setAddress] = useState('');
   const [selectedNetwork, setSelectedNetwork] = useState<'TON' | 'BEP20'>('TON');
 
-  const canWithdraw = qualification?.withdrawal.canWithdraw ?? true;
+  const hasMinReferrals = invitedCount >= 3;
+  const canWithdraw = hasPurchasedMachine && hasMinReferrals;
 
   const handleWithdraw = () => {
-    if (!canWithdraw) {
-      showToast(qualification?.withdrawal.reason || 'Withdrawal locked: need more qualified referrals', 'error');
+    if (!hasPurchasedMachine) {
+      showToast('Withdrawal Locked: Machine purchase required to unlock withdrawals', 'error');
+      return;
+    }
+    if (!hasMinReferrals) {
+      showToast(`Withdrawal Locked: Need 3 referrals to unlock trial withdrawal (Current: ${invitedCount}/3)`, 'error');
       return;
     }
     if (!amount || parseFloat(amount) <= 0) {
@@ -39,7 +50,7 @@ export const WithdrawScreen: React.FC = () => {
 
   return (
     <div className="p-4 flex flex-col gap-5">
-      {/* Header with TitanStream Emblem */}
+      {/* Header with Emblem */}
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -52,9 +63,9 @@ export const WithdrawScreen: React.FC = () => {
             ₮
           </div>
         </div>
-        <h1 className="text-title text-text-primary font-extrabold tracking-tight">Withdraw USDT</h1>
+        <h1 className="text-title text-text-primary font-extrabold tracking-tight">Withdraw Funds</h1>
         <p className="text-body mt-1">
-          Transfer your mined Tether directly to your crypto wallet
+          Transfer your mined yield directly to your mobile wallet or crypto account
         </p>
       </motion.div>
 
@@ -71,12 +82,55 @@ export const WithdrawScreen: React.FC = () => {
             <ShieldCheck size={12} /> Instant
           </span>
         </div>
-        <div className="text-3xl font-extrabold text-gradient-usdt font-mono mt-2 tracking-tight">
-          {(Number(usdtBalance) || 0).toFixed(8)} USDT
+        <div className="mt-2">
+          <CurrencyDisplay amount={usdtBalance} size="lg" className="text-3xl font-extrabold text-gradient-usdt font-mono tracking-tight" />
         </div>
       </motion.div>
 
-      {/* Network Selector Cards */}
+      {/* Requirement Banners if locked */}
+      {!canWithdraw && (
+        <div className="flex flex-col gap-3">
+          {!hasPurchasedMachine && (
+            <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-300 flex flex-col gap-2 shadow-md">
+              <div className="flex items-center gap-2 font-bold text-rose-300">
+                <Lock size={14} className="shrink-0 text-rose-400" />
+                <span>Cloud Machine Purchase Required</span>
+              </div>
+              <p className="text-[11px] text-text-secondary leading-relaxed">
+                Free trial earnings ($5.00 max) are unlocked for withdrawal after acquiring a Cloud Machine.
+              </p>
+              <button
+                onClick={() => setActiveTab('boost')}
+                className="self-start px-3.5 py-1.5 rounded-xl bg-usdt-green text-app-bg font-extrabold text-[11px] uppercase tracking-wider flex items-center gap-1 shadow-md hover:brightness-110 press-feedback"
+              >
+                <Zap size={12} />
+                <span>Acquire Cloud Machine</span>
+              </button>
+            </div>
+          )}
+
+          {!hasMinReferrals && (
+            <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300 flex flex-col gap-2 shadow-md">
+              <div className="flex items-center gap-2 font-bold text-amber-300">
+                <Lock size={14} className="shrink-0 text-amber-400" />
+                <span>3 Referrals Required ({invitedCount}/3 Completed)</span>
+              </div>
+              <p className="text-[11px] text-text-secondary leading-relaxed">
+                Invite at least 3 friends to join your cloud network to unlock trial withdrawal privileges.
+              </p>
+              <button
+                onClick={() => setActiveTab('friends')}
+                className="self-start px-3.5 py-1.5 rounded-xl bg-ton-blue text-white font-extrabold text-[11px] uppercase tracking-wider flex items-center gap-1 shadow-md hover:brightness-110 press-feedback"
+              >
+                <UserPlus size={12} />
+                <span>Invite Friends ({invitedCount}/3)</span>
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Network Selector */}
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
@@ -115,7 +169,7 @@ export const WithdrawScreen: React.FC = () => {
         </div>
       </motion.div>
 
-      {/* Wallet Address Input */}
+      {/* Destination Wallet Address Input */}
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
@@ -167,7 +221,7 @@ export const WithdrawScreen: React.FC = () => {
         className={`press-feedback w-full py-4 rounded-2xl font-extrabold text-base flex items-center justify-center gap-2 mt-2 ${
           canWithdraw
             ? 'bg-gradient-to-r from-usdt-green to-[#00c853] text-app-bg shadow-[0_4px_25px_rgba(0,230,118,0.4)]'
-            : 'bg-gray-700 text-text-tertiary cursor-not-allowed'
+            : 'bg-gray-800 text-text-tertiary cursor-not-allowed border border-white/10'
         }`}
       >
         {canWithdraw ? (
@@ -177,33 +231,11 @@ export const WithdrawScreen: React.FC = () => {
           </>
         ) : (
           <>
-            Withdrawals Locked
+            Withdrawal Locked
             <Lock size={20} />
           </>
         )}
       </motion.button>
-
-      {/* Qualification Notice */}
-      {!canWithdraw && qualification?.withdrawal.remainingNeeded && (
-        <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300 flex items-center gap-2">
-          <Lock size={14} className="shrink-0" />
-          <span>
-            {qualification.withdrawal.reason || `Need ${qualification.withdrawal.remainingNeeded} more qualified referral${qualification.withdrawal.remainingNeeded !== 1 ? 's' : ''} to unlock withdrawals.`}
-            {' '}Go to <strong>Trust & Growth Hub</strong> to track your progress.
-          </span>
-        </div>
-      )}
-
-      {/* Withdrawal History */}
-      <div className="flex flex-col gap-2.5 mt-1">
-        <h2 className="text-sm font-bold text-text-primary">Withdrawal History</h2>
-        <div className="glass-panel border border-dashed border-border-dashed rounded-2xl p-6 flex flex-col items-center justify-center text-center shadow-sm">
-          <div className="w-10 h-10 rounded-full bg-control-bg flex items-center justify-center text-text-tertiary mb-1.5">
-            <Wallet size={18} />
-          </div>
-          <div className="text-xs text-text-tertiary font-mono">No past withdrawal transactions</div>
-        </div>
-      </div>
     </div>
   );
 };

@@ -208,7 +208,6 @@ export const BoostScreen: React.FC = () => {
       <div className="flex flex-col gap-5">
         {MACHINE_CATALOG.map((machine, idx) => {
           const yieldDetails = getMachineYieldDetails(machine);
-          const rawDailyUgx = machine.dailyYieldUsdt * 3700;
 
           return (
             <motion.div
@@ -236,17 +235,17 @@ export const BoostScreen: React.FC = () => {
               {/* LEVEL 1: ESTIMATED DAILY EARNINGS (HERO ELEMENT) */}
               <div className="bg-app-bg/90 border border-white/10 rounded-2xl p-4 flex flex-col gap-1.5 shadow-inner">
                 <span className="text-[10px] font-black text-text-tertiary uppercase tracking-widest flex items-center gap-1.5">
-                  <BarChart3 size={12} className="text-usdt-green" /> Today's Estimated Earnings
+                  <BarChart3 size={12} className="text-usdt-green" /> Today's Estimated Daily Output
                 </span>
 
                 <div className="flex items-baseline gap-2 mt-0.5">
                   <div className="text-2xl sm:text-3xl font-black text-usdt-green font-mono tracking-tight">
-                    UGX <CountUpNumber endValue={rawDailyUgx} durationMs={1200} />
+                    {yieldDetails.daily.local}
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between text-[11px] font-mono font-bold text-text-secondary border-t border-white/5 pt-1.5 mt-1">
-                  <span>≈ {yieldDetails.daily.usdt} / day</span>
+                  <span>≈ ${machine.dailyYieldUsdt.toFixed(2)} USDT / day</span>
                   <span className="text-text-tertiary font-normal">Monthly: <strong className="text-text-primary">{yieldDetails.monthly.local}</strong></span>
                 </div>
               </div>
@@ -259,7 +258,7 @@ export const BoostScreen: React.FC = () => {
                     {yieldDetails.price.local}
                   </span>
                   <span className="text-[10px] font-mono font-bold text-usdt-green">
-                    ≈ {yieldDetails.price.usdt}
+                    ≈ ${machine.priceUsdt.toFixed(2)} USDT
                   </span>
                 </div>
 

@@ -120,7 +120,8 @@ export const MiningSpinner: React.FC = () => {
     hasPurchasedMachine,
     isTrialActive,
     isTrialExpired,
-    getTrialRemainingMs
+    getTrialRemainingMs,
+    trialEarnings
   } = useMiningStore();
   const { setActiveTab } = useNavigationStore();
 
@@ -384,7 +385,11 @@ export const MiningSpinner: React.FC = () => {
           {isTrialActive() ? (
             <>
               <Clock size={13} className="animate-pulse text-usdt-green shrink-0" />
-              <span>FREE TRIAL NOW ACTIVE • {trialTimeStr} LEFT</span>
+              <span>
+                {trialEarnings >= 5.0
+                  ? `FREE TRIAL CAP REACHED ($5.00 MAX)`
+                  : `FREE TRIAL ACTIVE • ${trialTimeStr} LEFT ($${(Number(trialEarnings) || 0).toFixed(2)}/$5.00)`}
+              </span>
             </>
           ) : (
             <>
