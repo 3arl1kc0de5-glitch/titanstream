@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, Optional } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { EventBusService, PlatformEvent } from '../automation/event-bus.service';
 import { LedgerEntryType, SettlementStatus, TransactionType } from '@prisma/client';
@@ -22,20 +22,22 @@ export class TreasuryService implements OnModuleInit {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly eventBus: EventBusService,
+    @Optional() private readonly eventBus?: EventBusService,
   ) {}
 
   onModuleInit() {
     this.logger.log('Treasury Intelligence Service active. Listening for ledger events...');
 
-    // Recalculate metrics on SettlementCompleted or WithdrawalCompleted
-    this.eventBus.on('SettlementCompleted').subscribe({
-      next: () => this.logger.log('[TreasuryIntel] Recalculating metrics after deposit settlement completed.'),
-    });
+    if (this.eventBus) {
+      // Recalculate metrics on SettlementCompleted or WithdrawalCompleted
+      this.eventBus.on('SettlementCompleted').subscribe({
+        next: () => this.logger.log('[TreasuryIntel] Recalculating metrics after deposit settlement completed.'),
+      });
 
-    this.eventBus.on('WithdrawalCompleted').subscribe({
-      next: () => this.logger.log('[TreasuryIntel] Recalculating metrics after withdrawal completed.'),
-    });
+      this.eventBus.on('WithdrawalCompleted').subscribe({
+        next: () => this.logger.log('[TreasuryIntel] Recalculating metrics after withdrawal completed.'),
+      });
+    }
   }
 
   /**
