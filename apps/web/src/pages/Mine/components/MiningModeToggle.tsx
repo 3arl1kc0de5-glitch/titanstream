@@ -34,7 +34,7 @@ export const MiningModeToggle: React.FC = () => {
                 toggleCurrency('TON');
                 showToast('TON compute channel activated. Welcome to premium network processing.', 'success');
               } else {
-                showToast(`Insufficient balance. ₮${tonPrice.toFixed(2)} USDT required to activate TON compute channel.`, 'error');
+                showToast(`Insufficient balance. ₮${(Number(tonPrice) || 110).toFixed(2)} USDT required to activate TON compute channel.`, 'error');
               }
             } else {
               toggleCurrency('TON');
@@ -61,7 +61,7 @@ export const MiningModeToggle: React.FC = () => {
           {tonUnlocked ? 'TON' : (
             <span className="flex flex-col items-center leading-none">
               <span>PREMIUM</span>
-              <span className="text-[8px] font-normal text-gold">₮{tonPrice.toFixed(2)}</span>
+              <span className="text-[8px] font-normal text-gold">₮{(Number(tonPrice) || 110).toFixed(2)}</span>
             </span>
           )}
         </button>

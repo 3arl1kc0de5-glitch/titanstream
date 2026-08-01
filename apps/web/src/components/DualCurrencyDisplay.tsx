@@ -32,17 +32,19 @@ export const CurrencyDisplay: React.FC<CurrencyDisplayProps> = ({
     lg: 'text-base',
   };
 
+  const safeAmount = Number(amount) || 0;
+
   if (showLocal) {
     return (
       <span className={`font-extrabold font-mono ${sizeStyles[size]} ${className}`}>
-        {getLocalAmount(amount)}
+        {getLocalAmount(safeAmount)}
       </span>
     );
   }
 
   return (
     <span className={`font-extrabold font-mono ${sizeStyles[size]} ${className}`}>
-      {amount < 1 ? amount.toFixed(4) : amount.toFixed(2)}
+      {safeAmount < 1 ? safeAmount.toFixed(4) : safeAmount.toFixed(2)}
       {showCurrencyLabel && ' USDT'}
     </span>
   );

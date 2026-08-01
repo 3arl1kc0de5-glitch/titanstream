@@ -52,7 +52,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
       {change !== undefined && (
         <div className="flex items-center gap-1.5">
           <span className={`text-xs font-semibold ${isPositive ? 'text-usdt-green' : 'text-error-red'}`}>
-            {isPositive ? '+' : ''}{change.toFixed(1)}%
+            {isPositive ? '+' : ''}{(Number(change) || 0).toFixed(1)}%
           </span>
           {changeLabel && <span className="text-xs text-text-tertiary">{changeLabel}</span>}
         </div>

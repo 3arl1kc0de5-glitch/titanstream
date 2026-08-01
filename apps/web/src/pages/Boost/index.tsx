@@ -124,7 +124,7 @@ export const BoostScreen: React.FC = () => {
       financialAccountId: 'acc-main',
       type: 'MACHINE_PURCHASE',
       asset: 'USDT',
-      amount: selectedMachine.priceUsdt.toFixed(2),
+      amount: (Number(selectedMachine?.priceUsdt) || 0).toFixed(2),
       status: 'COMPLETED',
       reference: invoiceId,
       createdAt: new Date().toISOString(),
@@ -185,7 +185,7 @@ export const BoostScreen: React.FC = () => {
           </div>
           <div className="flex flex-col">
             <span className="text-[10px] font-black text-text-tertiary uppercase tracking-wider">Active Cloud Allocation</span>
-            <span className="text-xl font-black text-text-primary font-mono mt-0.5">{baseSpeedGhs.toFixed(1)} GH/s</span>
+            <span className="text-xl font-black text-text-primary font-mono mt-0.5">{(Number(baseSpeedGhs) || 0).toFixed(1)} GH/s</span>
           </div>
         </div>
 
@@ -556,7 +556,7 @@ export const BoostScreen: React.FC = () => {
                     <div className="space-y-3">
                       <div className="p-3 bg-white/5 border border-white/10 rounded-2xl text-[11px] text-text-tertiary flex items-start gap-2">
                         <AlertCircle size={15} className="text-sky-400 shrink-0 mt-0.5" />
-                        <span>Please send payment of <strong>{selectedMachine.priceUsdt.toFixed(2)} USDT</strong> via @CryptoBot. Your Machine activates immediately after provider confirmation.</span>
+                        <span>Please send payment of <strong>{(Number(selectedMachine?.priceUsdt) || 0).toFixed(2)} USDT</strong> via @CryptoBot. Your Machine activates immediately after provider confirmation.</span>
                       </div>
 
                       <button

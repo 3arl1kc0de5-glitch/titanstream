@@ -315,7 +315,7 @@ export const MiningSpinner: React.FC = () => {
       vy: -Math.random() * 5 - 4,
       rotation: Math.random() * 360,
       rotSpeed: (Math.random() - 0.5) * 12,
-      text: `+${tapPayout.toFixed(8)} ${activeCurrency}`,
+      text: `+${(Number(tapPayout) || 0).toFixed(8)} ${activeCurrency}`,
     };
 
     setParticles((prev) => [...prev.slice(-12), newParticle]);
@@ -1059,7 +1059,7 @@ export const MiningSpinner: React.FC = () => {
             style={{ borderColor: dynamicColor }}
           >
             <span className="text-[10px] font-black text-white/95 leading-none font-mono tracking-tight">
-              {temperature.toFixed(1)}°
+              {(Number(temperature) || 30).toFixed(1)}°
             </span>
             <span className="text-[8px] font-extrabold text-text-tertiary uppercase tracking-wider leading-none mt-0.5 flex items-center gap-0.5">
               <Thermometer size={8} style={{ color: dynamicColor }} /> Temp
@@ -1098,7 +1098,7 @@ export const MiningSpinner: React.FC = () => {
               </div>
               <span className="text-[10px] font-black text-white tracking-widest uppercase font-sans">Locked Machine</span>
               <span className="text-[8px] font-extrabold text-gold mt-1 font-mono">
-                Requires: {(activeSpinner.minBoostGhs * 10).toFixed(0)} CU
+                Requires: {((Number(activeSpinner?.minBoostGhs) || 0) * 10).toFixed(0)} CU
               </span>
               <span className="text-[8px] text-text-tertiary mt-1 max-w-[125px] leading-tight font-sans font-medium">
                 Unlock a larger Machine in the Cloud Machines tab to access.

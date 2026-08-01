@@ -41,10 +41,11 @@ export const Header: React.FC = () => {
 
   // Format balance based on preference safely
   const displayBalance = () => {
+    const safeUsdt = Number(usdtBalance) || 0;
     try {
       if (preferLocalCurrency && selectedCountry && selectedCountry.code !== 'US') {
-        const rate = selectedCountry.exchangeRate || 1;
-        const localVal = usdtBalance * rate;
+        const rate = Number(selectedCountry.exchangeRate) || 1;
+        const localVal = safeUsdt * rate;
         const fmtOpts = selectedCountry.numberFormat && typeof selectedCountry.numberFormat === 'object'
           ? selectedCountry.numberFormat
           : { maximumFractionDigits: 2 };
@@ -58,7 +59,7 @@ export const Header: React.FC = () => {
       console.warn('[HEADER] displayBalance formatting error:', err);
     }
     return {
-      value: usdtBalance.toFixed(4),
+      value: safeUsdt.toFixed(4),
       symbol: '₮',
       flag: '🇺🇸',
     };

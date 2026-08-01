@@ -100,7 +100,7 @@ export const useWalletStore = create<WalletState>((set, get) => ({
     // Real-time User Notification Trigger
     useUserNotificationStore.getState().addNotification({
       title: 'USDT Balance Accredited',
-      message: `+$${amount.toFixed(2)} USDT has been accredited to your wallet balance by admin (${reason}).`,
+      message: `+$${(Number(amount) || 0).toFixed(2)} USDT has been accredited to your wallet balance by admin (${reason}).`,
       category: 'Deposit',
       actionTab: 'wallet',
     });

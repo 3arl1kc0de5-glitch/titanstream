@@ -506,7 +506,7 @@ export const RouletteGame: React.FC<RouletteGameProps> = ({ onClose, showToast }
                   {/* Dynamic Count-Up Value text */}
                   <span className="text-3xl font-mono font-black text-usdt-green tracking-wide">
                     {prize.type === 'USDT' || prize.type === 'JACKPOT' ? '₮ ' : ''}
-                    {displayedValue.toFixed(prize.type === 'USDT' || prize.type === 'JACKPOT' ? 2 : 0)}
+                    {(Number(displayedValue) || 0).toFixed(prize.type === 'USDT' || prize.type === 'JACKPOT' ? 2 : 0)}
                     {prize.type === 'CRYSTALS' ? ' 💎' : ''}
                     {prize.type === 'SPEED' ? 'x Boost ⚡' : ''}
                   </span>

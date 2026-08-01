@@ -54,7 +54,7 @@ export const Counter: React.FC<CounterProps> = ({
 
   return (
     <span className={`tabular-nums ${className}`}>
-      {displayValue.toFixed(decimals)}{suffix}
+      {(Number(displayValue) || 0).toFixed(decimals)}{suffix}
     </span>
   );
 };

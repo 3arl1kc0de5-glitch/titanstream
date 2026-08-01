@@ -10,23 +10,24 @@ export const BalanceDisplay: React.FC = () => {
   const { preferLocalCurrency } = useSettingsStore();
   const { selectedCountry, getLocalAmount } = useCountryStore();
   
-  const currentDisplay = activeCurrency === 'USDT' ? usdtBalance : tonBalance;
+  const currentDisplay = Number(activeCurrency === 'USDT' ? usdtBalance : tonBalance) || 0;
   const isUsdt = activeCurrency === 'USDT';
   const showLocal = preferLocalCurrency && !!selectedCountry && selectedCountry.code !== 'US';
 
   // Format the balance display based on currency preference
   const formatBalance = () => {
     if (isUsdt && showLocal && selectedCountry) {
-      const localVal = currentDisplay * selectedCountry.exchangeRate;
+      const rate = Number(selectedCountry.exchangeRate) || 1;
+      const localVal = currentDisplay * rate;
       return {
-        value: localVal < 1 
-          ? localVal.toFixed(4)
+        value: (Number(localVal) || 0) < 1 
+          ? (Number(localVal) || 0).toFixed(4)
           : localVal.toLocaleString(undefined, selectedCountry.numberFormat),
         label: selectedCountry.currencyCode,
       };
     }
     return {
-      value: currentDisplay.toFixed(8),
+      value: (Number(currentDisplay) || 0).toFixed(8),
       label: activeCurrency,
     };
   };
@@ -34,7 +35,7 @@ export const BalanceDisplay: React.FC = () => {
   const bal = formatBalance();
 
   // Convert GH/s to CU (Compute Units) — 1 GH/s = 10 CU
-  const computeUnits = (baseSpeedGhs * coolerMultiplier * 10).toFixed(0);
+  const computeUnits = ((Number(baseSpeedGhs) || 0) * (Number(coolerMultiplier) || 1) * 10).toFixed(0);
 
   return (
     <div className="flex flex-col items-center justify-center gap-2 my-2">

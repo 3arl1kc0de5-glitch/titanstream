@@ -248,7 +248,7 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({ isOpen, onClose })
                     />
                   </div>
                   <div className="flex justify-between text-[10px] text-text-tertiary">
-                    <span>Available: ₮{usdtBalance.toFixed(4)}</span>
+                    <span>Available: ₮{(Number(usdtBalance) || 0).toFixed(4)}</span>
                     <button
                       onClick={() => setWithdrawAmount(usdtBalance.toString())}
                       className="text-usdt-green font-bold hover:underline"

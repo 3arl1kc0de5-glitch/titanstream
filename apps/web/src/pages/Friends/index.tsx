@@ -85,7 +85,7 @@ export const FriendsScreen: React.FC = () => {
           <span className="text-[10px] font-extrabold text-text-tertiary uppercase tracking-wider">Earned USDT</span>
           <div className="flex items-center gap-1.5 mt-1 font-mono">
             <span className="text-sm font-extrabold text-usdt-green">₮</span>
-            <span className="text-lg font-black text-text-primary">{earnedUsdt.toFixed(5)}</span>
+            <span className="text-lg font-black text-text-primary">{(Number(earnedUsdt) || 0).toFixed(5)}</span>
           </div>
         </div>
 
@@ -94,7 +94,7 @@ export const FriendsScreen: React.FC = () => {
           <span className="text-[10px] font-extrabold text-text-tertiary uppercase tracking-wider">Earned TON</span>
           <div className="flex items-center gap-1.5 mt-1 font-mono">
             <span className="text-sm font-extrabold text-ton-blue">💎</span>
-            <span className="text-lg font-black text-text-primary">{earnedTon.toFixed(5)}</span>
+            <span className="text-lg font-black text-text-primary">{(Number(earnedTon) || 0).toFixed(5)}</span>
           </div>
         </div>
       </motion.div>

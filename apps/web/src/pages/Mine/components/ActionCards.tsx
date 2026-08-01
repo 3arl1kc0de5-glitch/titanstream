@@ -9,12 +9,14 @@ export const ActionCards: React.FC = () => {
   const { setActiveTab } = useNavigationStore();
   const { unclaimedBalance, claimMinedYield, activeCurrency } = useMiningStore();
 
+  const safeUnclaimed = Number(unclaimedBalance) || 0;
+
   const handleClaim = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (unclaimedBalance <= 0) return;
+    if (safeUnclaimed <= 0) return;
     const success = await claimMinedYield();
     if (success) {
-      showToast(`Successfully received +${unclaimedBalance.toFixed(4)} ${activeCurrency} in your wallet.`, 'success');
+      showToast(`Successfully received +${safeUnclaimed.toFixed(4)} ${activeCurrency} in your wallet.`, 'success');
     } else {
       showToast('Action could not be completed. Please try again.', 'error');
     }
@@ -23,7 +25,7 @@ export const ActionCards: React.FC = () => {
   return (
     <div className="px-4 flex flex-col gap-3 my-3">
       {/* Receive Stream Output Card */}
-      {unclaimedBalance > 0 && (
+      {safeUnclaimed > 0 && (
         <motion.div
           whileTap={{ scale: 0.97 }}
           onClick={handleClaim}
@@ -38,7 +40,7 @@ export const ActionCards: React.FC = () => {
                 Receive Stream Output
               </div>
               <div className="text-xs text-text-secondary mt-0.5 font-sans font-medium">
-                Accrued: <strong className="text-text-primary">{unclaimedBalance.toFixed(4)} {activeCurrency}</strong>. Tap to add to balance.
+                Accrued: <strong className="text-text-primary">{safeUnclaimed.toFixed(4)} {activeCurrency}</strong>. Tap to add to balance.
               </div>
             </div>
           </div>

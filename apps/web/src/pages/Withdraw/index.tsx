@@ -72,7 +72,7 @@ export const WithdrawScreen: React.FC = () => {
           </span>
         </div>
         <div className="text-3xl font-extrabold text-gradient-usdt font-mono mt-2 tracking-tight">
-          {usdtBalance.toFixed(8)} USDT
+          {(Number(usdtBalance) || 0).toFixed(8)} USDT
         </div>
       </motion.div>
 

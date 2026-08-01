@@ -328,7 +328,7 @@ export const CapacityEngine: React.FC = () => {
                   <div className="text-right">
                     {opportunity.isPaid && opportunity.price ? (
                       <div className="flex flex-col items-end">
-                        <span className="text-xs font-black text-gold font-mono">${opportunity.price.toFixed(2)}</span>
+                        <span className="text-xs font-black text-gold font-mono">${(Number(opportunity.price) || 0).toFixed(2)}</span>
                         <span className="text-[9px] text-text-tertiary">+{opportunity.reward} Cap</span>
                       </div>
                     ) : (

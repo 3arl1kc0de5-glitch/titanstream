@@ -8,6 +8,9 @@ export const CoolerSlider: React.FC = () => {
   const percentage = isOverheated ? 100 : Math.min(100, Math.max(0, ((coolerMultiplier - 1) / (maxMultiplier - 1)) * 100));
   const temperature = isOverheated ? 99.9 : Math.min(99.9, 30 + (coolerMultiplier - 1.0) * 3.2);
 
+  const safeCooler = Number(coolerMultiplier) || 1.0;
+  const safeTemp = Number(temperature) || 30;
+
   return (
     <div className="w-full px-5 my-4 flex flex-col gap-2.5">
       {/* Header indicators */}
@@ -17,12 +20,12 @@ export const CoolerSlider: React.FC = () => {
             ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 animate-pulse'
             : 'text-usdt-green bg-usdt-green/10 border-usdt-green/30'
         }`}>
-          {(isOverheated || temperature > 70) && <Flame size={12} className="text-error-red animate-bounce" />}
-          {isOverheated ? `Core Cooling Active (${cooldownTimer}s)` : `×${coolerMultiplier.toFixed(1)} Core Multiplier`}
+          {(isOverheated || safeTemp > 70) && <Flame size={12} className="text-error-red animate-bounce" />}
+          {isOverheated ? `Core Cooling Active (${cooldownTimer}s)` : `×${safeCooler.toFixed(1)} Core Multiplier`}
         </span>
         <span className={`flex items-center gap-0.5 ${isOverheated ? 'text-rose-400 font-bold' : 'text-text-tertiary'}`}>
           <Thermometer size={12} className={isOverheated ? 'text-rose-400' : 'text-text-secondary'} />
-          {temperature.toFixed(0)}°C
+          {safeTemp.toFixed(0)}°C
         </span>
       </div>
 

@@ -108,7 +108,7 @@ export const TreasuryScreen: React.FC = () => {
     useTreasuryStore.getState().adjustTrustScore(3);
 
     setShowDepositModal(false);
-    showToast(`Successfully deposited ${depVal.toFixed(2)} USDT! 1.5× Mining Speed Boost activated.`, 'success');
+    showToast(`Successfully deposited ${(Number(depVal) || 0).toFixed(2)} USDT! 1.5× Mining Speed Boost activated.`, 'success');
   };
 
   const handleMissionAction = (mission: MissionItem) => {
@@ -172,7 +172,7 @@ export const TreasuryScreen: React.FC = () => {
           <div className="bg-control-bg/40 p-2 rounded-xl border border-white/5">
             <div className="text-[9px] text-text-secondary uppercase font-extrabold">Compute Speed</div>
             <div className="text-sm font-black text-text-primary font-mono mt-0.5">
-              {((baseSpeedGhs * (dailyBoostActive ? 1.5 : 1.0)) * 10).toFixed(0)} CU
+              {((Number(baseSpeedGhs || 0) * (dailyBoostActive ? 1.5 : 1.0)) * 10).toFixed(0)} CU
             </div>
           </div>
           <div className="bg-control-bg/40 p-2 rounded-xl border border-white/5">
