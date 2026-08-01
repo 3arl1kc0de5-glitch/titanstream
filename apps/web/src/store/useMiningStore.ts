@@ -27,6 +27,8 @@ export interface MiningState {
   hasPurchasedMachine: boolean;
   trialStartedAt: number;
   trialEarnings: number;
+  machineMode: string;
+  lifetimePromotionalOutput: number;
   
   toggleCurrency: (currency: Currency) => Promise<void>;
   setUsdtSpinnerIdx: (idx: number) => void;
@@ -95,6 +97,8 @@ export const useMiningStore = create<MiningState>((set, get) => {
     hasPurchasedMachine: initialPurchased,
     trialStartedAt: initialTrialStartedAt,
     trialEarnings: initialTrialEarnings,
+    machineMode: 'PROMOTIONAL',
+    lifetimePromotionalOutput: 0.0,
 
     fetchMiningState: async () => {
       try {
@@ -104,8 +108,9 @@ export const useMiningStore = create<MiningState>((set, get) => {
           set({
             activeCurrency: state.activeCurrency,
             baseSpeedGhs: state.baseSpeedGhs || (get().hasPurchasedMachine ? 5.0 : 1.0),
-            // Do not overwrite the local real-time decaying coolerMultiplier with stale backend data
             unclaimedBalance: state.unclaimedBalance,
+            machineMode: state.machineMode || 'PROMOTIONAL',
+            lifetimePromotionalOutput: state.lifetimePromotionalOutput || 0.0,
           });
         }
       } catch (err) {
@@ -154,25 +159,23 @@ export const useMiningStore = create<MiningState>((set, get) => {
       const spinnerIdx = isUsdt ? state.usdtSpinnerIdx : state.tonSpinnerIdx;
       const machine = MACHINE_CATALOG[spinnerIdx];
 
-      // Enforce generic earnings cap if defined on the machine
-      if (machine.earningsCap && machine.earningsCap > 0) {
-        if (state.trialEarnings >= machine.earningsCap) {
-          return 0;
-        }
-      }
-
       const nextMultiplier = Math.min(state.coolerMultiplier + 0.6, state.maxMultiplier);
       const willOverheat = nextMultiplier >= state.maxMultiplier;
 
       const payoutMultiplier = isUsdt ? machine.dailyYieldUsdt : machine.dailyYieldUsdt * 1.15;
       let tapYield = 0.01 * state.coolerMultiplier * payoutMultiplier;
 
-      let newTrialEarnings = state.trialEarnings;
-      if (machine.earningsCap && machine.earningsCap > 0) {
-        const remainingCap = Math.max(0, machine.earningsCap - state.trialEarnings);
-        tapYield = Math.min(tapYield, remainingCap);
-        newTrialEarnings = Math.min(machine.earningsCap, state.trialEarnings + tapYield);
-        localStorage.setItem('trial_earnings', newTrialEarnings.toString());
+      let newLifetimePromotionalOutput = state.lifetimePromotionalOutput;
+      let newMachineMode = state.machineMode;
+      if (machine.id === 'free-trial') {
+        if (state.machineMode === 'PROMOTIONAL') {
+          const remainingCap = Math.max(0, 5.0 - state.lifetimePromotionalOutput);
+          tapYield = Math.min(tapYield, remainingCap);
+          newLifetimePromotionalOutput = Math.min(5.0, state.lifetimePromotionalOutput + tapYield);
+          if (newLifetimePromotionalOutput >= 5.0) {
+            newMachineMode = 'STANDARD';
+          }
+        }
       }
 
       set({
@@ -183,7 +186,8 @@ export const useMiningStore = create<MiningState>((set, get) => {
         tapsThisWeek: state.tapsThisWeek + 1,
         tapsThisMonth: state.tapsThisMonth + 1,
         unclaimedBalance: state.unclaimedBalance + tapYield,
-        trialEarnings: newTrialEarnings,
+        lifetimePromotionalOutput: newLifetimePromotionalOutput,
+        machineMode: newMachineMode,
       });
 
       // Synchronously credit the wallet store immediately for fluid real-time ticking odometer feedback
@@ -269,39 +273,22 @@ export const useMiningStore = create<MiningState>((set, get) => {
     },
     isTrialActive: () => {
       const s = get();
-      return !s.hasPurchasedMachine && !s.isMachineExpired('free-trial');
+      return s.machineMode === 'PROMOTIONAL';
     },
     isTrialExpired: () => {
-      const s = get();
-      return !s.hasPurchasedMachine && s.isMachineExpired('free-trial');
+      return false;
     },
     isMachineExpired: (machineId: string) => {
-      const s = get();
-      if (machineId === 'free-trial') {
-        const trialMachine = MACHINE_CATALOG.find(m => m.id === 'free-trial');
-        const durationMs = (trialMachine?.durationHours || 48) * 60 * 60 * 1000;
-        const elapsed = Date.now() - s.trialStartedAt;
-        return elapsed >= durationMs;
-      }
       return false;
     },
     getTrialRemainingMs: () => {
-      const s = get();
-      const trialMachine = MACHINE_CATALOG.find(m => m.id === 'free-trial');
-      const durationMs = (trialMachine?.durationHours || 48) * 60 * 60 * 1000;
-      const expiresAt = s.trialStartedAt + durationMs;
-      return Math.max(0, expiresAt - Date.now());
+      return 0;
     },
     isMiningLocked: () => {
       const s = get();
       const isUsdt = s.activeCurrency === 'USDT';
       const spinnerIdx = isUsdt ? s.usdtSpinnerIdx : s.tonSpinnerIdx;
       const machine = MACHINE_CATALOG[spinnerIdx];
-
-      // If it is the trial machine and it has expired
-      if (machine.id === 'free-trial' && s.isMachineExpired('free-trial')) {
-        return true;
-      }
 
       if (s.activeCurrency === 'TON' && !s.tonUnlocked) {
         return true;

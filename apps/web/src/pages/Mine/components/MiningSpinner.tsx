@@ -131,7 +131,9 @@ export const MiningSpinner: React.FC = () => {
     isTrialExpired,
     getTrialRemainingMs,
     trialEarnings,
-    isMiningLocked
+    isMiningLocked,
+    machineMode,
+    lifetimePromotionalOutput
   } = useMiningStore();
   const { setActiveTab } = useNavigationStore();
   const { preferLocalCurrency } = useSettingsStore();
@@ -382,29 +384,30 @@ export const MiningSpinner: React.FC = () => {
           <Flame size={14} className="animate-bounce text-rose-400" />
           <span>OVERHEATED — COOLING DOWN ({cooldownTimer}s)</span>
         </div>
-      ) : activeSpinner?.earningsCap ? (
-        <div className={`mb-3.5 z-20 text-[10px] font-black px-4 py-1.5 rounded-full flex items-center gap-1.5 uppercase tracking-wider shadow-lg backdrop-blur-md transition-all ${
-          !isTrialExpired()
-            ? 'bg-usdt-green/15 border border-usdt-green/40 text-usdt-green shadow-[0_0_12px_rgba(38,161,123,0.25)]' 
-            : 'bg-rose-500/20 border border-rose-500/40 text-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.25)]'
-        }`}>
-          {!isTrialExpired() ? (
+      ) : activeSpinner.id === 'free-trial' ? (
+        <div className="mb-3.5 z-20 text-[10px] font-black px-4 py-1.5 rounded-full flex items-center gap-1.5 uppercase tracking-wider shadow-lg backdrop-blur-md transition-all bg-usdt-green/15 border border-usdt-green/40 text-usdt-green shadow-[0_0_12px_rgba(38,161,123,0.25)]">
+          {machineMode === 'PROMOTIONAL' ? (
             <>
               <Clock size={13} className="animate-pulse text-usdt-green shrink-0" />
               <span>
-                {trialEarnings >= (activeSpinner.earningsCap || 5.0)
-                  ? `CAP REACHED (${showLocal ? getLocalAmount(activeSpinner.earningsCap || 5.0) : `$${(activeSpinner.earningsCap || 5.0).toFixed(2)}`} MAX)`
-                  : `${activeSpinner.name.toUpperCase()} • ${trialTimeStr} LEFT (${showLocal ? `${getLocalAmount(trialEarnings)} / ${getLocalAmount(activeSpinner.earningsCap || 5.0)}` : `$${(Number(trialEarnings) || 0).toFixed(2)} / $${(activeSpinner.earningsCap || 5.0).toFixed(2)}`})`}
+                TITAN CORE • PROMOTIONAL ({showLocal ? `${getLocalAmount(lifetimePromotionalOutput)} / ${getLocalAmount(5.0)}` : `$${(Number(lifetimePromotionalOutput) || 0).toFixed(2)} / $5.00`})
               </span>
             </>
           ) : (
             <>
-              <Lock size={13} className="text-rose-400 shrink-0" />
-              <span>TRIAL EXPIRED — MACHINE REQUIRED</span>
+              <Sparkles size={13} className="text-usdt-green shrink-0" />
+              <span>TITAN CORE • STANDARD MODE</span>
             </>
           )}
         </div>
-      ) : temperature > 70 ? (
+      ) : (
+        <div className="mb-3.5 z-20 bg-usdt-green/15 border border-usdt-green/40 text-usdt-green text-[10px] font-black px-4 py-1.5 rounded-full flex items-center gap-1.5 uppercase tracking-wider shadow-lg backdrop-blur-md">
+          <CheckCircle2 size={13} className="text-usdt-green shrink-0" />
+          <span>{activeSpinner.name.toUpperCase()} • PREMIUM ACTIVE</span>
+        </div>
+      )}
+
+      {temperature > 70 ? (
         <div className="mb-3.5 z-20 bg-error-red/20 border border-error-red/40 text-error-red text-[9px] font-black px-3.5 py-1.5 rounded-full flex items-center gap-1 uppercase tracking-widest shadow-lg animate-pulse backdrop-blur-md">
           <Flame size={12} className="animate-bounce" /> OVERCLOCK ACTIVE
         </div>
@@ -1077,29 +1080,7 @@ export const MiningSpinner: React.FC = () => {
             </span>
           </div>
 
-          {/* Machine Expired Overlay (config-driven: shows when earningsCap machine expires) */}
-          {activeSpinner?.earningsCap && isTrialExpired() && (
-            <div className="absolute inset-0 rounded-full bg-black/90 backdrop-blur-[5px] flex flex-col items-center justify-center z-30 text-center p-4 border border-rose-500/40 animate-fade-in">
-              <div className="w-9 h-9 rounded-full bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400 mb-2 animate-bounce">
-                <Lock size={16} />
-              </div>
-              <span className="text-[11px] font-black text-rose-400 tracking-wider uppercase font-sans">Free Trial Expired</span>
-              <span className="text-[8px] text-text-secondary mt-1 max-w-[130px] leading-tight font-sans font-medium">
-                Your 24-hour trial node has ended. Acquire a Cloud Machine to resume daily yields.
-              </span>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  impactOccurred('medium');
-                  setActiveTab('boost');
-                }}
-                className="mt-2.5 press-feedback font-extrabold text-[9px] px-3.5 py-1.5 rounded-xl bg-usdt-green text-app-bg uppercase tracking-wider shadow-lg hover:brightness-110 flex items-center gap-1"
-              >
-                <span>Acquire Machine</span>
-                <ChevronRight size={12} />
-              </button>
-            </div>
-          )}
+
 
           {/* Lock Screen Overlay */}
           {baseSpeedGhs < activeSpinner.minBoostGhs && (

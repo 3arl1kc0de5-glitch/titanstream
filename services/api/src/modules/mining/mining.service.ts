@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { FinancialOrchestratorService } from '../financial-orchestration/financial-orchestrator.service';
-import { FinancialOperationType } from '@prisma/client';
+import { FinancialOperationType, UserMachineAsset } from '@prisma/client';
 import { MachineService } from '../machine/machine.service';
 
 export interface UserMiningState {
@@ -12,6 +12,8 @@ export interface UserMiningState {
   unclaimedBalance: number;
   lastTappedAt?: Date;
   lastUpdatedAt?: Date;
+  machineMode: string;
+  lifetimePromotionalOutput: number;
 }
 
 @Injectable()
@@ -39,6 +41,8 @@ export class MiningService {
         unclaimedBalance: record.unclaimedBalance.toNumber(),
         lastTappedAt: record.lastTappedAt ? new Date(record.lastTappedAt) : undefined,
         lastUpdatedAt: record.lastUpdatedAt ? new Date(record.lastUpdatedAt) : undefined,
+        machineMode: record.machineMode,
+        lifetimePromotionalOutput: record.lifetimePromotionalOutput.toNumber(),
       };
     } catch (err) {
       console.warn('Failed to load mining state from DB:', err);
@@ -58,6 +62,8 @@ export class MiningService {
           unclaimedBalance: session.unclaimedBalance,
           lastTappedAt: session.lastTappedAt,
           lastUpdatedAt: session.lastUpdatedAt,
+          machineMode: session.machineMode,
+          lifetimePromotionalOutput: session.lifetimePromotionalOutput,
         },
         update: {
           activeCurrency: session.activeCurrency,
@@ -66,6 +72,8 @@ export class MiningService {
           unclaimedBalance: session.unclaimedBalance,
           lastTappedAt: session.lastTappedAt,
           lastUpdatedAt: session.lastUpdatedAt,
+          machineMode: session.machineMode,
+          lifetimePromotionalOutput: session.lifetimePromotionalOutput,
         },
       });
     } catch (err) {
@@ -81,27 +89,53 @@ export class MiningService {
     const elapsedMs = now.getTime() - lastUpdate.getTime();
     if (elapsedMs <= 0) return;
 
-    // Use the highest passiveYieldRate from the user's active machines
     const machines = this.machineService.getUserMachines(session.telegramUserId);
     const activeMachines = machines.filter((m) => m.status === 'ACTIVE');
-    const catalog = this.machineService.getCatalog();
-    
-    // Find the best passiveYieldRate across the user's active fleet
-    let bestPassiveRate = 0.00005; // default fallback
+
+    let totalYield = 0;
+
     for (const um of activeMachines) {
-      const tier = catalog.find((t) => t.tierCode === um.tierCode);
-      if (tier?.passiveYieldRate && tier.passiveYieldRate > bestPassiveRate) {
-        bestPassiveRate = tier.passiveYieldRate;
+      if (um.tierCode === 'TS_TRIAL') {
+        if (session.machineMode === 'PROMOTIONAL') {
+          const promoRate = 0.00000289;
+          const promoRatePerSec = promoRate * 10;
+          const totalPromoYield = session.baseSpeedGhs * 1.0 * promoRatePerSec * (elapsedMs / 1000);
+          
+          const remainingCap = 5.0 - session.lifetimePromotionalOutput;
+          if (totalPromoYield >= remainingCap && remainingCap > 0) {
+            totalYield += remainingCap;
+            session.lifetimePromotionalOutput = 5.0;
+            session.machineMode = 'STANDARD';
+            
+            const usedFraction = remainingCap / totalPromoYield;
+            const remainingMs = elapsedMs * (1 - usedFraction);
+            if (remainingMs > 0) {
+              const stdRate = 0.0000001929;
+              const stdRatePerSec = stdRate * 10;
+              const stdYield = session.baseSpeedGhs * 1.0 * stdRatePerSec * (remainingMs / 1000);
+              totalYield += stdYield;
+            }
+          } else {
+            totalYield += totalPromoYield;
+            session.lifetimePromotionalOutput += totalPromoYield;
+          }
+        } else {
+          const stdRate = 0.0000001929;
+          const stdRatePerSec = stdRate * 10;
+          const stdYield = session.baseSpeedGhs * 1.0 * stdRatePerSec * (elapsedMs / 1000);
+          totalYield += stdYield;
+        }
+      } else {
+        const catalog = this.machineService.getCatalog();
+        const tier = catalog.find((t) => t.tierCode === um.tierCode);
+        const rate = tier?.passiveYieldRate || 0.00005;
+        const ratePerSec = rate * 10;
+        const machineYield = session.baseSpeedGhs * 1.0 * ratePerSec * (elapsedMs / 1000);
+        totalYield += machineYield;
       }
     }
 
-    // Passive yield: speed * multiplier * yieldRate * elapsed
-    // For passive background mining, baseline multiplier of 1.0
-    const baseYieldRatePerSec = bestPassiveRate * 10; // convert per-100ms to per-second
-    const deltaPerSec = session.baseSpeedGhs * 1.0 * baseYieldRatePerSec;
-    const accumulated = (elapsedMs / 1000) * deltaPerSec;
-
-    session.unclaimedBalance += accumulated;
+    session.unclaimedBalance += totalYield;
   }
 
   async getOrCreateSession(telegramUserId: string): Promise<UserMiningState> {
@@ -123,6 +157,8 @@ export class MiningService {
         baseSpeedGhs: baseSpeed,
         coolerMultiplier: 1.0,
         unclaimedBalance: 0.0,
+        machineMode: 'PROMOTIONAL',
+        lifetimePromotionalOutput: 0.0,
         lastUpdatedAt: new Date(),
       };
       this.sessions.set(telegramUserId, session);
@@ -141,7 +177,19 @@ export class MiningService {
     session.coolerMultiplier = Math.min(20.2, session.coolerMultiplier + 0.6);
     session.lastTappedAt = new Date();
     
-    const increment = typeof tapYield === 'number' && !isNaN(tapYield) ? tapYield : 0.05;
+    let increment = typeof tapYield === 'number' && !isNaN(tapYield) ? tapYield : 0.05;
+    
+    if (session.machineMode === 'PROMOTIONAL') {
+      const remainingCap = 5.0 - session.lifetimePromotionalOutput;
+      if (increment >= remainingCap) {
+        increment = remainingCap;
+        session.lifetimePromotionalOutput = 5.0;
+        session.machineMode = 'STANDARD';
+      } else {
+        session.lifetimePromotionalOutput += increment;
+      }
+    }
+    
     session.unclaimedBalance += increment;
     session.lastUpdatedAt = new Date();
     

@@ -172,7 +172,7 @@ export class MachineService {
         id: 'mach_free_trial',
         telegramUserId,
         tierCode: 'TS_TRIAL',
-        name: 'Free Trial Core',
+        name: 'Titan Core',
         purchasePrice: 0.0,
         currency: 'USDT',
         status: 'ACTIVE',
@@ -182,17 +182,6 @@ export class MachineService {
         activatedAt: now.toISOString(),
       };
       list = [trialMachine];
-      this.userMachines.set(telegramUserId, list);
-    } else {
-      list = list.map((m) => {
-        if (m.tierCode === 'TS_TRIAL' && m.status === 'ACTIVE') {
-          const elapsed = Date.now() - new Date(m.activatedAt).getTime();
-          if (elapsed >= 48 * 60 * 60 * 1000) {
-            return { ...m, status: 'RETIRED' };
-          }
-        }
-        return m;
-      });
       this.userMachines.set(telegramUserId, list);
     }
     return list;

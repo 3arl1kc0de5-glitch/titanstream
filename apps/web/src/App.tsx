@@ -87,23 +87,45 @@ function MainApp() {
       const spinnerIdx = isUsdt ? state.usdtSpinnerIdx : state.tonSpinnerIdx;
       const machine = MACHINE_CATALOG[spinnerIdx];
 
-      const baseYieldRate = machine.passiveYieldRate || 0.0001;
-      const delta = state.baseSpeedGhs * state.coolerMultiplier * boostMultiplier * baseYieldRate;
+      let delta = 0;
+      let newLifetimePromotionalOutput = state.lifetimePromotionalOutput;
+      let newMachineMode = state.machineMode;
 
-      if (isUsdt && machine.earningsCap && machine.earningsCap > 0) {
-        if (state.trialEarnings < machine.earningsCap) {
-          const remainingCap = Math.max(0, machine.earningsCap - state.trialEarnings);
-          const cappedDelta = Math.min(delta, remainingCap);
-          useMiningStore.setState((s) => ({
-            unclaimedBalance: s.unclaimedBalance + cappedDelta,
-            trialEarnings: Math.min(machine.earningsCap!, s.trialEarnings + cappedDelta),
-          }));
+      if (machine.id === 'free-trial') {
+        if (state.machineMode === 'PROMOTIONAL') {
+          const promoRate = 0.00000289;
+          const promoDelta = state.baseSpeedGhs * state.coolerMultiplier * boostMultiplier * promoRate;
+          const remainingCap = Math.max(0, 5.0 - state.lifetimePromotionalOutput);
+          
+          if (promoDelta >= remainingCap && remainingCap > 0) {
+            delta += remainingCap;
+            newLifetimePromotionalOutput = 5.0;
+            newMachineMode = 'STANDARD';
+            
+            const usedFraction = remainingCap / promoDelta;
+            const remainingFraction = 1 - usedFraction;
+            const stdRate = 0.0000001929;
+            const stdDelta = state.baseSpeedGhs * state.coolerMultiplier * boostMultiplier * stdRate;
+            delta += stdDelta * remainingFraction;
+          } else {
+            delta += promoDelta;
+            newLifetimePromotionalOutput += promoDelta;
+          }
+        } else {
+          const stdRate = 0.0000001929;
+          const stdDelta = state.baseSpeedGhs * state.coolerMultiplier * boostMultiplier * stdRate;
+          delta += stdDelta;
         }
       } else {
-        useMiningStore.setState((s) => ({
-          unclaimedBalance: s.unclaimedBalance + delta,
-        }));
+        const baseYieldRate = machine.passiveYieldRate || 0.0001;
+        delta = state.baseSpeedGhs * state.coolerMultiplier * boostMultiplier * baseYieldRate;
       }
+
+      useMiningStore.setState((s) => ({
+        unclaimedBalance: s.unclaimedBalance + delta,
+        lifetimePromotionalOutput: newLifetimePromotionalOutput,
+        machineMode: newMachineMode,
+      }));
 
       useReferralStore.getState().tickEarnings(delta * 0.01, delta * 0.005);
     }, 100);

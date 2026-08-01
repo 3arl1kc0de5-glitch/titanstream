@@ -8,7 +8,7 @@ import { CurrencyDisplay } from '../../../components/DualCurrencyDisplay';
 
 export const ActionCards: React.FC = () => {
   const { setActiveTab } = useNavigationStore();
-  const { unclaimedBalance, claimMinedYield, activeCurrency } = useMiningStore();
+  const { unclaimedBalance, claimMinedYield, activeCurrency, machineMode, hasPurchasedMachine } = useMiningStore();
 
   const safeUnclaimed = Number(unclaimedBalance) || 0;
 
@@ -25,6 +25,28 @@ export const ActionCards: React.FC = () => {
 
   return (
     <div className="px-4 flex flex-col gap-3 my-3">
+      {/* Standard Mode Promo Banner */}
+      {machineMode === 'STANDARD' && !hasPurchasedMachine && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4.5 space-y-2 text-xs relative overflow-hidden">
+          <div className="flex items-center gap-2 text-amber-400 font-bold uppercase tracking-wider text-[10px]">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+            Core Status: Standard Mode
+          </div>
+          <div className="text-text-primary font-black text-sm">
+            Your Titan Core has completed its promotional earning phase.
+          </div>
+          <div className="text-text-secondary leading-relaxed font-medium">
+            You're still earning Stream Output every day! However, you can upgrade to a premium machine to dramatically increase your earning speed.
+          </div>
+          <button
+            onClick={() => setActiveTab('boost')}
+            className="mt-3 w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold py-2 px-4 rounded-xl transition-colors text-center uppercase tracking-wider text-[10px] block"
+          >
+            Upgrade to Premium Machine
+          </button>
+        </div>
+      )}
+
       {/* Receive Stream Output Card */}
       {safeUnclaimed > 0 && (
         <motion.div

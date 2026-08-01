@@ -1640,13 +1640,15 @@ model ProductSubscription {
 }
 
 model UserMiningState {
-  telegramUserId   BigInt   @id @map("telegram_user_id")
-  activeCurrency   String   @default("USDT") @map("active_currency")
-  baseSpeedGhs     Decimal  @default(1.0) @map("base_speed_ghs")
-  coolerMultiplier Decimal  @default(1.0) @map("cooler_multiplier")
-  unclaimedBalance Decimal  @default(0.0) @map("unclaimed_balance")
-  lastTappedAt     DateTime? @map("last_tapped_at")
-  lastUpdatedAt    DateTime? @map("last_updated_at")
+  telegramUserId            BigInt    @id @map("telegram_user_id")
+  activeCurrency            String    @default("USDT") @map("active_currency")
+  baseSpeedGhs              Decimal   @default(1.0) @map("base_speed_ghs")
+  coolerMultiplier          Decimal   @default(1.0) @map("cooler_multiplier")
+  unclaimedBalance          Decimal   @default(0.0) @map("unclaimed_balance")
+  lastTappedAt              DateTime? @map("last_tapped_at")
+  lastUpdatedAt             DateTime? @map("last_updated_at")
+  machineMode               String    @default("PROMOTIONAL") @map("machine_mode")
+  lifetimePromotionalOutput Decimal   @default(0.0) @map("lifetime_promotional_output")
 
   user User @relation(fields: [telegramUserId], references: [telegramUserId], onDelete: Cascade)
 
