@@ -5,7 +5,7 @@ import { useWalletStore } from '../../../store/useWalletStore';
 import { useQuestStore } from '../../../store/useQuestStore';
 import { useTreasuryStore } from '../../../store/useTreasuryStore';
 import { useHaptics } from '../../../hooks/useHaptics';
-import { Flame, Thermometer, ChevronLeft, ChevronRight, Lock, Clock, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Flame, Thermometer, ChevronLeft, ChevronRight, Lock, Clock, Sparkles, CheckCircle } from 'lucide-react';
 import { showToast } from '../../../components/Toast';
 import { useNavigationStore } from '../../../store/useNavigationStore';
 import { useCountryStore } from '../../../store/useCountryStore';
@@ -372,7 +372,7 @@ export const MiningSpinner: React.FC = () => {
         </div>
       ) : (
         <div className="mb-3.5 z-20 bg-usdt-green/15 border border-usdt-green/40 text-usdt-green text-[10px] font-black px-4 py-1.5 rounded-full flex items-center gap-1.5 uppercase tracking-wider shadow-lg backdrop-blur-md">
-          <CheckCircle2 size={13} className="text-usdt-green shrink-0" />
+          <CheckCircle size={13} className="text-usdt-green shrink-0" />
           <span>{activeSpinner.name.toUpperCase()} • PREMIUM ACTIVE</span>
         </div>
       )}
