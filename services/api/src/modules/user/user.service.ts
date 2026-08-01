@@ -91,7 +91,7 @@ export class UserService {
       where: { telegramUserId },
       include: {
         educationCompletions: true,
-        financialAccounts: true,
+        financialAccount: true,
       },
     });
 
