@@ -139,7 +139,7 @@ export const MiningSpinner: React.FC = () => {
       const hrs = Math.floor(totalSecs / 3600);
       const mins = Math.floor((totalSecs % 3600) / 60);
       const secs = totalSecs % 60;
-      setTrialTimeStr(`${hrs}h ${mins}m ${secs}s`);
+      setTrialTimeStr(`${hrs}H ${mins}M ${secs}S`);
     };
 
     updateTimer();
@@ -371,30 +371,30 @@ export const MiningSpinner: React.FC = () => {
 
       {/* Overheat warning / Free Trial banner overlay */}
       {isOverheated ? (
-        <div className="absolute top-0 z-20 bg-rose-600/30 border border-rose-500 text-rose-300 text-[10px] font-black px-4 py-1.5 rounded-full flex items-center gap-1.5 uppercase tracking-widest shadow-xl animate-pulse">
+        <div className="mb-3.5 z-20 bg-rose-600/30 border border-rose-500 text-rose-300 text-[10px] font-black px-4 py-1.5 rounded-full flex items-center gap-1.5 uppercase tracking-widest shadow-xl animate-pulse backdrop-blur-md">
           <Flame size={14} className="animate-bounce text-rose-400" />
           <span>OVERHEATED — COOLING DOWN ({cooldownTimer}s)</span>
         </div>
       ) : !hasPurchasedMachine ? (
-        <div className={`absolute top-0 z-20 text-[10px] font-black px-3.5 py-1 rounded-full flex items-center gap-1.5 uppercase tracking-wider shadow-lg ${
+        <div className={`mb-3.5 z-20 text-[10px] font-black px-4 py-1.5 rounded-full flex items-center gap-1.5 uppercase tracking-wider shadow-lg backdrop-blur-md transition-all ${
           isTrialActive() 
-            ? 'bg-usdt-green/15 border border-usdt-green/40 text-usdt-green' 
-            : 'bg-rose-500/20 border border-rose-500/40 text-rose-300'
+            ? 'bg-usdt-green/15 border border-usdt-green/40 text-usdt-green shadow-[0_0_12px_rgba(38,161,123,0.25)]' 
+            : 'bg-rose-500/20 border border-rose-500/40 text-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.25)]'
         }`}>
           {isTrialActive() ? (
             <>
-              <Clock size={12} className="animate-pulse text-usdt-green" />
-              <span>Free Trial Node • {trialTimeStr} Left</span>
+              <Clock size={13} className="animate-pulse text-usdt-green shrink-0" />
+              <span>FREE TRIAL NOW ACTIVE • {trialTimeStr} LEFT</span>
             </>
           ) : (
             <>
-              <Lock size={12} className="text-rose-400" />
-              <span>Trial Expired — Machine Required</span>
+              <Lock size={13} className="text-rose-400 shrink-0" />
+              <span>TRIAL EXPIRED — MACHINE REQUIRED</span>
             </>
           )}
         </div>
       ) : temperature > 70 ? (
-        <div className="absolute top-0 z-20 bg-error-red/20 border border-error-red/40 text-error-red text-[9px] font-black px-3 py-1 rounded-full flex items-center gap-1 uppercase tracking-widest shadow-lg animate-pulse">
+        <div className="mb-3.5 z-20 bg-error-red/20 border border-error-red/40 text-error-red text-[9px] font-black px-3.5 py-1.5 rounded-full flex items-center gap-1 uppercase tracking-widest shadow-lg animate-pulse backdrop-blur-md">
           <Flame size={12} className="animate-bounce" /> OVERCLOCK ACTIVE
         </div>
       ) : null}
