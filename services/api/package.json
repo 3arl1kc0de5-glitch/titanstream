@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "npx prisma generate && nest build",
+    "build": "DATABASE_URL=\"postgresql://dummy:dummy@localhost:5432/dummy\" npx prisma generate && nest build",
     "dev": "nest start --watch",
     "start": "nest start",
     "start:prod": "node dist/src/main",
