@@ -80,7 +80,7 @@ export class MachineService {
       multiplierDecayPerSec: 0.5,
       interactiveBaseRate: 0.01,
       interactiveBonusCap: 0.10,
-      promoMultiplierInfluence: 1.5,
+      promoMultiplierInfluence: 1.06,
     },
     {
       tierCode: 'TS_C10',

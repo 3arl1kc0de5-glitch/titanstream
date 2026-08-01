@@ -56,7 +56,7 @@ export const MiningSimulatorPage: React.FC = () => {
     const rate = 0.00000289; // TS_TRIAL promotional rate
     const baseYieldRatePerSec = rate * 10;
     const seconds = hours * 3600;
-    const multiplierInfluence = Math.min(s.coolerMultiplier, 1.5); // mirrors server promoMultiplierInfluence
+    const multiplierInfluence = Math.min(s.coolerMultiplier, 1.06); // mirrors server promoMultiplierInfluence
     let accrued = s.baseSpeedGhs * multiplierInfluence * baseYieldRatePerSec * seconds;
 
     let promo = s.lifetimePromotionalOutput;
