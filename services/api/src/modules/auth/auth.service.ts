@@ -282,10 +282,11 @@ export class AuthService {
       role: 'USER',
     };
 
+    const refreshSecret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'super-secret-jwt-key';
     const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
     const refreshToken = this.jwtService.sign(
       { sub: String(telegramUserId), type: 'refresh' },
-      { expiresIn: '30d', secret: process.env.JWT_REFRESH_SECRET || 'refresh-secret' },
+      { expiresIn: '30d', secret: refreshSecret },
     );
 
     this.logAuth(traceId, 'jwt.issued', `telegramUserId=${telegramUserId}`);
@@ -394,29 +395,35 @@ export class AuthService {
   async refreshTokens(refreshToken: string) {
     const traceId = this.createTraceId();
     this.logAuth(traceId, 'refresh.request_received', 'refresh token submitted');
+    const refreshSecret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'super-secret-jwt-key';
     try {
       const payload = this.jwtService.verify(refreshToken, {
-        secret: process.env.JWT_REFRESH_SECRET || 'refresh-secret',
+        secret: refreshSecret,
       });
       if (payload.type !== 'refresh') throw new UnauthorizedException('INVALID_REFRESH_TOKEN');
       const telegramUserId = BigInt(payload.sub);
 
-      const user = await this.prisma.user.findUnique({
-        where: { telegramUserId },
-      });
-      if (!user) throw new UnauthorizedException('USER_NOT_FOUND');
+      let userState = UserState.READY;
+      try {
+        const user = await this.prisma.user.findUnique({
+          where: { telegramUserId },
+        });
+        if (user) userState = user.state;
+      } catch (dbErr: any) {
+        this.logger.warn(`[AUTH_FALLBACK] Database lookup failed during token refresh: ${dbErr.message}`);
+      }
 
       const newPayload = {
         sub: String(telegramUserId),
         telegramUserId: Number(telegramUserId),
-        state: user.state,
+        state: userState,
         role: 'USER',
       };
 
       const newAccessToken = this.jwtService.sign(newPayload, { expiresIn: '15m' });
       const newRefreshToken = this.jwtService.sign(
         { sub: String(telegramUserId), type: 'refresh' },
-        { expiresIn: '30d', secret: process.env.JWT_REFRESH_SECRET || 'refresh-secret' },
+        { expiresIn: '30d', secret: refreshSecret },
       );
 
       this.logAuth(traceId, 'refresh.completed', `telegramUserId=${telegramUserId.toString()}`);

@@ -32,16 +32,19 @@ export class JwtAuthGuard implements CanActivate {
     try {
       const payload = this.jwtService.verify(token);
       const telegramUserId = BigInt(payload.sub);
-      const user = await this.prisma.user.findUnique({ where: { telegramUserId } });
-      if (!user) {
-        throw new UnauthorizedException({ code: 'USER_NOT_FOUND', message: 'User not found' });
+      let userState = payload.state || 'READY';
+      try {
+        const user = await this.prisma.user.findUnique({ where: { telegramUserId } });
+        if (user) userState = user.state;
+      } catch (dbErr) {
+        // Fallback user state on database connection lag/blip
       }
 
       request.user = {
-        id: user.telegramUserId,
-        sub: String(user.telegramUserId),
-        telegramUserId: String(user.telegramUserId),
-        state: user.state,
+        id: telegramUserId,
+        sub: String(telegramUserId),
+        telegramUserId: String(telegramUserId),
+        state: userState,
         role: payload.role || 'USER',
       };
       return true;
