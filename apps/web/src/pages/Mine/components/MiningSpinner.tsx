@@ -268,7 +268,7 @@ export const MiningSpinner: React.FC = () => {
   }, [particles.length]);
 
   const handleTap = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (isOverheated || coolerMultiplier >= maxMultiplier) {
+    if (isOverheated) {
       impactOccurred('heavy');
       showToast(`🔥 Spinner overheated! Cool down period active (${cooldownTimer || 15}s). No funds credited.`, 'error');
       return;

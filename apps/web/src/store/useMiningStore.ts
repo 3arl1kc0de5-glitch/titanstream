@@ -99,12 +99,13 @@ export const useMiningStore = create<MiningState>((set, get) => {
     fetchMiningState: async () => {
       try {
         const res = await miningService.getMiningState();
-        if (res.success && res.data) {
+        const state = res as any;
+        if (state && typeof state === 'object') {
           set({
-            activeCurrency: res.data.activeCurrency,
-            baseSpeedGhs: res.data.baseSpeedGhs || (get().hasPurchasedMachine ? 5.0 : 1.0),
+            activeCurrency: state.activeCurrency,
+            baseSpeedGhs: state.baseSpeedGhs || (get().hasPurchasedMachine ? 5.0 : 1.0),
             // Do not overwrite the local real-time decaying coolerMultiplier with stale backend data
-            unclaimedBalance: res.data.unclaimedBalance,
+            unclaimedBalance: state.unclaimedBalance,
           });
         }
       } catch (err) {
@@ -115,7 +116,8 @@ export const useMiningStore = create<MiningState>((set, get) => {
     claimMinedYield: async () => {
       try {
         const res = await miningService.claimRewards();
-        if (res.success && res.data?.success) {
+        const data = res as any;
+        if (data && data.success) {
           await useWalletStore.getState().fetchBalanceFromEngine();
           set({
             unclaimedBalance: 0.0,
@@ -193,9 +195,10 @@ export const useMiningStore = create<MiningState>((set, get) => {
       }
 
       miningService.tapCooler(tapYield).then((res) => {
-        if (res.success && res.data) {
+        const state = res as any;
+        if (state && typeof state === 'object') {
           set({
-            unclaimedBalance: res.data.unclaimedBalance,
+            unclaimedBalance: state.unclaimedBalance,
           });
         }
       }).catch((err) => {
@@ -205,7 +208,14 @@ export const useMiningStore = create<MiningState>((set, get) => {
       return tapYield;
     },
 
-    setMultiplier: (value) => set({ coolerMultiplier: value }),
+    setMultiplier: (value) => set((state) => {
+      const willOverheat = value >= state.maxMultiplier;
+      return {
+        coolerMultiplier: value,
+        isOverheated: willOverheat ? true : state.isOverheated,
+        cooldownTimer: willOverheat ? 15 : state.cooldownTimer,
+      };
+    }),
     decay: () =>
       set((state) => {
         if (state.isOverheated) return state;
