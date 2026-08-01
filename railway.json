@@ -5,7 +5,7 @@
     "dockerfilePath": "services/api/Dockerfile"
   },
   "deploy": {
-    "startCommand": "sh -c \"for i in 1 2 3 4 5 6 7 8 9 10; do npx prisma migrate deploy && break || sleep 2; done && node dist/src/main\"",
+    "startCommand": "./start.sh",
     "healthcheckPath": "/api/v1/health/readiness",
     "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE",
