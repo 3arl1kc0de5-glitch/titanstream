@@ -44,11 +44,8 @@ export const Header: React.FC = () => {
       if (preferLocalCurrency && selectedCountry && selectedCountry.code !== 'US') {
         const rate = Number(selectedCountry.exchangeRate) || 1;
         const localVal = safeUsdt * rate;
-        const fmtOpts = selectedCountry.numberFormat && typeof selectedCountry.numberFormat === 'object'
-          ? selectedCountry.numberFormat
-          : { maximumFractionDigits: 2 };
         return {
-          value: localVal < 1 ? (Number(localVal) || 0).toFixed(4) : (Number(localVal) || 0).toLocaleString(undefined, fmtOpts),
+          value: (Number(localVal) || 0).toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 }),
           symbol: selectedCountry.currencySymbol || 'USh',
           flag: selectedCountry.flag || '🇺🇬',
         };

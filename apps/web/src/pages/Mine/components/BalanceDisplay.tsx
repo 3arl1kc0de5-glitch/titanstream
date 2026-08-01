@@ -20,9 +20,7 @@ export const BalanceDisplay: React.FC = () => {
       const rate = Number(selectedCountry.exchangeRate) || 1;
       const localVal = currentDisplay * rate;
       return {
-        value: (Number(localVal) || 0) < 1 
-          ? (Number(localVal) || 0).toFixed(4)
-          : localVal.toLocaleString(undefined, selectedCountry.numberFormat),
+        value: (Number(localVal) || 0).toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 }),
         label: selectedCountry.currencyCode,
       };
     }
