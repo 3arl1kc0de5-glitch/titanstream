@@ -54,7 +54,7 @@ export const GrowthScreen: React.FC = () => {
   } = useQuestStore();
 
   const { oursCount, partnerCount, decrementBadge } = useNotificationStore();
-  const { crystalsBalance, updateBalance } = useWalletStore();
+  const { usdtBalance, crystalsBalance, updateBalance } = useWalletStore();
   const { openGames } = useNavigationStore();
   const { events: communityEvents } = useTreasuryStore();
 
