@@ -34,9 +34,9 @@ export class MiningService {
       return {
         telegramUserId,
         activeCurrency: record.activeCurrency as 'USDT' | 'TON',
-        baseSpeedGhs: Number(record.baseSpeedGhs),
-        coolerMultiplier: Number(record.coolerMultiplier),
-        unclaimedBalance: Number(record.unclaimedBalance),
+        baseSpeedGhs: record.baseSpeedGhs.toNumber(),
+        coolerMultiplier: record.coolerMultiplier.toNumber(),
+        unclaimedBalance: record.unclaimedBalance.toNumber(),
         lastTappedAt: record.lastTappedAt ? new Date(record.lastTappedAt) : undefined,
         lastUpdatedAt: record.lastUpdatedAt ? new Date(record.lastUpdatedAt) : undefined,
       };
