@@ -1,4 +1,22 @@
 import { create } from 'zustand';
+import { growthService, type ReferralSummary } from '../services/growthService';
+
+interface ReferralItem {
+  id: string;
+  refereeId: string;
+  refereeName: string;
+  refereeUsername?: string;
+  status: string;
+  createdAt: string;
+}
+
+interface ReferredByInfo {
+  referrerId: string;
+  name: string;
+  username?: string;
+  joinedAt: string;
+  status: string;
+}
 
 interface ReferralState {
   invitedCount: number;
@@ -7,22 +25,56 @@ interface ReferralState {
   earnedTon: number;
   referralLink: string;
   referralCode: string;
-  referrals: Array<{ id: string; username: string; crystals: number }>;
+  referredBy: ReferredByInfo | null;
+  referrals: ReferralItem[];
+  isLoading: boolean;
+  error: string | null;
+
+  fetchReferrals: () => Promise<void>;
   tickEarnings: (usdtDelta: number, tonDelta: number) => void;
 }
 
 export const useReferralStore = create<ReferralState>((set) => ({
-  invitedCount: 3,
-  computeBoost: 1.06,
-  earnedUsdt: 0.12450,
-  earnedTon: 0.08200,
-  referralLink: 'https://t.me/TS_usdt_bot?start=ref_Z72G1X5A',
-  referralCode: 'Z72G1X5A',
-  referrals: [
-    { id: '1', username: 'Alex_Cloud', crystals: 45 },
-    { id: '2', username: 'VaporTech', crystals: 12 },
-    { id: '3', username: 'Cloud_Pro', crystals: 30 },
-  ],
+  invitedCount: 0,
+  computeBoost: 1.0,
+  earnedUsdt: 0,
+  earnedTon: 0,
+  referralLink: '',
+  referralCode: '',
+  referredBy: null,
+  referrals: [],
+  isLoading: false,
+  error: null,
+
+  fetchReferrals: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const summary: ReferralSummary = await growthService.getReferrals();
+      const boost = Number((1 + (summary.totalInvited || 0) * 0.02).toFixed(2));
+
+      set({
+        invitedCount: summary.totalInvited || 0,
+        computeBoost: boost,
+        earnedUsdt: summary.totalEarnedUSDT || 0,
+        earnedTon: 0,
+        referralLink: summary.referralLink || '',
+        referralCode: summary.referralCode || '',
+        referredBy: summary.referredBy || null,
+        referrals: (summary.referrals || []).map((r) => ({
+          id: r.id,
+          refereeId: r.refereeId,
+          refereeName: r.refereeName,
+          refereeUsername: r.refereeUsername,
+          status: r.status,
+          createdAt: r.createdAt,
+        })),
+        isLoading: false,
+      });
+    } catch (err: any) {
+      set({ error: err?.message || 'Failed to load referral data', isLoading: false });
+    }
+  },
+
   tickEarnings: (usdtDelta, tonDelta) =>
     set((state) => ({
       earnedUsdt: state.earnedUsdt + usdtDelta,
