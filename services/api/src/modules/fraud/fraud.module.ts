@@ -1,10 +1,12 @@
-import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule, forwardRef } from '@nestjs/common';
+import { PrismaModule } from '../../database/prisma.module';
+import { GrowthModule } from '../growth/growth.module';
+import { UserModule } from '../user/user.module';
 import { FraudGuardMiddleware } from './fraud-guard.middleware';
 import { FraudDetectionService } from './fraud-detection.service';
-import { UserModule } from '../user/user.module';
 
 @Module({
-  imports: [UserModule],
+  imports: [PrismaModule, UserModule, forwardRef(() => GrowthModule)],
   providers: [FraudDetectionService],
   exports: [FraudDetectionService],
 })

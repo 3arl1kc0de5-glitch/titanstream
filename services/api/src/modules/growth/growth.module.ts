@@ -17,8 +17,10 @@ import { GrowthAdminController } from './growth-admin.controller';
 import { GrowthAnalyticsController } from './growth-analytics.controller';
 import { GrowthEventType } from '@prisma/client';
 
+import { FraudModule } from '../fraud/fraud.module';
+
 @Module({
-  imports: [PrismaModule, FinancialOrchestrationModule, forwardRef(() => AdminModule)],
+  imports: [PrismaModule, FinancialOrchestrationModule, forwardRef(() => AdminModule), forwardRef(() => FraudModule)],
   controllers: [GrowthController, GrowthAdminController, GrowthAnalyticsController],
   providers: [
     GrowthEventService,

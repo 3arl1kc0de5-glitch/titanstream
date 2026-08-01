@@ -51,7 +51,7 @@ export class ReferralService {
   }
 
   /**
-   * Get or create a unique referral code for a user.
+   * Get or create a unique referral code for a user with collision protection.
    */
   async getOrCreateReferralCode(telegramUserId: bigint) {
     const existing = await this.prisma.referralCode.findUnique({
@@ -65,15 +65,44 @@ export class ReferralService {
       };
     }
 
-    // Generate random 8-char uppercase code
-    const randomSuffix = Math.random().toString(36).substring(2, 8).toUpperCase();
-    const code = `TS${randomSuffix}`;
+    // Collision protection retry loop
+    let attempts = 0;
+    while (attempts < 10) {
+      attempts++;
+      const randomSuffix = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const code = `TS${randomSuffix}`;
 
-    const created = await this.prisma.referralCode.create({
-      data: {
+      try {
+        const created = await this.prisma.referralCode.create({
+          data: {
+            telegramUserId,
+            code,
+            metadata: { generatedAt: new Date().toISOString() },
+          },
+        });
+
+        return {
+          ...created,
+          referralLink: `https://t.me/${this.BOT_USERNAME}?start=ref_${created.code}`,
+        };
+      } catch (err: any) {
+        if (err.code === 'P2002' && attempts < 10) {
+          this.logger.warn(`Referral code collision for ${code}, retrying... (attempt ${attempts})`);
+          continue;
+        }
+        throw err;
+      }
+    }
+
+    // Fallback if random suffix collision persists
+    const fallbackCode = `TS${telegramUserId.toString().slice(-6)}`;
+    const created = await this.prisma.referralCode.upsert({
+      where: { telegramUserId },
+      update: {},
+      create: {
         telegramUserId,
-        code,
-        metadata: { generatedAt: new Date().toISOString() },
+        code: fallbackCode,
+        metadata: { generatedAt: new Date().toISOString(), fallback: true },
       },
     });
 
@@ -84,15 +113,37 @@ export class ReferralService {
   }
 
   /**
-   * Record a new referral connection when a new user joins via a referral code.
+   * Record a new referral connection when a new user joins via a referral code or user ID.
    */
-  async registerReferral(referrerCode: string, refereeId: bigint) {
-    const codeRecord = await this.prisma.referralCode.findUnique({
-      where: { code: referrerCode.toUpperCase() },
+  async registerReferral(referrerCodeOrId: string, refereeId: bigint) {
+    const cleanedInput = referrerCodeOrId.trim();
+
+    // 1. Try finding by referral code string
+    let codeRecord = await this.prisma.referralCode.findUnique({
+      where: { code: cleanedInput.toUpperCase() },
     });
 
+    // 2. If not found, try finding by Telegram User ID if numeric
+    if (!codeRecord && /^\d+$/.test(cleanedInput)) {
+      try {
+        const referrerUserId = BigInt(cleanedInput);
+        const referrerUser = await this.prisma.user.findUnique({
+          where: { telegramUserId: referrerUserId },
+        });
+
+        if (referrerUser) {
+          const generated = await this.getOrCreateReferralCode(referrerUserId);
+          codeRecord = await this.prisma.referralCode.findUnique({
+            where: { id: generated.id },
+          });
+        }
+      } catch (e) {
+        this.logger.debug(`Could not parse ${cleanedInput} as BigInt referrer ID`);
+      }
+    }
+
     if (!codeRecord) {
-      throw new NotFoundException(`Referral code ${referrerCode} not found`);
+      throw new NotFoundException(`Referral code or user ${referrerCodeOrId} not found`);
     }
 
     if (codeRecord.telegramUserId === refereeId) {
@@ -123,14 +174,14 @@ export class ReferralService {
         relationshipId: relationship.id,
         fromStatus: ReferralStatus.CREATED,
         toStatus: ReferralStatus.REGISTERED,
-        payload: { referrerCode },
+        payload: { referrerCode: referrerCodeOrId },
       },
     });
 
     await this.growthEventService.publish({
       telegramUserId: refereeId,
       eventType: GrowthEventType.USER_REGISTERED,
-      payload: { referrerId: codeRecord.telegramUserId.toString(), referralCode: referrerCode },
+      payload: { referrerId: codeRecord.telegramUserId.toString(), referralCode: referrerCodeOrId },
     });
 
     return relationship;
@@ -299,6 +350,20 @@ export class ReferralService {
       });
     });
 
+    // Find who referred this user (upline)
+    const uplineRelationship = await this.prisma.referralRelationship.findUnique({
+      where: { refereeId: telegramUserId },
+      include: {
+        referrer: {
+          select: {
+            telegramUserId: true,
+            firstName: true,
+            telegramUsername: true,
+          },
+        },
+      },
+    });
+
     return {
       referralCode: codeInfo.code,
       referralLink: codeInfo.referralLink,
@@ -306,6 +371,15 @@ export class ReferralService {
       qualifiedCount,
       payingCount,
       totalEarnedUSDT,
+      referredBy: uplineRelationship
+        ? {
+            referrerId: uplineRelationship.referrerId.toString(),
+            name: uplineRelationship.referrer.firstName,
+            username: uplineRelationship.referrer.telegramUsername,
+            joinedAt: uplineRelationship.createdAt,
+            status: uplineRelationship.status,
+          }
+        : null,
       referrals: relationships.map((r) => ({
         id: r.id,
         refereeId: r.refereeId.toString(),

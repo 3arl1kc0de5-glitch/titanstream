@@ -1,7 +1,8 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, Optional, Inject, forwardRef } from '@nestjs/common';
 import { EventBusService, PlatformEvent } from './event-bus.service';
 import { PrismaService } from '../../database/prisma.service';
-import { DomainEventType, OperationsQueueStatus } from '@prisma/client';
+import { DomainEventType, GrowthEventType, OperationsQueueStatus } from '@prisma/client';
+import { GrowthEventService } from '../growth/growth-event.service';
 
 @Injectable()
 export class AutomationService implements OnModuleInit {
@@ -10,6 +11,7 @@ export class AutomationService implements OnModuleInit {
   constructor(
     private readonly eventBus: EventBusService,
     private readonly prisma: PrismaService,
+    @Optional() @Inject(forwardRef(() => GrowthEventService)) private readonly growthEventService?: GrowthEventService,
   ) {}
 
   onModuleInit() {
@@ -72,19 +74,20 @@ export class AutomationService implements OnModuleInit {
       },
     });
 
-    // Check referral relations for the depositor
-    const userRelation = await this.prisma.referralRelationship.findFirst({
-      where: { refereeId: BigInt(telegramUserId) },
-      include: { referrer: true },
-    }).catch(() => null);
-
-    if (userRelation) {
-      this.logger.log(`[Automation] Referral match found! Referrer: ${userRelation.referrerId}, Referee: ${telegramUserId}`);
-      // Award 5 Crystals to referrer
-      await this.prisma.user.update({
-        where: { telegramUserId: userRelation.referrerId },
-        data: { educationScore: { increment: 5 } }, // using educationScore as reputation metric
-      }).catch(() => null);
+    // Trigger growth domain event to evaluate referral eligibility, trust score, and rewards
+    if (this.growthEventService && telegramUserId) {
+      this.logger.log(`[Automation] Emitting SETTLEMENT_COMPLETED to GrowthEventService for user ${telegramUserId}`);
+      await this.growthEventService.publish({
+        telegramUserId: BigInt(telegramUserId),
+        eventType: GrowthEventType.SETTLEMENT_COMPLETED,
+        payload: {
+          settlementId,
+          telegramUserId: telegramUserId.toString(),
+          amount: amount?.toString(),
+          asset: asset || 'USDT',
+        },
+        correlationId: event.correlationId,
+      });
     }
   }
 

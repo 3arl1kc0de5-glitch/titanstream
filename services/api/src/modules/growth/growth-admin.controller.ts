@@ -1,10 +1,12 @@
-import { Controller, Get, Post, Param, Body, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Query, UseGuards, Inject, forwardRef } from '@nestjs/common';
 import { JwtAuthGuard as AuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RewardService } from './reward.service';
 import { UserLevelService } from './user-level.service';
 import { GrowthNotificationService } from './growth-notification.service';
+import { ReferralGraphService } from './referral-graph.service';
+import { FraudDetectionService } from '../fraud/fraud-detection.service';
 import { PrismaService } from '../../database/prisma.service';
-import { RewardStatus, RewardType, UserLevelTier, NotificationChannel } from '@prisma/client';
+import { RewardStatus, RewardType, ReferralStatus, UserLevelTier, NotificationChannel } from '@prisma/client';
 
 @Controller('admin')
 @UseGuards(AuthGuard)
@@ -13,6 +15,9 @@ export class GrowthAdminController {
     private readonly rewardService: RewardService,
     private readonly userLevelService: UserLevelService,
     private readonly notificationService: GrowthNotificationService,
+    private readonly referralGraphService: ReferralGraphService,
+    @Inject(forwardRef(() => FraudDetectionService))
+    private readonly fraudDetectionService: FraudDetectionService,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -41,6 +46,86 @@ export class GrowthAdminController {
       ...result,
       telegramUserId: result.telegramUserId.toString(),
       amount: result.amount.toString(),
+    };
+  }
+
+  /**
+   * GET /admin/referrals/relationships
+   * Detailed listing of all referral relationships for auditing.
+   */
+  @Get('referrals/relationships')
+  async getReferralRelationships(
+    @Query('status') status?: ReferralStatus,
+    @Query('referrerId') referrerId?: string,
+  ) {
+    const where: any = {};
+    if (status) where.status = status;
+    if (referrerId) where.referrerId = BigInt(referrerId);
+
+    const list = await this.prisma.referralRelationship.findMany({
+      where,
+      include: {
+        referrer: { select: { telegramUserId: true, firstName: true, telegramUsername: true } },
+        referee: { select: { telegramUserId: true, firstName: true, telegramUsername: true } },
+        rewards: { include: { reward: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
+
+    return list.map((r) => ({
+      id: r.id,
+      referrerId: r.referrerId.toString(),
+      referrerName: r.referrer.firstName,
+      referrerUsername: r.referrer.telegramUsername,
+      refereeId: r.refereeId.toString(),
+      refereeName: r.referee.firstName,
+      refereeUsername: r.referee.telegramUsername,
+      status: r.status,
+      createdAt: r.createdAt,
+      qualifiedAt: r.qualifiedAt,
+      rewardedAt: r.rewardedAt,
+      rewards: r.rewards.map((rw) => ({
+        id: rw.reward.id,
+        amount: rw.reward.amount.toString(),
+        status: rw.reward.status,
+        reference: rw.reward.reference,
+      })),
+    }));
+  }
+
+  /**
+   * GET /admin/referrals/graph/:userId
+   * Inspect referral graph tree & chain for a specific user.
+   */
+  @Get('referrals/graph/:userId')
+  async getReferralGraphForUser(@Param('userId') userId: string) {
+    const targetId = BigInt(userId);
+    const tree = await this.referralGraphService.getReferralTree(targetId);
+    const chain = await this.referralGraphService.getReferralChain(targetId);
+    const downstream = await this.referralGraphService.getDownstreamCount(targetId);
+
+    return {
+      telegramUserId: userId,
+      tree,
+      chain,
+      downstream,
+    };
+  }
+
+  /**
+   * GET /admin/referrals/fraud-check
+   * Run fraud analysis across IP clusters and referral graph cycles.
+   */
+  @Get('referrals/fraud-check')
+  async runFraudCheck() {
+    const ipClusters = await this.fraudDetectionService.analyzeIpClusters();
+    const graphCycles = await this.fraudDetectionService.checkReferralGraph();
+
+    return {
+      timestamp: new Date().toISOString(),
+      ipClusters,
+      graphCycles,
     };
   }
 
