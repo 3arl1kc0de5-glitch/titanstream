@@ -103,7 +103,7 @@ export const useMiningStore = create<MiningState>((set, get) => {
           set({
             activeCurrency: res.data.activeCurrency,
             baseSpeedGhs: res.data.baseSpeedGhs || (get().hasPurchasedMachine ? 5.0 : 1.0),
-            coolerMultiplier: res.data.coolerMultiplier,
+            // Do not overwrite the local real-time decaying coolerMultiplier with stale backend data
             unclaimedBalance: res.data.unclaimedBalance,
           });
         }
@@ -195,7 +195,6 @@ export const useMiningStore = create<MiningState>((set, get) => {
       miningService.tapCooler(tapYield).then((res) => {
         if (res.success && res.data) {
           set({
-            coolerMultiplier: res.data.coolerMultiplier,
             unclaimedBalance: res.data.unclaimedBalance,
           });
         }

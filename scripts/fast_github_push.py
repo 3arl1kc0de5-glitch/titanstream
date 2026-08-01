@@ -143,7 +143,7 @@ def main():
     print(f"🌲 Created Remote Tree SHA: {new_tree_sha}")
     
     # 6. Create commit
-    commit_msg = "refactor: complete full-stack rebrand from TetherStream to TitanStream"
+    commit_msg = sys.argv[1] if len(sys.argv) > 1 else "refactor: unify Free Trial node into production machine pipeline"
     commit_body = {
         'message': commit_msg,
         'tree': new_tree_sha,
