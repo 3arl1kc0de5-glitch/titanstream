@@ -6,11 +6,11 @@ import { useCountryStore } from '../../../store/useCountryStore';
 
 export const BalanceDisplay: React.FC = () => {
   const { usdtBalance, tonBalance } = useWalletStore();
-  const { activeCurrency, baseSpeedGhs, coolerMultiplier } = useMiningStore();
+  const { activeCurrency, baseSpeedGhs, coolerMultiplier, unclaimedBalance } = useMiningStore();
   const { preferLocalCurrency } = useSettingsStore();
   const { selectedCountry, getLocalAmount } = useCountryStore();
   
-  const currentDisplay = Number(activeCurrency === 'USDT' ? usdtBalance : tonBalance) || 0;
+  const currentDisplay = (Number(activeCurrency === 'USDT' ? usdtBalance : tonBalance) || 0) + (Number(unclaimedBalance) || 0);
   const isUsdt = activeCurrency === 'USDT';
   const showLocal = preferLocalCurrency && !!selectedCountry && selectedCountry.code !== 'US';
 

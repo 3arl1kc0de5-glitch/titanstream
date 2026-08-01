@@ -253,8 +253,6 @@ export const MiningSpinner: React.FC = () => {
     return () => clearInterval(interval);
   }, [particles.length]);
 
-  const { updateBalance } = useWalletStore();
-
   const handleTap = (e: React.MouseEvent<HTMLDivElement>) => {
     if (isOverheated || coolerMultiplier >= maxMultiplier) {
       impactOccurred('heavy');
@@ -275,8 +273,8 @@ export const MiningSpinner: React.FC = () => {
       return;
     }
 
-    const tapSuccess = tap();
-    if (!tapSuccess) {
+    const tapYield = tap(); // Triggers store tap action, which also updates the wallet store balances.
+    if (tapYield <= 0) {
       impactOccurred('heavy');
       showToast(`🔥 Spinner overheated! Cooler bar is full. Waiting for cool down.`, 'error');
       return;
@@ -287,25 +285,6 @@ export const MiningSpinner: React.FC = () => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left - rect.width / 2;
     const y = e.clientY - rect.top - rect.height / 2;
-
-    const currentMultiplier = useMiningStore.getState().coolerMultiplier;
-    const miningStoreState = useMiningStore.getState();
-
-    let tapPayout = 0.02;
-    if (!hasPurchasedMachine && isTrialActive()) {
-      const remainingCap = Math.max(0, 5.0 - miningStoreState.trialEarnings);
-      tapPayout = Math.min(0.02, remainingCap);
-    } else {
-      tapPayout = 0.01 * currentMultiplier * (activeSpinner.payoutMultiplier || 1.0);
-    }
-
-    // Credit directly to the wallet store so the odometer display instantly reflects the tap
-    const wallet = useWalletStore.getState();
-    if (isUsdt) {
-      updateBalance({ usdtBalance: wallet.usdtBalance + tapPayout });
-    } else {
-      updateBalance({ tonBalance: wallet.tonBalance + tapPayout });
-    }
 
     // Increment Taps category progress for Quest Store
     useQuestStore.getState().incrementCategoryProgress('Taps', 1);
@@ -325,7 +304,7 @@ export const MiningSpinner: React.FC = () => {
       vy: -Math.random() * 5 - 4,
       rotation: Math.random() * 360,
       rotSpeed: (Math.random() - 0.5) * 12,
-      text: `+${(Number(tapPayout) || 0).toFixed(4)} ${activeCurrency}`,
+      text: `+${(Number(tapYield) || 0).toFixed(4)} ${activeCurrency}`,
     };
 
     setParticles((prev) => [...prev.slice(-12), newParticle]);

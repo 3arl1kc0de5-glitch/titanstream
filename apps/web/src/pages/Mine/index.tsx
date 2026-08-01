@@ -6,13 +6,16 @@ import { BalanceDisplay } from './components/BalanceDisplay';
 import { CoolerSlider } from './components/CoolerSlider';
 import { ActionCards } from './components/ActionCards';
 import { useMiningStore } from '../../store/useMiningStore';
+import { useWalletStore } from '../../store/useWalletStore';
 
 export const MineScreen: React.FC = () => {
   const { fetchMiningState } = useMiningStore();
+  const { fetchBalanceFromEngine } = useWalletStore();
 
   useEffect(() => {
     fetchMiningState();
-  }, [fetchMiningState]);
+    fetchBalanceFromEngine();
+  }, [fetchMiningState, fetchBalanceFromEngine]);
 
   return (
     <div className="flex flex-col min-h-full animate-fade-in">

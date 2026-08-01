@@ -78,7 +78,6 @@ function MainApp() {
       const state = useMiningStore.getState();
       if (state.isMiningLocked()) return;
 
-      const wallet = useWalletStore.getState();
       const treasury = useTreasuryStore.getState();
       const boostMultiplier = treasury.dailyBoostActive ? 1.5 : 1.0;
       
@@ -92,27 +91,27 @@ function MainApp() {
           if (state.trialEarnings < 5.0) {
             const remainingCap = Math.max(0, 5.0 - state.trialEarnings);
             const cappedDelta = Math.min(delta, remainingCap);
-            updateBalance({ usdtBalance: wallet.usdtBalance + cappedDelta });
             useMiningStore.setState((s) => ({
               unclaimedBalance: s.unclaimedBalance + cappedDelta,
               trialEarnings: Math.min(5.0, s.trialEarnings + cappedDelta),
             }));
           }
         } else {
-          updateBalance({ usdtBalance: wallet.usdtBalance + delta });
           useMiningStore.setState((s) => ({
             unclaimedBalance: s.unclaimedBalance + delta,
           }));
         }
       } else {
-        updateBalance({ tonBalance: wallet.tonBalance + delta });
+        useMiningStore.setState((s) => ({
+          unclaimedBalance: s.unclaimedBalance + delta,
+        }));
       }
 
       useReferralStore.getState().tickEarnings(delta * 0.01, delta * 0.005);
     }, 100);
 
     return () => clearInterval(interval);
-  }, [updateBalance]);
+  }, []);
 
   const renderTabContent = () => {
     switch (activeTab) {
