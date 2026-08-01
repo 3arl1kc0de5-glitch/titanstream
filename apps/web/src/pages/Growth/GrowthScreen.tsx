@@ -13,7 +13,7 @@ import {
   Zap,
   TrendingUp,
   Clock,
-  CheckCircle2,
+  CheckCircle,
   Lock,
   Unlock,
   DollarSign,
@@ -180,14 +180,14 @@ export const GrowthScreen: React.FC = () => {
           <div className="p-2.5 rounded-2xl bg-app-bg/50 border border-white/5 space-y-0.5">
             <div className="text-[10px] text-text-tertiary font-bold">Active Computing Capacity</div>
             <div className="font-mono font-extrabold text-usdt-green flex items-center gap-1">
-              <CheckCircle2 size={12} />
+              <CheckCircle size={12} />
               <span>{hasPurchasedMachine ? `${((Number(baseSpeedGhs) || 0) * 10).toFixed(0)} CU Active` : 'Titan Core (10 CU)'}</span>
             </div>
           </div>
           <div className="p-2.5 rounded-2xl bg-app-bg/50 border border-white/5 space-y-0.5">
             <div className="text-[10px] text-text-tertiary font-bold font-sans">Accumulated Yield</div>
             <div className="font-mono font-extrabold text-text-primary flex items-center gap-1">
-              <CheckCircle2 size={12} className="text-usdt-green" />
+              <CheckCircle size={12} className="text-usdt-green" />
               <CurrencyDisplay amount={unclaimedBalance + (Number(usdtBalance) || 0)} size="sm" />
             </div>
           </div>
@@ -334,7 +334,7 @@ export const GrowthScreen: React.FC = () => {
                       key={idx}
                       className="p-3 rounded-2xl bg-usdt-green/10 border border-usdt-green/20 flex items-center gap-3 text-xs text-text-primary font-semibold"
                     >
-                      <CheckCircle2 size={16} className="text-usdt-green shrink-0" />
+                      <CheckCircle size={16} className="text-usdt-green shrink-0" />
                       <span>{benefit}</span>
                     </div>
                   ))}

@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../database/prisma.service';
 import { UserState } from '../../common/interfaces/user-state.enum';
+import { requiredEnv } from '../../common/config/env.util';
 
 @Injectable()
 export class WebAuthSessionService {
@@ -110,7 +111,7 @@ export class WebAuthSessionService {
     const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
     const refreshToken = this.jwtService.sign(
       { sub: String(telegramUser.id), type: 'refresh' },
-      { expiresIn: '30d', secret: process.env.JWT_REFRESH_SECRET || 'refresh-secret' },
+      { expiresIn: '30d', secret: process.env.JWT_REFRESH_SECRET || requiredEnv('JWT_REFRESH_SECRET', 'dev-refresh-secret') },
     );
 
     this.webAuthSessions.set(sessionCode, {

@@ -2,6 +2,8 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { FinancialAccountStatus, FinancialOperationType, FinancialRuleType, Prisma, UserState } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
 
+type DbClient = Prisma.TransactionClient | PrismaService;
+
 const DEFAULT_RULES = [
   { code: 'USER_MUST_BE_READY', ruleType: FinancialRuleType.USER_READY, parameters: {} },
   { code: 'FINANCIAL_ACCOUNT_MUST_BE_ACTIVE', ruleType: FinancialRuleType.ACCOUNT_ACTIVE, parameters: {} },
@@ -40,12 +42,12 @@ export class FinancialRulesService {
     assetCode: string;
     amount: string;
     operationType: FinancialOperationType;
-  }) {
+  }, client: DbClient = this.prisma) {
     const [user, account, asset, rules] = await Promise.all([
-      this.prisma.user.findUnique({ where: { telegramUserId: params.telegramUserId } }),
-      this.prisma.financialAccount.findUnique({ where: { id: params.financialAccountId } }),
-      this.prisma.asset.findUnique({ where: { assetCode: params.assetCode } }),
-      this.prisma.financialRule.findMany({
+      client.user.findUnique({ where: { telegramUserId: params.telegramUserId } }),
+      client.financialAccount.findUnique({ where: { id: params.financialAccountId } }),
+      client.asset.findUnique({ where: { assetCode: params.assetCode } }),
+      client.financialRule.findMany({
         where: {
           enabled: true,
           OR: [
@@ -72,16 +74,16 @@ export class FinancialRulesService {
         if (new Prisma.Decimal(params.amount).lt(minAmount)) throw new BadRequestException('RULE_AMOUNT_BELOW_MINIMUM');
       }
       if (rule.ruleType === FinancialRuleType.DAILY_LIMIT) {
-        await this.validateDailyLimit(params, rule.parameters as { maxAmount?: string });
+        await this.validateDailyLimit(params, rule.parameters as { maxAmount?: string }, client);
       }
     }
   }
 
-  private async validateDailyLimit(params: { financialAccountId: string; assetCode: string; amount: string }, config: { maxAmount?: string }) {
+  private async validateDailyLimit(params: { financialAccountId: string; assetCode: string; amount: string }, config: { maxAmount?: string }, client: DbClient = this.prisma) {
     if (!config.maxAmount) return;
     const start = new Date();
     start.setHours(0, 0, 0, 0);
-    const operations = await this.prisma.financialOperation.findMany({
+    const operations = await client.financialOperation.findMany({
       where: {
         financialAccountId: params.financialAccountId,
         assetCode: params.assetCode,

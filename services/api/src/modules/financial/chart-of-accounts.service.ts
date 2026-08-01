@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { LedgerAccountType } from '@prisma/client';
+import { LedgerAccountType, Prisma } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
+
+type DbClient = Prisma.TransactionClient | PrismaService;
 
 const REQUIRED_LEDGER_ACCOUNTS = [
   { code: 'PLATFORM_RESERVE', name: 'Platform Reserve', type: LedgerAccountType.ASSET },
@@ -33,8 +35,8 @@ export class ChartOfAccountsService {
     }
   }
 
-  async getRequired(code: string) {
-    const account = await this.prisma.ledgerAccount.findUnique({ where: { code } });
+  async getRequired(code: string, client: DbClient = this.prisma) {
+    const account = await client.ledgerAccount.findUnique({ where: { code } });
     if (!account || !account.enabled) throw new NotFoundException(`LEDGER_ACCOUNT_NOT_FOUND:${code}`);
     return account;
   }

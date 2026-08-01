@@ -4,6 +4,7 @@ import { PrismaService } from '../../database/prisma.service';
 import { TelegramAuthService } from './strategies/telegram-auth.service';
 import { UserState, AuditEventType } from '../../common/interfaces/user-state.enum';
 import { AuditService } from '../audit/audit.service';
+import { requiredEnv } from '../../common/config/env.util';
 
 @Injectable()
 export class AuthService {
@@ -282,7 +283,7 @@ export class AuthService {
       role: 'USER',
     };
 
-    const refreshSecret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'super-secret-jwt-key';
+    const refreshSecret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || requiredEnv('JWT_REFRESH_SECRET', 'dev-refresh-secret');
     const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
     const refreshToken = this.jwtService.sign(
       { sub: String(telegramUserId), type: 'refresh' },
@@ -395,7 +396,7 @@ export class AuthService {
   async refreshTokens(refreshToken: string) {
     const traceId = this.createTraceId();
     this.logAuth(traceId, 'refresh.request_received', 'refresh token submitted');
-    const refreshSecret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || 'super-secret-jwt-key';
+    const refreshSecret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || requiredEnv('JWT_REFRESH_SECRET', 'dev-refresh-secret');
     try {
       const payload = this.jwtService.verify(refreshToken, {
         secret: refreshSecret,

@@ -8,6 +8,8 @@ import { DomainEventService } from './domain-event.service';
 import { FinancialRulesService } from './financial-rules.service';
 import { FinancialWorkflowService } from './financial-workflow.service';
 
+type DbClient = Prisma.TransactionClient | PrismaService;
+
 @Injectable()
 export class CommandProcessorService {
   constructor(
@@ -28,9 +30,9 @@ export class CommandProcessorService {
     idempotencyKey: string;
     reference: string;
     metadata?: Record<string, unknown>;
-  }) {
-    const account = await this.accounts.getOrCreateForReadyUser(command.telegramUserId);
-    const operation = await this.prisma.financialOperation.create({
+  }, client: DbClient = this.prisma) {
+    const account = await this.accounts.getOrCreateForReadyUser(command.telegramUserId, client);
+    const operation = await client.financialOperation.create({
       data: {
         telegramUserId: command.telegramUserId,
         financialAccountId: account.id,
@@ -54,7 +56,7 @@ export class CommandProcessorService {
       telegramUserId: command.telegramUserId,
       financialAccountId: account.id,
       payload: { reference: command.reference, assetCode: command.assetCode, amount: command.amount },
-    });
+    }, client);
 
     try {
       await this.rules.validate({
@@ -63,16 +65,16 @@ export class CommandProcessorService {
         assetCode: command.assetCode,
         amount: command.amount,
         operationType: command.operationType,
-      });
-      await this.workflow.transition(operation.id, FinancialOperationStatus.VALIDATED, 'rules_engine');
-      await this.workflow.transition(operation.id, FinancialOperationStatus.AUTHORIZED, 'command_processor');
+      }, client);
+      await this.workflow.transition(operation.id, FinancialOperationStatus.VALIDATED, 'rules_engine', {}, client);
+      await this.workflow.transition(operation.id, FinancialOperationStatus.AUTHORIZED, 'command_processor', {}, client);
       await this.events.emit({
         eventType: DomainEventType.FINANCIAL_OPERATION_AUTHORIZED,
         operationId: operation.id,
         telegramUserId: command.telegramUserId,
         financialAccountId: account.id,
         payload: { reference: command.reference },
-      });
+      }, client);
 
       const transaction = await this.transactions.createFrameworkTransaction({
         telegramUserId: command.telegramUserId,
@@ -82,13 +84,13 @@ export class CommandProcessorService {
         amount: command.amount,
         reference: command.reference,
         metadata: { operationId: operation.id, ...command.metadata },
-      });
+      }, client);
 
-      await this.prisma.financialOperation.update({
+      await client.financialOperation.update({
         where: { id: operation.id },
         data: { transactionId: transaction.id },
       });
-      await this.workflow.transition(operation.id, FinancialOperationStatus.EXECUTING, 'transaction_created', { transactionId: transaction.id });
+      await this.workflow.transition(operation.id, FinancialOperationStatus.EXECUTING, 'transaction_created', { transactionId: transaction.id }, client);
 
       // Post balanced double-entry ledger entries matching the transaction type
       const lines = [];
@@ -166,15 +168,16 @@ export class CommandProcessorService {
         reference: command.reference,
         description: `${command.operationType} operations posting`,
         lines,
+        client,
       });
 
       // Transition the transaction to COMPLETED state (through PROCESSING first to satisfy state flow rules)
-      await this.transactions.transition(transaction.id, TransactionStatus.PROCESSING, command.telegramUserId);
-      await this.transactions.transition(transaction.id, TransactionStatus.COMPLETED, command.telegramUserId);
+      await this.transactions.transition(transaction.id, TransactionStatus.PROCESSING, command.telegramUserId, client);
+      await this.transactions.transition(transaction.id, TransactionStatus.COMPLETED, command.telegramUserId, client);
 
       // Transition the operation to POSTED and then to COMPLETED
-      await this.workflow.transition(operation.id, FinancialOperationStatus.POSTED, 'ledger_posted');
-      await this.workflow.transition(operation.id, FinancialOperationStatus.COMPLETED, 'completed');
+      await this.workflow.transition(operation.id, FinancialOperationStatus.POSTED, 'ledger_posted', {}, client);
+      await this.workflow.transition(operation.id, FinancialOperationStatus.COMPLETED, 'completed', {}, client);
 
       await this.events.emit({
         eventType: DomainEventType.LEDGER_POSTING_COMPLETED,
@@ -182,14 +185,14 @@ export class CommandProcessorService {
         telegramUserId: command.telegramUserId,
         financialAccountId: account.id,
         payload: { reference: command.reference },
-      });
+      }, client);
 
-      return this.prisma.financialOperation.findUnique({
+      return client.financialOperation.findUnique({
         where: { id: operation.id },
         include: { transaction: true, workflowSteps: true, domainEvents: true },
       });
     } catch (error: any) {
-      await this.prisma.financialOperation.update({
+      await client.financialOperation.update({
         where: { id: operation.id },
         data: {
           failureCode: error?.response?.message || error?.message || 'FINANCIAL_OPERATION_FAILED',
@@ -198,7 +201,9 @@ export class CommandProcessorService {
       });
       await this.workflow.transition(operation.id, FinancialOperationStatus.FAILED_VALIDATION, 'command_processor_failure', {
         error: error?.message || 'Financial operation failed',
-      }).catch(() => undefined);
+      }, client).catch((transitionError: any) => {
+        console.error('[CommandProcessor] Failed to record FAILED_VALIDATION transition:', transitionError?.message);
+      });
       throw error;
     }
   }

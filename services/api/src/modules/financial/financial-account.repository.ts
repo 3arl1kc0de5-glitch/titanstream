@@ -1,17 +1,19 @@
 import { Injectable } from '@nestjs/common';
-import { FinancialAccountStatus } from '@prisma/client';
+import { FinancialAccountStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
+
+type DbClient = Prisma.TransactionClient | PrismaService;
 
 @Injectable()
 export class FinancialAccountRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findByTelegramUserId(telegramUserId: bigint) {
-    return this.prisma.financialAccount.findUnique({ where: { telegramUserId } });
+  findByTelegramUserId(telegramUserId: bigint, client: DbClient = this.prisma) {
+    return client.financialAccount.findUnique({ where: { telegramUserId } });
   }
 
-  createActive(telegramUserId: bigint) {
-    return this.prisma.financialAccount.create({
+  createActive(telegramUserId: bigint, client: DbClient = this.prisma) {
+    return client.financialAccount.create({
       data: {
         telegramUserId,
         status: FinancialAccountStatus.ACTIVE,

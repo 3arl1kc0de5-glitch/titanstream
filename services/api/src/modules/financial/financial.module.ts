@@ -1,6 +1,7 @@
 import { Module, OnModuleInit, forwardRef } from '@nestjs/common';
 import { AuditModule } from '../audit/audit.module';
 import { PrismaModule } from '../../database/prisma.module';
+import { isProduction } from '../../common/config/env.util';
 import { FinancialOrchestrationModule } from '../financial-orchestration/financial-orchestration.module';
 import { AdminModule } from '../admin/admin.module';
 import { GrowthModule } from '../growth/growth.module';
@@ -61,6 +62,10 @@ export class FinancialModule implements OnModuleInit {
       await this.assets.ensureDefaults();
       await this.chart.ensureDefaults();
     } catch (err: any) {
+      if (isProduction()) {
+        console.error('FATAL: Failed to seed default financial configs:', err?.message);
+        throw err;
+      }
       console.warn('Failed to seed default financial configs on startup:', err?.message);
     }
   }
