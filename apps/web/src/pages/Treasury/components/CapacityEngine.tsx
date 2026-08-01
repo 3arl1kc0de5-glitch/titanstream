@@ -16,9 +16,11 @@ import {
   Crown
 } from 'lucide-react';
 import { useCapacityStore, type CapacityOpportunity, type CapacityLevel } from '../../../store/useCapacityStore';
+import { useNavigationStore } from '../../../store/useNavigationStore';
 import { showToast } from '../../../components/Toast';
 
 export const CapacityEngine: React.FC = () => {
+  const { setActiveTab } = useNavigationStore();
   const {
     currentCapacity,
     todayCapacityEarned,
@@ -65,33 +67,44 @@ export const CapacityEngine: React.FC = () => {
         case 'CAPACITY_BOOST':
           purchaseCapacityBoost(opportunity.reward, opportunity.price);
           showToast(`Capacity Boost purchased! +${opportunity.reward} Capacity for 24h.`, 'success');
+          setActiveTab('boost');
           break;
         case 'CAPACITY_PACK':
           purchaseCapacityPack(opportunity.reward, opportunity.price);
           showToast(`Capacity Pack purchased! +${opportunity.reward} permanent Capacity.`, 'success');
+          setActiveTab('boost');
           break;
         case 'REFERRAL_ACCELERATOR':
           purchaseReferralAccelerator(7, opportunity.price);
           showToast(`Referral Accelerator activated! 7-day capacity multiplier.`, 'success');
+          setActiveTab('friends');
           break;
         default:
+          setActiveTab('boost');
           break;
       }
     } else {
-      // Handle free opportunities
+      // Handle free opportunities — navigate to required action screen
       switch (opportunity.source) {
         case 'DEPOSIT':
-          showToast('Navigate to Wallet to make a deposit.', 'info');
+          showToast('Opening Wallet for deposit...', 'info');
+          setActiveTab('wallet');
           break;
         case 'REFERRAL_SIGNUP':
-          showToast('Navigate to Friends to refer new users.', 'info');
+          showToast('Opening Friends hub to invite users...', 'info');
+          setActiveTab('friends');
           break;
         case 'CONSECUTIVE_DAYS':
-          showToast('Stay active daily to earn consecutive day bonuses.', 'info');
+        case 'DAILY_LOGIN':
+        case 'MINING_ACTIVE':
+          addCapacity(opportunity.source, opportunity.reward, opportunity.description);
+          showToast(`+${opportunity.reward} Capacity earned!`, 'success');
+          setActiveTab('mine');
           break;
         default:
           addCapacity(opportunity.source, opportunity.reward, opportunity.description);
           showToast(`+${opportunity.reward} Capacity earned!`, 'success');
+          setActiveTab('mine');
       }
     }
   };
