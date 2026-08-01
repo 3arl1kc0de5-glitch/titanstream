@@ -50,7 +50,7 @@ export const Header: React.FC = () => {
           ? selectedCountry.numberFormat
           : { maximumFractionDigits: 2 };
         return {
-          value: localVal < 1 ? localVal.toFixed(4) : localVal.toLocaleString(undefined, fmtOpts),
+          value: localVal < 1 ? (Number(localVal) || 0).toFixed(4) : (Number(localVal) || 0).toLocaleString(undefined, fmtOpts),
           symbol: selectedCountry.currencySymbol || 'USh',
           flag: selectedCountry.flag || '🇺🇬',
         };

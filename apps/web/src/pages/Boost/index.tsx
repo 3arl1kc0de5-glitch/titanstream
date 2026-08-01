@@ -245,7 +245,7 @@ export const BoostScreen: React.FC = () => {
                 </div>
 
                 <div className="flex items-center justify-between text-[11px] font-mono font-bold text-text-secondary border-t border-white/5 pt-1.5 mt-1">
-                  <span>≈ ${machine.dailyYieldUsdt.toFixed(2)} USDT / day</span>
+                  <span>≈ ${(Number(machine?.dailyYieldUsdt) || 0).toFixed(2)} USDT / day</span>
                   <span className="text-text-tertiary font-normal">Monthly: <strong className="text-text-primary">{yieldDetails.monthly.local}</strong></span>
                 </div>
               </div>
@@ -258,7 +258,7 @@ export const BoostScreen: React.FC = () => {
                     {yieldDetails.price.local}
                   </span>
                   <span className="text-[10px] font-mono font-bold text-usdt-green">
-                    ≈ ${machine.priceUsdt.toFixed(2)} USDT
+                    ≈ ${(Number(machine?.priceUsdt) || 0).toFixed(2)} USDT
                   </span>
                 </div>
 

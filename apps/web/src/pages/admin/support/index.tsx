@@ -296,7 +296,7 @@ export const AdminSupportPage: React.FC = () => {
                 </div>
                 <div className="flex justify-between py-1 border-b border-white/5">
                   <span className="text-text-tertiary">Controlled Balance:</span>
-                  <span className="font-mono font-bold text-usdt-green">${selectedTicket.userBalanceUsdt.toFixed(2)} USDT</span>
+                  <span className="font-mono font-bold text-usdt-green">${(Number(selectedTicket.userBalanceUsdt) || 0).toFixed(2)} USDT</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-white/5">
                   <span className="text-text-tertiary">Running Machines:</span>

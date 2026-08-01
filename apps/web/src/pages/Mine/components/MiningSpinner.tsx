@@ -1171,7 +1171,7 @@ export const MiningSpinner: React.FC = () => {
         </div>
         <div className="bg-control-bg/70 border border-white/10 rounded-2xl p-2 flex flex-col items-center justify-center shadow-sm">
           <span className="text-[9px] text-text-tertiary font-bold font-sans uppercase">Core Multiplier</span>
-          <span className="font-extrabold text-gold text-xs mt-0.5">×{coolerMultiplier.toFixed(1)}</span>
+          <span className="font-extrabold text-gold text-xs mt-0.5">×{(Number(coolerMultiplier) || 1).toFixed(1)}</span>
         </div>
       </div>
     </div>
