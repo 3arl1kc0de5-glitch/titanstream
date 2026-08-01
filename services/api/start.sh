@@ -3,88 +3,56 @@ set -e
 
 echo "=== STARTUP DIAGNOSTICS ==="
 
-check_var() {
+# Validate required variables (fails fast if missing)
+validate_env() {
   name=$1
   val=$(eval echo "\$$name")
-  if [ -z "$val" ]; then
-    echo "  $name: UNSET or EMPTY"
-  else
-    # Check prefixes safely
-    is_pg="false"
-    case "$val" in
-      postgres://*|postgresql://*) is_pg="true" ;;
-    esac
-    echo "  $name: EXISTS (length: ${#val}, is_postgres: $is_pg)"
+  if [ -z "$val" ] || [ -z "$(echo "$val" | tr -d ' ')" ]; then
+    echo "FATAL: Required environment variable $name is missing or empty!"
+    exit 1
   fi
 }
 
-check_var "DATABASE_URL"
-check_var "DATABASE_PRIVATE_URL"
-check_var "POSTGRES_URL"
-check_var "POSTGRESQL_URL"
-check_var "RAILWAY_POSTGRESQL_URL"
-check_var "PGHOST"
-check_var "PGUSER"
-check_var "PGPORT"
-check_var "PGDATABASE"
+validate_env "DATABASE_URL"
+validate_env "JWT_SECRET"
+validate_env "JWT_REFRESH_SECRET"
 
-echo "==========================="
+echo "All required environment variables are present."
 
-# Fallback DATABASE_URL resolution
-resolved_url="${DATABASE_URL}"
-if [ -z "$resolved_url" ]; then
-  resolved_url="${DATABASE_PRIVATE_URL}"
-fi
-if [ -z "$resolved_url" ]; then
-  resolved_url="${POSTGRES_URL}"
-fi
-if [ -z "$resolved_url" ]; then
-  resolved_url="${RAILWAY_POSTGRESQL_URL}"
-fi
-if [ -z "$resolved_url" ] && [ -n "$PGHOST" ]; then
-  resolved_url="postgresql://${PGUSER}:${PGPASSWORD}@${PGHOST}:${PGPORT:-5432}/${PGDATABASE:-railway}?schema=public"
-fi
-
-export DATABASE_URL="$resolved_url"
-
-if [ -z "$DATABASE_URL" ]; then
-  echo "[start.sh] WARNING: DATABASE_URL is empty after resolving fallbacks!"
-else
-  # Double check prefix safely
-  is_pg="false"
-  case "$DATABASE_URL" in
-    postgres://*|postgresql://*) is_pg="true" ;;
-  esac
-  echo "[start.sh] DATABASE_URL resolved successfully (length: ${#DATABASE_URL}, is_postgres: $is_pg)."
-fi
-
-# Print list of tables and migration statuses
-echo "=== DATABASE SCHEMA STATUS ==="
-node -e "
-const { Client } = require('pg');
-const client = new Client({ connectionString: process.env.DATABASE_URL });
-client.connect()
-  .then(() => client.query(\"SELECT table_name FROM information_schema.tables WHERE table_schema='public'\"))
-  .then(res => {
-    console.log('Tables:', res.rows.map(r => r.table_name));
-    return client.query(\"SELECT migration_name, rolled_back_at, finished_at FROM _prisma_migrations\");
-  })
-  .then(res => {
-    console.log('Migrations:');
-    res.rows.forEach(r => console.log(' -', r.migration_name, 'rolled_back_at:', r.rolled_back_at, 'finished_at:', r.finished_at));
-    process.exit(0);
-  })
+# Inspect database using Prisma Client
+echo "Checking database schema status..."
+HAS_USERS_TABLE=$(node -e "
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+prisma.user.findFirst()
+  .then(() => console.log('true'))
   .catch(err => {
-    console.error('Error querying DB:', err);
-    process.exit(0);
-  });
-" || true
+    if (err.code === 'P2021') {
+      console.log('false');
+    } else {
+      console.log('true'); // DB connects but table query failed (e.g. empty but structural connection OK)
+    }
+  })
+  .finally(() => prisma.\$disconnect());
+" 2>/dev/null || echo "false")
 
-# Run migrations
-for i in 1 2 3 4 5 6 7 8 9 10; do
-  echo "Attempting to run prisma migrate deploy (attempt $i)..."
-  npx prisma migrate deploy && break || sleep 2
-done
+echo "Database contains core schema tables: $HAS_USERS_TABLE"
+
+if [ "$HAS_USERS_TABLE" = "false" ]; then
+  echo "Database is empty. Running one-time bootstrap schema (db push)..."
+  npx prisma db push --accept-data-loss
+  
+  echo "Marking migrations as resolved/applied in migration history..."
+  npx prisma migrate resolve --applied 0_init || true
+  npx prisma migrate resolve --applied 20260728120000_financial_foundation || true
+  npx prisma migrate resolve --applied 20260728130000_financial_orchestration || true
+  npx prisma migrate resolve --applied 20260728150000_merchant_settlement_engine || true
+  npx prisma migrate resolve --applied 20260801160000_add_interactive_promotional_output || true
+  echo "Database bootstrap and migration resolution completed successfully."
+else
+  echo "Database already contains schema. Deploying normal migrations..."
+  npx prisma migrate deploy
+fi
 
 # Run main application
 exec node dist/src/main

@@ -11,11 +11,15 @@ RUN npm install -g pnpm && pnpm install --frozen-lockfile --filter @titanstream/
 
 COPY services/api/ ./services/api/
 
+WORKDIR /app/services/api
+
+# Generate baseline migration 0_init representing the current schema.prisma
+RUN mkdir -p prisma/migrations/0_init && \
+    npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > prisma/migrations/0_init/migration.sql
+
 RUN pnpm --filter @titanstream/api run prisma:generate
 
 RUN pnpm --filter @titanstream/api build
-
-WORKDIR /app/services/api
 
 RUN chmod +x start.sh
 
