@@ -17,6 +17,8 @@ RUN pnpm --filter @titanstream/api build
 
 WORKDIR /app/services/api
 
+RUN chmod +x start.sh
+
 EXPOSE 3000
 
-CMD ["sh", "-c", "for i in 1 2 3 4 5 6 7 8 9 10; do npx prisma migrate deploy && break || sleep 2; done && node dist/src/main"]
+CMD ["./start.sh"]
