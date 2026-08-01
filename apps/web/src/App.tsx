@@ -72,7 +72,7 @@ function MainApp() {
   const { activeTab } = useNavigationStore();
   const { updateBalance } = useWalletStore();
 
-  // Live balance ticking
+  // Live balance & yield ticking engine
   useEffect(() => {
     const interval = setInterval(() => {
       const state = useMiningStore.getState();
@@ -81,10 +81,29 @@ function MainApp() {
       const wallet = useWalletStore.getState();
       const treasury = useTreasuryStore.getState();
       const boostMultiplier = treasury.dailyBoostActive ? 1.5 : 1.0;
-      const delta = state.baseSpeedGhs * state.coolerMultiplier * boostMultiplier * 0.000000148385;
+      
+      // Calibrated passive stream yield rate per 100ms
+      const baseYieldRate = state.hasPurchasedMachine ? 0.0001 : 0.00005;
+      const delta = state.baseSpeedGhs * state.coolerMultiplier * boostMultiplier * baseYieldRate;
 
       if (state.activeCurrency === 'USDT') {
-        updateBalance({ usdtBalance: wallet.usdtBalance + delta * 0.4 });
+        // Enforce 48h Free Trial $5.00 Cap for trial users
+        if (!state.hasPurchasedMachine && state.isTrialActive()) {
+          if (state.trialEarnings < 5.0) {
+            const remainingCap = Math.max(0, 5.0 - state.trialEarnings);
+            const cappedDelta = Math.min(delta, remainingCap);
+            updateBalance({ usdtBalance: wallet.usdtBalance + cappedDelta });
+            useMiningStore.setState((s) => ({
+              unclaimedBalance: s.unclaimedBalance + cappedDelta,
+              trialEarnings: Math.min(5.0, s.trialEarnings + cappedDelta),
+            }));
+          }
+        } else {
+          updateBalance({ usdtBalance: wallet.usdtBalance + delta });
+          useMiningStore.setState((s) => ({
+            unclaimedBalance: s.unclaimedBalance + delta,
+          }));
+        }
       } else {
         updateBalance({ tonBalance: wallet.tonBalance + delta });
       }
