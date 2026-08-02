@@ -10,7 +10,10 @@ export class IdempotencyService {
   constructor(private readonly prisma: PrismaService) {}
 
   hashPayload(payload: unknown) {
-    return createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+    const jsonSafeString = JSON.stringify(payload, (_key, value) =>
+      typeof value === 'bigint' ? value.toString() : value
+    );
+    return createHash('sha256').update(jsonSafeString).digest('hex');
   }
 
   async begin(telegramUserId: bigint, idempotencyKey: string, payload: unknown, client: DbClient = this.prisma) {
