@@ -146,8 +146,73 @@ export const MiningSpinner: React.FC = () => {
 
   const isDailyLimitReached = tapsToday >= dailyTapLimit;
   const isWeeklyLimitReached = tapsThisWeek >= weeklyTapLimit;
-  const isMonthlyLimitReached = tapsThisMonth >= monthlyTapLimit;  
   const reactorRef = React.useRef<QuantumLoopReactorRef | null>(null);
+
+  // V2 AI Presence & Telemetry State
+  const AI_COMPUTE_STATUSES = [
+    'Allocating AI Compute',
+    'Optimizing Tensor Paths',
+    'Synchronizing Compute Grid',
+    'Rendering Intelligence',
+    'Compressing Neural Graph',
+    'Balancing Quantum Mesh',
+    'Routing Neural Packets',
+    'Stabilizing Reactor Core',
+    'Maintaining Compute Integrity',
+    'Synchronizing Distributed Nodes',
+  ];
+  const BOOT_STEPS = [
+    'Connecting to Titan Grid...',
+    'Synchronizing AI Core...',
+    'Loading Quantum Reactor...',
+    'Operator Connected.',
+  ];
+
+  const [statusIdx, setStatusIdx] = useState(0);
+  const [discoveryToast, setDiscoveryToast] = useState<string | null>(null);
+  const [isBooting, setIsBooting] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const booted = sessionStorage.getItem('tether_reactor_booted');
+      return !booted;
+    }
+    return false;
+  });
+  const [bootStep, setBootStep] = useState(0);
+
+  // Status Ticker Timer (Req 11)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setStatusIdx((prev) => (prev + 1) % AI_COMPUTE_STATUSES.length);
+    }, 9000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Session Boot Sequence (Req 19)
+  useEffect(() => {
+    if (!isBooting) return;
+    const interval = setInterval(() => {
+      setBootStep((prev) => {
+        if (prev >= BOOT_STEPS.length - 1) {
+          clearInterval(interval);
+          setTimeout(() => {
+            setIsBooting(false);
+            sessionStorage.setItem('tether_reactor_booted', 'true');
+          }, 400);
+          return prev;
+        }
+        return prev + 1;
+      });
+    }, 450);
+
+    return () => clearInterval(interval);
+  }, [isBooting]);
+
+  const handleDiscoveryEvent = (title: string) => {
+    setDiscoveryToast(title);
+    setTimeout(() => {
+      setDiscoveryToast(null);
+    }, 2800);
+  };
 
   const isAnyLimitReached = isDailyLimitReached || isWeeklyLimitReached || isMonthlyLimitReached;
   const isUsdt = activeCurrency === 'USDT';
@@ -161,6 +226,7 @@ export const MiningSpinner: React.FC = () => {
   const activeSpinner = activeSpinners[activeSpinnerIdx];
 
   const [fanRotation, setFanRotation] = useState(0);
+
 
   // Fan spinning speed — driven entirely by unified mining state.
   // Base speed comes from the machine configuration (spinnerSpeedMultiplier /
@@ -490,15 +556,55 @@ export const MiningSpinner: React.FC = () => {
           
           {/* 0. Quantum Loop Reactor (Visual Upgrade for Free Trial Machine & Baseline Core) */}
           {(activeSpinner.id === 'free-trial' || !['berp-heli', 'jet-turbine', 'co-axial', 'plasma-coil', 'quantum-core', 'neural-net', 'crystal-array', 'plasma-fusion'].includes(activeSpinner.id)) && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-              <QuantumLoopReactor
-                ref={reactorRef}
-                coolerMultiplier={coolerMultiplier}
-                isOverheated={isOverheated}
-                isLocked={isMiningLocked()}
-              />
-            </div>
+            <>
+              {/* Floating Holographic Telemetry Data (Req 16) */}
+              <div className="absolute -top-3 -left-2 z-20 pointer-events-none flex flex-col opacity-75 animate-pulse">
+                <span className="text-[7px] font-mono font-bold text-cyan-400 uppercase tracking-tighter">AI LOAD</span>
+                <span className="text-[9px] font-mono font-black text-cyan-200">
+                  {93 + Math.floor((Math.sin(Date.now() / 3500) + 1) * 2.5)}%
+                </span>
+              </div>
+              <div className="absolute -top-3 -right-2 z-20 pointer-events-none flex flex-col items-end opacity-75 animate-pulse">
+                <span className="text-[7px] font-mono font-bold text-cyan-400 uppercase tracking-tighter">COMPUTE</span>
+                <span className="text-[9px] font-mono font-black text-cyan-200">
+                  {(8.1 + (Math.cos(Date.now() / 4000) + 1) * 0.25).toFixed(1)} TH/s
+                </span>
+              </div>
+              <div className="absolute -bottom-2 right-1 z-20 pointer-events-none flex flex-col items-end opacity-75">
+                <span className="text-[7px] font-mono font-bold text-emerald-400 uppercase tracking-tighter">NETWORK</span>
+                <span className="text-[8px] font-mono font-bold text-emerald-300">SYNCED</span>
+              </div>
+
+              {/* Rare Discovery Event Toast (Req 18) */}
+              {discoveryToast && (
+                <div className="absolute -top-12 z-30 bg-cyan-950/80 border border-cyan-400 text-cyan-200 text-[9px] font-mono font-black px-3 py-1 rounded-full flex items-center gap-1.5 uppercase tracking-widest shadow-[0_0_20px_rgba(0,242,254,0.5)] animate-bounce backdrop-blur-md">
+                  <Sparkles size={12} className="text-cyan-300 animate-spin" />
+                  <span>{discoveryToast}</span>
+                </div>
+              )}
+
+              {/* Session Boot Experience Overlay (Req 19) */}
+              {isBooting && (
+                <div className="absolute inset-0 rounded-full bg-black/90 backdrop-blur-md z-30 flex flex-col items-center justify-center p-4 text-center border border-cyan-500/40 animate-fade-in pointer-events-none">
+                  <div className="w-7 h-7 rounded-full border-2 border-cyan-400 border-t-transparent animate-spin mb-1.5" />
+                  <span className="text-[9px] font-mono font-black text-cyan-300 uppercase tracking-widest">
+                    {BOOT_STEPS[bootStep]}
+                  </span>
+                </div>
+              )}
+
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                <QuantumLoopReactor
+                  ref={reactorRef}
+                  coolerMultiplier={coolerMultiplier}
+                  isOverheated={isOverheated}
+                  isLocked={isMiningLocked()}
+                  onDiscoveryEvent={handleDiscoveryEvent}
+                />
+              </div>
+            </>
           )}
+
 
           {/* 1. Aero BERP Rotor (Helicopter Aerodynamic Blades) */}
           {activeSpinner.id === 'berp-heli' && (
@@ -1128,7 +1234,16 @@ export const MiningSpinner: React.FC = () => {
         </button>
       </div>
 
+      {/* AI Compute Status Ticker (Req 11) for Quantum Loop Reactor */}
+      {(activeSpinner.id === 'free-trial' || !['berp-heli', 'jet-turbine', 'co-axial', 'plasma-coil', 'quantum-core', 'neural-net', 'crystal-array', 'plasma-fusion'].includes(activeSpinner.id)) && (
+        <div className="mt-3 flex items-center justify-center gap-1.5 text-[9px] font-mono font-extrabold text-cyan-300/90 uppercase tracking-widest bg-cyan-950/30 border border-cyan-500/20 px-3.5 py-1 rounded-full backdrop-blur-xs shadow-[0_0_12px_rgba(0,176,255,0.15)] transition-all duration-500">
+          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
+          <span>{AI_COMPUTE_STATUSES[statusIdx]}</span>
+        </div>
+      )}
+
       {/* Live Stream Stats Panel below Spinner Wheel */}
+
       {(() => {
         // Output / Tap is published by the mining engine — the UI only renders it
         const currentTapYieldVal = Number(tapYieldPerTap) || 0;

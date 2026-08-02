@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
+import React, { useEffect, useRef, useImperativeHandle, forwardRef, useState } from 'react';
 
 export interface QuantumLoopReactorRef {
   triggerTap: () => void;
@@ -9,6 +9,7 @@ interface QuantumLoopReactorProps {
   isOverheated?: boolean;
   isLocked?: boolean;
   onClick?: (e: React.MouseEvent<HTMLDivElement>) => void;
+  onDiscoveryEvent?: (title: string) => void;
 }
 
 interface Particle {
@@ -18,6 +19,14 @@ interface Particle {
   size: number;
   opacity: number;
   isSpark?: boolean;
+}
+
+interface InwardBeam {
+  angle: number;
+  dist: number;
+  maxDist: number;
+  speed: number;
+  alpha: number;
 }
 
 interface TapRipple {
@@ -31,10 +40,30 @@ interface Shockwave {
   r: number;
   maxR: number;
   alpha: number;
+  isStabilization?: boolean;
+}
+
+// Operating modes for Req 17 (Reactor Personality)
+const PERSONALITY_MODES = [
+  { name: 'Stable', hueOffset: 0, speedFactor: 0.9, pulseSpeed: 0.8 },
+  { name: 'Experimental', hueOffset: 35, speedFactor: 1.25, pulseSpeed: 1.3 },
+  { name: 'Adaptive', hueOffset: -15, speedFactor: 1.1, pulseSpeed: 1.1 },
+  { name: 'Quantum', hueOffset: 50, speedFactor: 1.4, pulseSpeed: 1.4 },
+  { name: 'Precision', hueOffset: 10, speedFactor: 1.0, pulseSpeed: 0.9 },
+  { name: 'Hyper Efficient', hueOffset: -30, speedFactor: 0.95, pulseSpeed: 0.85 },
+  { name: 'Learning', hueOffset: 20, speedFactor: 1.15, pulseSpeed: 1.2 },
+  { name: 'Autonomous', hueOffset: 40, speedFactor: 1.3, pulseSpeed: 1.35 },
+];
+
+function getDailyPersonality() {
+  const now = new Date();
+  const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000);
+  const index = dayOfYear % PERSONALITY_MODES.length;
+  return PERSONALITY_MODES[index];
 }
 
 // Color interpolation helpers (HSL / RGB smooth transitions)
-function getQuantumColor(timeSec: number): {
+function getQuantumColor(timeSec: number, hueOffset: number = 0): {
   primaryHex: string;
   secondaryHex: string;
   accentHex: string;
@@ -45,18 +74,17 @@ function getQuantumColor(timeSec: number): {
   const cycle = (timeSec % 18) / 18;
   let hue: number;
   if (cycle < 0.333) {
-    // 195 (Electric Blue) -> 175 (Cyan)
     const t = cycle / 0.333;
     hue = 195 + (175 - 195) * t;
   } else if (cycle < 0.666) {
-    // 175 (Cyan) -> 265 (Violet)
     const t = (cycle - 0.333) / 0.333;
     hue = 175 + (265 - 175) * t;
   } else {
-    // 265 (Violet) -> 195 (Electric Blue)
     const t = (cycle - 0.666) / 0.334;
     hue = 265 + (195 - 265) * t;
   }
+
+  hue = (hue + hueOffset + 360) % 360;
 
   const primaryHex = `hsl(${hue}, 100%, 55%)`;
   const secondaryHex = `hsl(${(hue + 30) % 360}, 100%, 65%)`;
@@ -84,9 +112,89 @@ function getQuantumColor(timeSec: number): {
   return { primaryHex, secondaryHex, accentHex, coreGlowRgb, hue };
 }
 
+// Web Audio API Synth Generator for Ambient Soundscape & Tap Feedback (Req 20)
+class ReactorAudioSynth {
+  private ctx: AudioContext | null = null;
+  private humOsc: OscillatorNode | null = null;
+  private humGain: GainNode | null = null;
+  public isMuted: boolean = false;
+
+  private initCtx() {
+    if (!this.ctx && typeof window !== 'undefined') {
+      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (AudioCtx) {
+        this.ctx = new AudioCtx();
+      }
+    }
+  }
+
+  public playTapSound() {
+    if (this.isMuted) return;
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+      if (this.ctx.state === 'suspended') {
+        this.ctx.resume();
+      }
+
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(280, now);
+      osc.frequency.exponentialRampToValueAtTime(560, now + 0.12);
+
+      gain.gain.setValueAtTime(0.08, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.16);
+    } catch {
+      // Audio autoplay policy fallback
+    }
+  }
+
+  public playDiscoveryChime() {
+    if (this.isMuted) return;
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+      if (this.ctx.state === 'suspended') {
+        this.ctx.resume();
+      }
+
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(520, now);
+      osc.frequency.exponentialRampToValueAtTime(880, now + 0.35);
+
+      gain.gain.setValueAtTime(0.06, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.42);
+    } catch {
+      // Audio autoplay policy fallback
+    }
+  }
+}
+
+const audioSynth = new ReactorAudioSynth();
+
 export const QuantumLoopReactor = forwardRef<QuantumLoopReactorRef, QuantumLoopReactorProps>(
-  ({ coolerMultiplier = 1.0, isOverheated = false, isLocked = false, onClick }, ref) => {
+  ({ coolerMultiplier = 1.0, isOverheated = false, isLocked = false, onClick, onDiscoveryEvent }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const [personality] = useState(getDailyPersonality);
 
     // Refs for physics / animation state without React re-renders
     const stateRef = useRef({
@@ -94,29 +202,59 @@ export const QuantumLoopReactor = forwardRef<QuantumLoopReactorRef, QuantumLoopR
       middleAngle: 0,
       outerAngle: 0,
       lastTime: performance.now(),
+      lastTapTime: performance.now(),
+      idleFactor: 0, // 0 = energetic, 1 = calm idle (Req 13)
       tapSpeedSurge: 0,
       coreFlash: 0,
       pulseTimer: 0,
-      nextPulseInterval: 5.5, // random 5-8 seconds
+      nextPulseInterval: 5.5,
+      autoEventTimer: 0,
+      nextAutoEventInterval: 22.0, // Req 12
+      stabilizationTimer: 0, // Req 15
+      isStabilizing: false,
+      stabilizePhase: 0,
+      discoveryTimer: 0, // Req 18
       ripples: [] as TapRipple[],
       shockwaves: [] as Shockwave[],
+      inwardBeams: [] as InwardBeam[],
       particles: [] as Particle[],
+      particleDir: 1, // 1 or -1 for particle reversal events
     });
 
     // Expose imperative handle for tap events
     useImperativeHandle(ref, () => ({
       triggerTap: () => {
         const s = stateRef.current;
-        s.tapSpeedSurge = 2.5; // Temporary ring acceleration
-        s.coreFlash = 1.0; // Soft core flash
+        const now = performance.now();
+        s.lastTapTime = now;
+        s.idleFactor = 0; // Immediate energetic awakening from idle (Req 13)
         
+        // Chain speed surge (Req 14)
+        s.tapSpeedSurge = Math.min(3.5, s.tapSpeedSurge + 1.2);
+        s.coreFlash = 1.0;
+        
+        // Audio confirmation
+        audioSynth.playTapSound();
+
         // Spawn outward expanding ripple
         s.ripples.push({
           r: 24,
           maxR: 106,
-          alpha: 0.9,
-          speed: 4.8,
+          alpha: 0.95,
+          speed: 5.0,
         });
+
+        // Spawn reactive inward energy beams (Req 14)
+        for (let b = 0; b < 4; b++) {
+          const angle = Math.random() * Math.PI * 2;
+          s.inwardBeams.push({
+            angle,
+            dist: 100,
+            maxDist: 100,
+            speed: 180 + Math.random() * 60,
+            alpha: 0.9,
+          });
+        }
 
         // Pull particles inward towards core
         s.particles.forEach((p) => {
@@ -176,25 +314,93 @@ export const QuantumLoopReactor = forwardRef<QuantumLoopReactorRef, QuantumLoopR
 
         const s = stateRef.current;
 
+        // --- REQ 13: IDLE AWARENESS SYSTEM ---
+        const timeSinceTap = (now - s.lastTapTime) / 1000;
+        if (timeSinceTap > 4.5) {
+          // Smoothly drift to calm idle state
+          s.idleFactor = Math.min(1.0, s.idleFactor + dt * 0.5);
+        } else {
+          s.idleFactor = Math.max(0.0, s.idleFactor - dt * 2.0);
+        }
+
+        const idleSpeedMult = 1.0 - s.idleFactor * 0.45; // 45% slower rotation in idle
+        const idlePulseMult = 1.0 - s.idleFactor * 0.5;
+
         // Overheat / Lock multipliers
         const isActive = !isOverheated && !isLocked;
-        const intensity = isActive ? 0.4 + 0.6 * Math.min(1.5, coolerMultiplier) : 0;
+        const intensity = isActive ? (0.4 + 0.6 * Math.min(1.5, coolerMultiplier)) * personality.speedFactor * idleSpeedMult : 0;
 
         // Decay tap speed surge & core flash
-        s.tapSpeedSurge = Math.max(0, s.tapSpeedSurge - dt * 3.5);
-        s.coreFlash = Math.max(0, s.coreFlash - dt * 4.0);
+        s.tapSpeedSurge = Math.max(0, s.tapSpeedSurge - dt * 2.8);
+        s.coreFlash = Math.max(0, s.coreFlash - dt * 3.5);
 
-        // Quantum pulse logic (Every 5-8 seconds)
+        // --- REQ 12: INTELLIGENT AUTONOMOUS REACTOR EVENTS (20-40s) ---
+        s.autoEventTimer += dt;
+        if (s.autoEventTimer >= s.nextAutoEventInterval) {
+          s.autoEventTimer = 0;
+          s.nextAutoEventInterval = 20.0 + Math.random() * 20.0;
+          if (isActive) {
+            const eventType = Math.floor(Math.random() * 4);
+            if (eventType === 0) {
+              // Particle Direction Flip
+              s.particleDir *= -1;
+            } else if (eventType === 1) {
+              // Scan Ring Flare
+              s.shockwaves.push({ r: 24, maxR: 104, alpha: 0.85 });
+            } else if (eventType === 2) {
+              // Core Flare
+              s.coreFlash = 0.8;
+            } else {
+              // Speed Impulse
+              s.tapSpeedSurge = 1.5;
+            }
+          }
+        }
+
+        // --- REQ 15: REACTOR STABILIZATION CYCLE (Every 2.5 mins) ---
+        s.stabilizationTimer += dt;
+        if (s.stabilizationTimer >= 140.0) {
+          s.stabilizationTimer = 0;
+          s.isStabilizing = true;
+          s.stabilizePhase = 0;
+          if (isActive) {
+            s.shockwaves.push({ r: 20, maxR: 108, alpha: 1.0, isStabilization: true });
+            s.coreFlash = 1.0;
+          }
+        }
+
+        if (s.isStabilizing) {
+          s.stabilizePhase += dt * 0.8;
+          if (s.stabilizePhase >= 1.0) {
+            s.isStabilizing = false;
+          }
+        }
+
+        // --- REQ 18: RARE DISCOVERY EVENTS (60-90s) ---
+        s.discoveryTimer += dt;
+        if (s.discoveryTimer >= 75.0) {
+          s.discoveryTimer = 0;
+          if (isActive && Math.random() > 0.3 && onDiscoveryEvent) {
+            const DISCOVERIES = [
+              'Quantum Resonance Detected',
+              'Compute Optimization Found',
+              'AI Cluster Expanded',
+              'Tensor Alignment Complete',
+              'Photon Synchronization Successful',
+            ];
+            const item = DISCOVERIES[Math.floor(Math.random() * DISCOVERIES.length)];
+            audioSynth.playDiscoveryChime();
+            onDiscoveryEvent(item);
+          }
+        }
+
+        // --- REQ 5: QUANTUM PULSE LOGIC ---
         s.pulseTimer += dt;
         if (s.pulseTimer >= s.nextPulseInterval) {
           s.pulseTimer = 0;
-          s.nextPulseInterval = 5.0 + Math.random() * 3.0; // random between 5 and 8 seconds
+          s.nextPulseInterval = 5.0 + Math.random() * 3.0;
           if (isActive) {
-            s.shockwaves.push({
-              r: 28,
-              maxR: 104,
-              alpha: 0.8,
-            });
+            s.shockwaves.push({ r: 28, maxR: 104, alpha: 0.8 });
             s.coreFlash = Math.max(s.coreFlash, 0.7);
           }
         }
@@ -213,7 +419,7 @@ export const QuantumLoopReactor = forwardRef<QuantumLoopReactorRef, QuantumLoopR
         s.outerAngle += outerSpeed * dt;
 
         // Colors
-        const colors = getQuantumColor(timeSec);
+        const colors = getQuantumColor(timeSec, personality.hueOffset);
         let primaryColor = colors.primaryHex;
         let secondaryColor = colors.secondaryHex;
 
@@ -223,7 +429,7 @@ export const QuantumLoopReactor = forwardRef<QuantumLoopReactorRef, QuantumLoopR
         }
 
         // --- LAYER 1: AMBIENT BACKDROP & LIVING PLASMA CORE GLOW ---
-        const pulseRatio = Math.sin(timeSec * 2.2) * 0.5 + 0.5; // breathing pulse
+        const pulseRatio = Math.sin(timeSec * 2.2 * personality.pulseSpeed * idlePulseMult) * 0.5 + 0.5; // breathing pulse
         const coreRadius = 26 + pulseRatio * 4 + s.coreFlash * 7;
 
         // Radial core gradient (Living energy core with soft bloom & breathing glow)
@@ -250,8 +456,34 @@ export const QuantumLoopReactor = forwardRef<QuantumLoopReactorRef, QuantumLoopR
         ctx.stroke();
         ctx.restore();
 
+        // --- REQ 14: INWARD ENERGY BEAMS (Tap energy injection) ---
+        for (let i = s.inwardBeams.length - 1; i >= 0; i--) {
+          const bm = s.inwardBeams[i];
+          bm.dist -= dt * bm.speed;
+          bm.alpha -= dt * 0.9;
+
+          if (bm.dist <= 15 || bm.alpha <= 0) {
+            s.inwardBeams.splice(i, 1);
+            continue;
+          }
+
+          const bx = cx + Math.cos(bm.angle) * bm.dist;
+          const by = cy + Math.sin(bm.angle) * bm.dist;
+
+          ctx.save();
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2.0;
+          ctx.globalAlpha = Math.max(0, bm.alpha);
+          ctx.shadowColor = primaryColor;
+          ctx.shadowBlur = 12;
+          ctx.beginPath();
+          ctx.moveTo(bx, by);
+          ctx.lineTo(cx, cy);
+          ctx.stroke();
+          ctx.restore();
+        }
+
         // --- LAYER 2: QUANTUM PULSE SHOCKWAVES & RIPPLES ---
-        // Shockwaves (expanding energy wave emitting from reactor every 5-8s)
         for (let i = s.shockwaves.length - 1; i >= 0; i--) {
           const sw = s.shockwaves[i];
           sw.r += dt * 80;
@@ -263,8 +495,8 @@ export const QuantumLoopReactor = forwardRef<QuantumLoopReactorRef, QuantumLoopR
           }
 
           ctx.save();
-          ctx.strokeStyle = primaryColor;
-          ctx.lineWidth = 3.0;
+          ctx.strokeStyle = sw.isStabilization ? '#ffffff' : primaryColor;
+          ctx.lineWidth = sw.isStabilization ? 4.0 : 3.0;
           ctx.globalAlpha = Math.max(0, sw.alpha);
           ctx.shadowColor = primaryColor;
           ctx.shadowBlur = 16;
@@ -298,8 +530,6 @@ export const QuantumLoopReactor = forwardRef<QuantumLoopReactorRef, QuantumLoopR
         }
 
         // --- LAYER 3: THREE INDEPENDENT ENERGY RINGS WITH TRAILS ---
-
-        // Helper to draw segmented energy ring with trailing opacity
         const drawEnergyRing = (
           r: number,
           angle: number,
@@ -320,7 +550,6 @@ export const QuantumLoopReactor = forwardRef<QuantumLoopReactorRef, QuantumLoopR
           for (let i = 0; i < segments; i++) {
             const segStartAngle = angle + (i * (Math.PI * 2)) / segments;
             
-            // Draw trail with multi-step sub-arcs fading backwards
             const trailSteps = 10;
             for (let t = 0; t < trailSteps; t++) {
               const stepFraction = t / trailSteps;
@@ -336,7 +565,6 @@ export const QuantumLoopReactor = forwardRef<QuantumLoopReactorRef, QuantumLoopR
               ctx.stroke();
             }
 
-            // High intensity leading head particle on the ring segment
             const headAngle = segStartAngle + arcLengthRad * 0.05;
             const headX = cx + Math.cos(headAngle) * r;
             const headY = cy + Math.sin(headAngle) * r;
@@ -353,23 +581,23 @@ export const QuantumLoopReactor = forwardRef<QuantumLoopReactorRef, QuantumLoopR
           ctx.restore();
         };
 
-        // Ring 1: INNER RING (Slow, brightest, closest to core, r=48px)
+        // Ring 1: INNER RING (r=48px)
         drawEnergyRing(
           48,
           s.innerAngle,
-          3, // 3 arc segments
-          (Math.PI * 2) / 3 * 0.65, // length of each segment
+          3,
+          (Math.PI * 2) / 3 * 0.65,
           4.0,
           primaryColor,
           0.9,
           18
         );
 
-        // Ring 2: MIDDLE RING (Medium speed, opposite direction, r=72px)
+        // Ring 2: MIDDLE RING (r=72px)
         drawEnergyRing(
           72,
           s.middleAngle,
-          4, // 4 arc segments
+          4,
           (Math.PI * 2) / 4 * 0.55,
           2.8,
           secondaryColor,
@@ -377,11 +605,11 @@ export const QuantumLoopReactor = forwardRef<QuantumLoopReactorRef, QuantumLoopR
           14
         );
 
-        // Ring 3: OUTER RING (Fastest, thin, subtle high-tech quantum boundary, r=94px)
+        // Ring 3: OUTER RING (r=94px)
         drawEnergyRing(
           94,
           s.outerAngle,
-          6, // 6 fine segments
+          6,
           (Math.PI * 2) / 6 * 0.45,
           1.8,
           colors.accentHex,
@@ -401,17 +629,15 @@ export const QuantumLoopReactor = forwardRef<QuantumLoopReactorRef, QuantumLoopR
 
         // --- LAYER 4: SUBTLE FLOATING PARTICLES & SPARKS ---
         s.particles.forEach((p) => {
-          // Orbit angle update
-          p.angle += p.speed * (1 + s.tapSpeedSurge * 0.5) * dt;
+          p.angle += p.speed * s.particleDir * (1 + s.tapSpeedSurge * 0.5) * idleSpeedMult * dt;
           
-          // Wobble distance
           const distWobble = p.dist + Math.sin(timeSec * 3 + p.angle * 2) * 3;
           const px = cx + Math.cos(p.angle) * distWobble;
           const py = cy + Math.sin(p.angle) * distWobble;
 
           ctx.save();
           ctx.fillStyle = p.isSpark ? '#ffffff' : primaryColor;
-          ctx.globalAlpha = p.opacity * (0.65 + s.coreFlash * 0.35);
+          ctx.globalAlpha = p.opacity * (0.65 + s.coreFlash * 0.35) * (1 - s.idleFactor * 0.3);
           if (p.isSpark) {
             ctx.shadowColor = '#ffffff';
             ctx.shadowBlur = 8;
@@ -428,7 +654,7 @@ export const QuantumLoopReactor = forwardRef<QuantumLoopReactorRef, QuantumLoopR
 
       animFrameId = requestAnimationFrame(render);
       return () => cancelAnimationFrame(animFrameId);
-    }, [coolerMultiplier, isOverheated, isLocked]);
+    }, [coolerMultiplier, isOverheated, isLocked, personality, onDiscoveryEvent]);
 
     return (
       <div 
