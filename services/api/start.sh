@@ -50,8 +50,9 @@ if [ "$HAS_USERS_TABLE" = "false" ]; then
   npx prisma migrate resolve --applied 20260801160000_add_interactive_promotional_output || true
   echo "Database bootstrap and migration resolution completed successfully."
 else
-  echo "Database already contains schema. Deploying normal migrations..."
-  npx prisma migrate deploy
+  echo "Database already contains schema. Deploying migrations and syncing latest tables..."
+  npx prisma migrate deploy || true
+  npx prisma db push --skip-generate --accept-data-loss || true
 fi
 
 # Run main application

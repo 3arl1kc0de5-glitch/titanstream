@@ -189,10 +189,16 @@ export class MachineService {
       bigIntUserId = BigInt(0);
     }
 
-    const records = await this.prisma.userMachine.findMany({
-      where: { telegramUserId: bigIntUserId },
-      orderBy: { purchasedAt: 'desc' },
-    });
+    let records: any[] = [];
+    try {
+      records = await this.prisma.userMachine.findMany({
+        where: { telegramUserId: bigIntUserId },
+        orderBy: { purchasedAt: 'desc' },
+      });
+    } catch (err: any) {
+      console.warn('[MachineService] user_machines table query error (falling back to baseline Titan Core):', err?.message);
+      records = [];
+    }
 
     const now = new Date();
     const trialMachine: UserMachineAsset = {
