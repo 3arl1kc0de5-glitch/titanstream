@@ -10,6 +10,7 @@ import { showToast } from '../../../components/Toast';
 import { useNavigationStore } from '../../../store/useNavigationStore';
 import { useCountryStore } from '../../../store/useCountryStore';
 import { useSettingsStore } from '../../../store/useSettingsStore';
+import { QuantumLoopReactor, type QuantumLoopReactorRef } from './QuantumLoopReactor';
 
 interface Particle {
   id: number;
@@ -145,8 +146,8 @@ export const MiningSpinner: React.FC = () => {
 
   const isDailyLimitReached = tapsToday >= dailyTapLimit;
   const isWeeklyLimitReached = tapsThisWeek >= weeklyTapLimit;
-  const isMonthlyLimitReached = tapsThisMonth >= monthlyTapLimit;
-
+  const isMonthlyLimitReached = tapsThisMonth >= monthlyTapLimit;  
+  const reactorRef = React.useRef<QuantumLoopReactorRef | null>(null);
 
   const isAnyLimitReached = isDailyLimitReached || isWeeklyLimitReached || isMonthlyLimitReached;
   const isUsdt = activeCurrency === 'USDT';
@@ -269,6 +270,7 @@ export const MiningSpinner: React.FC = () => {
     }
 
     impactOccurred('medium');
+    reactorRef.current?.triggerTap();
 
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left - rect.width / 2;
@@ -455,35 +457,49 @@ export const MiningSpinner: React.FC = () => {
             ))}
           </div>
 
-          {/* Liquid Water cooling pipe loop */}
-          <svg className="absolute inset-0 w-full h-full pointer-events-none z-10">
-            <circle
-              cx="108"
-              cy="108"
-              r="98"
-              fill="none"
-              stroke={`${dynamicColor}20`}
-              strokeWidth="3"
-            />
-            <circle
-              cx="108"
-              cy="108"
-              r="98"
-              fill="none"
-              stroke={dynamicColor}
-              strokeWidth="3.5"
-              strokeDasharray="12, 180"
-              style={{
-                transformOrigin: 'center',
-                animation: `spin ${Math.max(0.5, 5 - coolerMultiplier * 0.2)}s linear infinite`,
-              }}
-            />
-          </svg>
+          {/* Liquid Water cooling pipe loop for legacy mechanical machines */}
+          {activeSpinner.id !== 'free-trial' && (
+            <svg className="absolute inset-0 w-full h-full pointer-events-none z-10">
+              <circle
+                cx="108"
+                cy="108"
+                r="98"
+                fill="none"
+                stroke={`${dynamicColor}20`}
+                strokeWidth="3"
+              />
+              <circle
+                cx="108"
+                cy="108"
+                r="98"
+                fill="none"
+                stroke={dynamicColor}
+                strokeWidth="3.5"
+                strokeDasharray="12, 180"
+                style={{
+                  transformOrigin: 'center',
+                  animation: `spin ${Math.max(0.5, 5 - coolerMultiplier * 0.2)}s linear infinite`,
+                }}
+              />
+            </svg>
+          )}
 
           <div className="absolute inset-2.5 rounded-full border border-white/5 pointer-events-none" />
 
           {/* DYNAMIC SPINNER RENDERING ENGINE */}
           
+          {/* 0. Quantum Loop Reactor (Visual Upgrade for Free Trial Machine & Baseline Core) */}
+          {(activeSpinner.id === 'free-trial' || !['berp-heli', 'jet-turbine', 'co-axial', 'plasma-coil', 'quantum-core', 'neural-net', 'crystal-array', 'plasma-fusion'].includes(activeSpinner.id)) && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+              <QuantumLoopReactor
+                ref={reactorRef}
+                coolerMultiplier={coolerMultiplier}
+                isOverheated={isOverheated}
+                isLocked={isMiningLocked()}
+              />
+            </div>
+          )}
+
           {/* 1. Aero BERP Rotor (Helicopter Aerodynamic Blades) */}
           {activeSpinner.id === 'berp-heli' && (
             <>
@@ -1039,7 +1055,11 @@ export const MiningSpinner: React.FC = () => {
 
           {/* Center Metal Hub Casing */}
           <div
-            className="absolute inset-16 rounded-full bg-[#161822] border-2 shadow-[0_4px_15px_rgba(0,0,0,0.8),inset_0_2px_4px_rgba(255,255,255,0.08)] flex flex-col items-center justify-center transition-all duration-300 z-10"
+            className={
+              activeSpinner.id === 'free-trial'
+                ? "absolute w-[72px] h-[72px] rounded-full bg-[#080b15]/60 backdrop-blur-xs border border-cyan-400/40 shadow-[0_0_20px_rgba(0,176,255,0.3)] flex flex-col items-center justify-center transition-all duration-300 z-20 pointer-events-none"
+                : "absolute inset-16 rounded-full bg-[#161822] border-2 shadow-[0_4px_15px_rgba(0,0,0,0.8),inset_0_2px_4px_rgba(255,255,255,0.08)] flex flex-col items-center justify-center transition-all duration-300 z-20 pointer-events-none"
+            }
             style={{ borderColor: dynamicColor }}
           >
             <span className="text-[10px] font-black text-white/95 leading-none font-mono tracking-tight">

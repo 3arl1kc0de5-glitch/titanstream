@@ -109,7 +109,8 @@ export const useMiningStore = create<MiningState>((set, get) => {
      * first fetch (session restore) and after claims (wallet already updated).
      */
     applyServerSession: (session, opts) => {
-      const snap = opts?.snapDisplay ?? !hydrated;
+      const currentDisplay = get().displayUnclaimed;
+      const snap = opts?.snapDisplay || !hydrated || session.unclaimedBalance < currentDisplay;
       hydrated = true;
       set({
         activeCurrency: session.activeCurrency,
@@ -122,9 +123,9 @@ export const useMiningStore = create<MiningState>((set, get) => {
         isOverheated: session.isOverheated,
         cooldownRemaining: session.cooldownRemaining,
         tapYieldPerTap: session.tapYieldPerTap,
-        displayUnclaimed: snap ? session.unclaimedBalance : get().displayUnclaimed,
-        displayMultiplier: snap ? session.coolerMultiplier : get().displayMultiplier,
-        displayPromoOutput: snap ? session.lifetimePromotionalOutput : get().displayPromoOutput,
+        displayUnclaimed: snap ? session.unclaimedBalance : currentDisplay,
+        displayMultiplier: snap || session.coolerMultiplier < get().displayMultiplier ? session.coolerMultiplier : get().displayMultiplier,
+        displayPromoOutput: snap || session.lifetimePromotionalOutput < get().displayPromoOutput ? session.lifetimePromotionalOutput : get().displayPromoOutput,
       });
     },
 
@@ -269,13 +270,13 @@ export const useMiningStore = create<MiningState>((set, get) => {
         const passiveYield = (s.isActive && !s.isOverheated) ? (s.baseSpeedGhs * s.coolerMultiplier * baseRate * (TICK_MS / 1000)) : 0;
         const nextUnclaimed = s.unclaimedBalance + passiveYield;
 
-        // Ease the odometer-style displays toward authoritative targets
-        const unclDir = nextUnclaimed >= s.displayUnclaimed ? EASE_FLAT : EASE_DOWN;
-        const promoDir = s.lifetimePromotionalOutput >= s.displayPromoOutput ? EASE_FLAT : EASE_DOWN;
+        // Ease the odometer-style displays toward authoritative targets; snap down instantly on claim reset
+        const unclDir = nextUnclaimed >= s.displayUnclaimed ? EASE_FLAT : 1.0;
+        const promoDir = s.lifetimePromotionalOutput >= s.displayPromoOutput ? EASE_FLAT : 1.0;
         set({
           unclaimedBalance: nextUnclaimed,
-          displayUnclaimed: s.displayUnclaimed + (nextUnclaimed - s.displayUnclaimed) * unclDir,
-          displayPromoOutput: s.displayPromoOutput + (s.lifetimePromotionalOutput - s.displayPromoOutput) * promoDir,
+          displayUnclaimed: nextUnclaimed < s.displayUnclaimed ? nextUnclaimed : s.displayUnclaimed + (nextUnclaimed - s.displayUnclaimed) * unclDir,
+          displayPromoOutput: s.lifetimePromotionalOutput < s.displayPromoOutput ? s.lifetimePromotionalOutput : s.displayPromoOutput + (s.lifetimePromotionalOutput - s.displayPromoOutput) * promoDir,
         });
 
         // Cooldown countdown rendering (recalibrated by every server response).
