@@ -142,14 +142,25 @@ export const useMiningStore = create<MiningState>((set, get) => {
     claimMinedYield: async () => {
       try {
         const res = await miningService.claimRewards();
-        if (res && res.success && res.data?.success) {
+        const isSuccess = Boolean(
+          res &&
+          (res.success !== false) &&
+          (res.data?.success !== false) &&
+          (res.success || res.data?.success || res.data?.session || (res as any).session)
+        );
+
+        if (isSuccess) {
+          const session = res.data?.session || (res.data as any) || (res as any).session;
           await useWalletStore.getState().fetchBalanceFromEngine();
-          if (res.data.session) {
-            get().applyServerSession(res.data.session, { snapDisplay: true });
+          if (session && typeof session === 'object' && 'unclaimedBalance' in session) {
+            get().applyServerSession(session, { snapDisplay: true });
+          } else {
+            await get().fetchMiningState();
           }
           return { success: true };
         }
-        return { success: false, error: new Error(res?.message || 'Server claim operation failed without explicit error code.') };
+        const errorMsg = (res as any)?.error?.message || res?.message || 'Server claim operation failed without explicit error code.';
+        return { success: false, error: new Error(errorMsg) };
       } catch (err) {
         console.error('Failed to claim mining yield:', err);
         return { success: false, error: err };

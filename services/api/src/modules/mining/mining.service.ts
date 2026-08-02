@@ -341,7 +341,7 @@ export class MiningService {
   async claim(telegramUserId: string): Promise<{ success: boolean; amount: string; session: UserMiningState }> {
     const session = await this.getOrCreateSession(telegramUserId);
     const claimAmount = session.unclaimedBalance;
-    if (claimAmount <= 0) {
+    if (claimAmount < 0.000001) {
       return { success: false, amount: '0.00', session };
     }
 

@@ -14,7 +14,7 @@ export const ActionCards: React.FC = () => {
 
   const handleClaim = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (safeUnclaimed <= 0) return;
+    if (safeUnclaimed < 0.000001) return;
     const result = await claimMinedYield();
     if (result.success) {
       showToast(`Successfully received +${safeUnclaimed.toFixed(4)} ${activeCurrency} in your wallet.`, 'success');
@@ -23,7 +23,7 @@ export const ActionCards: React.FC = () => {
       const response = err?.response;
       const status = response?.status;
       const body = response?.data;
-      const backendError = body?.message || err?.message || 'Unknown error';
+      const backendError = body?.error?.message || body?.message || err?.message || 'Unknown error';
       const stack = err?.stack || 'No stack trace';
 
       console.error('[CLAIM FAILURE DIAGNOSTICS]', {
