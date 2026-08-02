@@ -26,17 +26,7 @@ export class AssetRegistryService {
   }
 
   async getEnabled(assetCode: string, client: DbClient = this.prisma) {
-    let asset = await client.asset.findUnique({ where: { assetCode } });
-    if (!asset) {
-      const fallback = DEFAULT_ASSETS.find((a) => a.assetCode === assetCode);
-      if (fallback) {
-        asset = await client.asset.upsert({
-          where: { assetCode: fallback.assetCode },
-          create: { ...fallback, enabled: true },
-          update: { enabled: true },
-        });
-      }
-    }
+    const asset = await client.asset.findUnique({ where: { assetCode } });
     if (!asset || !asset.enabled) throw new NotFoundException(`ASSET_NOT_FOUND:${assetCode}`);
     return asset;
   }

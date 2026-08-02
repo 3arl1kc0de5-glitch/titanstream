@@ -36,21 +36,7 @@ export class ChartOfAccountsService {
   }
 
   async getRequired(code: string, client: DbClient = this.prisma) {
-    let account = await client.ledgerAccount.findUnique({ where: { code } });
-    if (!account) {
-      const fallback = REQUIRED_LEDGER_ACCOUNTS.find((a) => a.code === code);
-      if (fallback) {
-        account = await client.ledgerAccount.upsert({
-          where: { code: fallback.code },
-          create: {
-            ...fallback,
-            description: `${fallback.name} ledger account`,
-            enabled: true,
-          },
-          update: { enabled: true },
-        });
-      }
-    }
+    const account = await client.ledgerAccount.findUnique({ where: { code } });
     if (!account || !account.enabled) throw new NotFoundException(`LEDGER_ACCOUNT_NOT_FOUND:${code}`);
     return account;
   }
