@@ -18,8 +18,8 @@ export class MachineController {
   @Get('my')
   @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Get active user cloud machines and capacity telemetry' })
-  getMyMachines(@TelegramUserId() telegramUserId: bigint) {
-    return this.service.getUserMachines(telegramUserId.toString());
+  async getMyMachines(@TelegramUserId() telegramUserId: bigint) {
+    return await this.service.getUserMachines(telegramUserId.toString());
   }
 
   @Post('purchase')

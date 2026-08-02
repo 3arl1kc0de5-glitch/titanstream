@@ -85,7 +85,7 @@ export const ActionCards: React.FC = () => {
                 Receive Stream Output
               </div>
               <div className="text-xs text-text-secondary mt-0.5 font-sans font-medium">
-                Transfer your claimable mining output to your wallet.
+                Transfer your claimable stream output to your wallet.
               </div>
             </div>
           </div>

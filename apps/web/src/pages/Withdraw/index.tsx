@@ -65,7 +65,7 @@ export const WithdrawScreen: React.FC = () => {
         </div>
         <h1 className="text-title text-text-primary font-extrabold tracking-tight">Withdraw Funds</h1>
         <p className="text-body mt-1">
-          Transfer your mined yield directly to your mobile wallet or crypto account
+          Transfer your stream yield directly to your mobile wallet or crypto account
         </p>
       </motion.div>
 

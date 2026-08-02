@@ -139,7 +139,7 @@ export const MiningSimulatorPage: React.FC = () => {
         <div>
           <h1 className="text-2xl font-black tracking-tight text-white flex items-center gap-2.5">
             <Zap className="text-emerald-400 animate-pulse" size={26} />
-            Unified Mining Engine Simulator
+            Unified Stream Engine Simulator
           </h1>
           <p className="text-sm text-slate-400 mt-1">
             Observe, simulate, and audit the state-driven lifecycle of the Free Trial and Premium machines.
@@ -202,7 +202,7 @@ export const MiningSimulatorPage: React.FC = () => {
               </span>
             ) : (
               <span className="text-emerald-400 flex items-center gap-1.5 text-lg">
-                <Play size={18} className="fill-emerald-400" /> ACTIVE & MINING
+                <Play size={18} className="fill-emerald-400" /> ACTIVE & STREAMING
               </span>
             )}
           </div>
@@ -305,7 +305,7 @@ export const MiningSimulatorPage: React.FC = () => {
             </h3>
             <p className="text-sm text-slate-400 mb-6">
               The Titan Core is a <strong className="text-slate-200">permanent machine</strong>. During the promotion, passive
-              mining generates ~95–98% of the <strong className="text-slate-200">$5.00 lifetime promotional output</strong> while
+              streaming generates ~95–98% of the <strong className="text-slate-200">$5.00 lifetime promotional output</strong> while
               tapping adds at most <strong className="text-slate-200">$0.10</strong> in interactive bonus — engagement never
               meaningfully shortens the promotional period. After the cap it continues forever in{" "}
               <strong className="text-slate-200">Standard Mode</strong> at a slower configured rate. It never expires and never

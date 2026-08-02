@@ -325,6 +325,7 @@ model User {
   channelVerificationEvents ChannelVerificationEvent[]
   miningState           UserMiningState?
   productSubscriptions  ProductSubscription[]
+  userMachines          UserMachine[]
 
   @@index([state])
   @@index([createdAt])
@@ -1655,5 +1656,26 @@ model UserMiningState {
 
   @@map("user_mining_states")
 }
+
+model UserMachine {
+  id               String   @id @default(uuid()) @map("user_machine_id")
+  telegramUserId   BigInt   @map("telegram_user_id")
+  tierCode         String   @map("tier_code")
+  name             String   @map("name")
+  purchasePrice    Decimal  @db.Decimal(36, 18) @map("purchase_price")
+  currency         String   @default("USDT") @map("currency")
+  status           String   @default("ACTIVE") @map("status")
+  capacityGhs      Decimal  @db.Decimal(36, 18) @map("capacity_ghs")
+  lifetimeEarnings Decimal  @default(0.0) @db.Decimal(36, 18) @map("lifetime_earnings")
+  purchasedAt      DateTime @default(now()) @map("purchased_at")
+  activatedAt      DateTime @default(now()) @map("activated_at")
+
+  user User @relation(fields: [telegramUserId], references: [telegramUserId], onDelete: Cascade)
+
+  @@index([telegramUserId])
+  @@index([status])
+  @@map("user_machines")
+}
+
 
 

@@ -219,7 +219,7 @@ export const FriendsScreen: React.FC = () => {
             </div>
             <div className="flex flex-col">
               <span className="text-xs font-extrabold text-text-primary">Compute capacity boost</span>
-              <span className="text-[11px] text-text-secondary mt-0.5">Your mining capacity grows with each friend you bring in</span>
+              <span className="text-[11px] text-text-secondary mt-0.5">Your stream capacity grows with each friend you bring in</span>
             </div>
           </div>
 

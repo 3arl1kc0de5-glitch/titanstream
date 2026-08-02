@@ -36,9 +36,9 @@ export const BalanceDisplay: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center justify-center gap-1.5 my-2">
-      {/* Label: Claimable Mining Output */}
+      {/* Label: Claimable Stream Output */}
       <span className="text-[11px] font-extrabold uppercase tracking-widest text-text-secondary/80">
-        Claimable Mining Output
+        Claimable Stream Output
       </span>
 
       {/* Live Odometer Ticker Balance with Text Gradient */}

@@ -105,7 +105,7 @@ export const TreasuryScreen: React.FC = () => {
     useTreasuryStore.getState().adjustTrustScore(3);
 
     setShowDepositModal(false);
-    showToast(`Successfully deposited ${(Number(depVal) || 0).toFixed(2)} USDT! 1.5× Mining Speed Boost activated.`, 'success');
+    showToast(`Successfully deposited ${(Number(depVal) || 0).toFixed(2)} USDT! 1.5× Stream Speed Boost activated.`, 'success');
   };
 
   const handleMissionAction = (mission: MissionItem) => {

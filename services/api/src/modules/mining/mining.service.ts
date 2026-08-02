@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { FinancialOrchestratorService } from '../financial-orchestration/financial-orchestrator.service';
 import { FinancialOperationType, Prisma } from '@prisma/client';
@@ -34,6 +34,7 @@ export class MiningService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly orchestrator: FinancialOrchestratorService,
+    @Inject(forwardRef(() => MachineService))
     private readonly machineService: MachineService,
   ) {}
 
@@ -109,8 +110,9 @@ export class MiningService {
    * Highest-capacity active machine tier — the economic profile that governs
    * tap yield, thermal limits, and promotional economics for the session.
    */
-  private getBestActiveTier(session: UserMiningState): MachineTier | undefined {
-    const activeMachines = this.machineService.getUserMachines(session.telegramUserId).filter((m) => m.status === 'ACTIVE');
+  private async getBestActiveTier(session: UserMiningState): Promise<MachineTier | undefined> {
+    const machines = await this.machineService.getUserMachines(session.telegramUserId);
+    const activeMachines = machines.filter((m) => m.status === 'ACTIVE');
     const catalog = this.machineService.getCatalog();
 
     let bestTier: MachineTier | undefined;
@@ -128,8 +130,9 @@ export class MiningService {
    * overheated the multiplier is frozen and the engine pauses; when the window
    * closes the core resets to 1.0 so tapping can resume cleanly.
    */
-  private applyCoolingState(session: UserMiningState, now: Date): void {
-    const maxMultiplier = this.getBestActiveTier(session)?.maxMultiplier ?? MAX_MULTIPLIER;
+  private async applyCoolingState(session: UserMiningState, now: Date): Promise<void> {
+    const bestTier = await this.getBestActiveTier(session);
+    const maxMultiplier = bestTier?.maxMultiplier ?? MAX_MULTIPLIER;
     const lastTap = session.lastTappedAt ? new Date(session.lastTappedAt).getTime() : 0;
     const overheated = session.coolerMultiplier >= maxMultiplier && now.getTime() - lastTap < OVERHEAT_MS;
     if (overheated) {
@@ -147,14 +150,9 @@ export class MiningService {
   /**
    * Server-computed per-tap yield from the machine configuration. The client
    * never supplies yield numbers — it only renders this value.
-   *
-   * During the promotional phase the yield is additionally capped by the
-   * configurable interactive bonus ceiling, so tapping can never materially
-   * accelerate reaching the promotional cap: passive mining stays the primary
-   * earning mechanism.
    */
-  private computeTapYield(session: UserMiningState): number {
-    const bestTier = this.getBestActiveTier(session);
+  private async computeTapYield(session: UserMiningState): Promise<number> {
+    const bestTier = await this.getBestActiveTier(session);
 
     const dailyYield = bestTier?.dailyYieldEstimateUsdt ?? 2.0;
     const payout = session.activeCurrency === 'TON' ? dailyYield * 1.15 : dailyYield;
@@ -171,28 +169,26 @@ export class MiningService {
     return yieldValue;
   }
 
-  private accruePassiveYield(session: UserMiningState) {
+  private async accruePassiveYield(session: UserMiningState): Promise<void> {
     const now = new Date();
     const lastUpdate = session.lastUpdatedAt ? new Date(session.lastUpdatedAt) : new Date();
     session.lastUpdatedAt = now;
 
     const elapsedMs = now.getTime() - lastUpdate.getTime();
-    this.applyCoolingState(session, now);
+    await this.applyCoolingState(session, now);
     if (elapsedMs <= 0) return;
 
-    // While the machine is cooling down it is genuinely inactive: the engine
-    // pauses so the spinner and the counter always move together.
     if (session.isOverheated) {
       return;
     }
 
-    // Cooler naturally decays toward 1.0 (configurable rate per second) unless overheated
-    const decayPerSec = this.getBestActiveTier(session)?.multiplierDecayPerSec ?? MULTIPLIER_DECAY_PER_SEC;
+    const bestTier = await this.getBestActiveTier(session);
+    const decayPerSec = bestTier?.multiplierDecayPerSec ?? MULTIPLIER_DECAY_PER_SEC;
     if (session.coolerMultiplier > 1.0) {
       session.coolerMultiplier = Math.max(1.0, session.coolerMultiplier - decayPerSec * (elapsedMs / 1000));
     }
 
-    const machines = this.machineService.getUserMachines(session.telegramUserId);
+    const machines = await this.machineService.getUserMachines(session.telegramUserId);
     const activeMachines = machines.filter((m) => m.status === 'ACTIVE');
     const catalog = this.machineService.getCatalog();
 
@@ -205,15 +201,11 @@ export class MiningService {
       if (tier.promoOutputCap && tier.promoYieldRate && session.machineMode === 'PROMOTIONAL') {
         const promoRate = tier.promoYieldRate;
         const promoRatePerSec = promoRate * 10;
-        // The cooler multiplier only nudges promotional output up to the
-        // configured influence ceiling — engagement feels responsive without
-        // letting the multiplier materially shorten the promotional period.
         const multiplierInfluence = Math.min(session.coolerMultiplier, tier.promoMultiplierInfluence ?? Number.POSITIVE_INFINITY);
         const totalPromoYield = session.baseSpeedGhs * multiplierInfluence * promoRatePerSec * (elapsedMs / 1000);
 
         const remainingCap = tier.promoOutputCap - session.lifetimePromotionalOutput;
         if (remainingCap <= 0) {
-          // Defensive: never accrue promotional output past the cap
           session.machineMode = 'STANDARD';
         } else if (totalPromoYield >= remainingCap) {
           totalYield += remainingCap;
@@ -250,7 +242,7 @@ export class MiningService {
     }
 
     // Sync speed dynamically with user's active machines from MachineService
-    const machines = this.machineService.getUserMachines(telegramUserId);
+    const machines = await this.machineService.getUserMachines(telegramUserId);
     const activeMachines = machines.filter((m) => m.status === 'ACTIVE');
     const totalGhs = activeMachines.reduce((sum, m) => sum + m.capacityGhs, 0);
     const baseSpeed = totalGhs > 0 ? totalGhs : 1.0;
@@ -273,12 +265,27 @@ export class MiningService {
       this.sessions.set(telegramUserId, session);
     } else {
       session.baseSpeedGhs = baseSpeed;
-      this.accruePassiveYield(session);
+      await this.accruePassiveYield(session);
       this.sessions.set(telegramUserId, session);
     }
 
-    session.tapYieldPerTap = this.computeTapYield(session);
+    session.tapYieldPerTap = await this.computeTapYield(session);
     await this.saveToDb(session);
+    return session;
+  }
+
+  /**
+   * Recalculate and persist user mining state baseSpeedGhs based on persistent active machines in DB.
+   */
+  async recalculateUserMiningState(telegramUserId: string): Promise<UserMiningState> {
+    const session = await this.getOrCreateSession(telegramUserId);
+    const machines = await this.machineService.getUserMachines(telegramUserId);
+    const activeMachines = machines.filter((m) => m.status === 'ACTIVE');
+    const totalGhs = activeMachines.reduce((sum, m) => sum + m.capacityGhs, 0);
+    session.baseSpeedGhs = totalGhs > 0 ? totalGhs : 1.0;
+    session.tapYieldPerTap = await this.computeTapYield(session);
+    await this.saveToDb(session);
+    this.sessions.set(telegramUserId, session);
     return session;
   }
 
@@ -290,14 +297,14 @@ export class MiningService {
 
     // Yield is computed from machine configuration before the multiplier bump,
     // so the credited amount matches the value the UI displayed.
-    const increment = this.computeTapYield(session);
+    const increment = await this.computeTapYield(session);
 
-    session.coolerMultiplier = Math.min(this.getBestActiveTier(session)?.maxMultiplier ?? MAX_MULTIPLIER, session.coolerMultiplier + 0.6);
+    const bestTier = await this.getBestActiveTier(session);
+    session.coolerMultiplier = Math.min(bestTier?.maxMultiplier ?? MAX_MULTIPLIER, session.coolerMultiplier + 0.6);
     session.lastTappedAt = new Date();
 
     let credit = increment;
     if (session.machineMode === 'PROMOTIONAL') {
-      const bestTier = this.getBestActiveTier(session);
       const promoCap = bestTier?.promoOutputCap ?? 5.0;
       const interactiveCap = bestTier?.interactiveBonusCap ?? Number.MAX_SAFE_INTEGER;
 
@@ -308,8 +315,6 @@ export class MiningService {
         credit = 0;
         session.machineMode = 'STANDARD';
       } else {
-        // The interactive bonus pool is a ceiling of its own: taps draw from it,
-        // never from the promotional period the passive yield is building toward.
         credit = Math.min(increment, remainingInteractive, remainingCap);
         session.lifetimePromotionalOutput += credit;
         session.interactivePromotionalOutput += credit;
@@ -323,8 +328,8 @@ export class MiningService {
     session.unclaimedBalance += credit;
     session.lastUpdatedAt = new Date();
 
-    this.applyCoolingState(session, new Date());
-    session.tapYieldPerTap = this.computeTapYield(session);
+    await this.applyCoolingState(session, new Date());
+    session.tapYieldPerTap = await this.computeTapYield(session);
 
     await this.saveToDb(session);
     return session;
@@ -333,7 +338,7 @@ export class MiningService {
   async toggleCurrency(telegramUserId: string, currency: 'USDT' | 'TON'): Promise<UserMiningState> {
     const session = await this.getOrCreateSession(telegramUserId);
     session.activeCurrency = currency;
-    session.tapYieldPerTap = this.computeTapYield(session);
+    session.tapYieldPerTap = await this.computeTapYield(session);
     await this.saveToDb(session);
     return session;
   }
@@ -385,7 +390,7 @@ export class MiningService {
     session.isOverheated = false;
     session.cooldownRemaining = 0;
     session.lastUpdatedAt = resetState.lastUpdatedAt;
-    session.tapYieldPerTap = this.computeTapYield(session);
+    session.tapYieldPerTap = await this.computeTapYield(session);
     this.sessions.set(telegramUserId, session);
 
     return {

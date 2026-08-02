@@ -1,10 +1,11 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { NotificationService } from '../notification/notification.service';
 import { BalanceService } from '../financial/balance.service';
 import { FinancialOrchestratorService } from '../financial-orchestration/financial-orchestrator.service';
 import { PaymentOrderService } from '../payment-order/payment-order.service';
+import { MiningService } from '../mining/mining.service';
 import { FinancialOperationType } from '@prisma/client';
 import { AuditEventType } from '../../common/interfaces/user-state.enum';
 import type { NotificationPayload } from '../notification/notification.service';
@@ -165,9 +166,6 @@ export class MachineService {
     },
   ];
 
-  // In-memory user machines store
-  private readonly userMachines = new Map<string, UserMachineAsset[]>();
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
@@ -175,33 +173,94 @@ export class MachineService {
     private readonly balanceService: BalanceService,
     private readonly orchestrator: FinancialOrchestratorService,
     private readonly paymentOrderService: PaymentOrderService,
+    @Inject(forwardRef(() => MiningService))
+    private readonly miningService?: MiningService,
   ) {}
 
   getCatalog(): MachineTier[] {
     return this.catalog;
   }
 
-  getUserMachines(telegramUserId: string): UserMachineAsset[] {
-    let list = this.userMachines.get(telegramUserId);
-    if (!list) {
-      const now = new Date();
-      const trialMachine: UserMachineAsset = {
-        id: 'mach_free_trial',
+  async getUserMachines(telegramUserId: string): Promise<UserMachineAsset[]> {
+    let bigIntUserId: bigint;
+    try {
+      bigIntUserId = BigInt(telegramUserId);
+    } catch {
+      bigIntUserId = BigInt(0);
+    }
+
+    const records = await this.prisma.userMachine.findMany({
+      where: { telegramUserId: bigIntUserId },
+      orderBy: { purchasedAt: 'desc' },
+    });
+
+    const now = new Date();
+    const trialMachine: UserMachineAsset = {
+      id: 'mach_free_trial',
+      telegramUserId,
+      tierCode: 'TS_TRIAL',
+      name: 'Titan Core',
+      purchasePrice: 0.0,
+      currency: 'USDT',
+      status: 'ACTIVE',
+      capacityGhs: 1.0,
+      lifetimeEarnings: 0.0,
+      purchasedAt: now.toISOString(),
+      activatedAt: now.toISOString(),
+    };
+
+    const userAssets: UserMachineAsset[] = records.map((r) => ({
+      id: r.id,
+      telegramUserId: r.telegramUserId.toString(),
+      tierCode: r.tierCode,
+      name: r.name,
+      purchasePrice: r.purchasePrice.toNumber(),
+      currency: r.currency,
+      status: r.status as any,
+      capacityGhs: r.capacityGhs.toNumber(),
+      lifetimeEarnings: r.lifetimeEarnings.toNumber(),
+      purchasedAt: r.purchasedAt.toISOString(),
+      activatedAt: r.activatedAt.toISOString(),
+    }));
+
+    return [trialMachine, ...userAssets];
+  }
+
+  async fulfillMachineOwnershipAfterPayment(telegramUserId: bigint, tierCode: string, pricePaid: number) {
+    const tier = this.catalog.find((t) => t.tierCode === tierCode);
+    const machineName = tier ? tier.name : tierCode;
+    const capacityGhs = tier ? tier.capacityGhs : 5.0;
+
+    const createdMachine = await this.prisma.userMachine.create({
+      data: {
         telegramUserId,
-        tierCode: 'TS_TRIAL',
-        name: 'Titan Core',
-        purchasePrice: 0.0,
+        tierCode,
+        name: machineName,
+        purchasePrice: pricePaid,
         currency: 'USDT',
         status: 'ACTIVE',
-        capacityGhs: 1.0,
-        lifetimeEarnings: 0.0,
-        purchasedAt: now.toISOString(),
-        activatedAt: now.toISOString(),
-      };
-      list = [trialMachine];
-      this.userMachines.set(telegramUserId, list);
+        capacityGhs,
+      },
+    });
+
+    if (this.miningService) {
+      await this.miningService.recalculateUserMiningState(telegramUserId.toString());
     }
-    return list;
+
+    await this.notification.createNotification({
+      userId: telegramUserId,
+      templateCode: 'MACHINE_ACTIVATED',
+      variables: { machineName: `${machineName} (${capacityGhs} GH/s)` },
+    });
+
+    await this.audit.create({
+      telegramUserId,
+      eventType: AuditEventType.TRANSACTION_COMPLETED,
+      description: `Fulfilled machine ownership for ${machineName} ($${pricePaid} USDT)`,
+      metadata: { machineId: createdMachine.id, tierCode, price: pricePaid },
+    });
+
+    return createdMachine;
   }
 
   async purchaseMachine(telegramUserId: bigint, tierCode: string) {
@@ -251,22 +310,35 @@ export class MachineService {
       metadata: { source: 'machine_purchase', tierCode, price: tier.priceUsdt },
     });
 
-    const newMachine: UserMachineAsset = {
-      id: `mach_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+    const createdMachine = await this.prisma.userMachine.create({
+      data: {
+        telegramUserId,
+        tierCode: tier.tierCode,
+        name: tier.name,
+        purchasePrice: tier.priceUsdt,
+        currency: 'USDT',
+        status: 'ACTIVE',
+        capacityGhs: tier.capacityGhs,
+      },
+    });
+
+    const newMachineAsset: UserMachineAsset = {
+      id: createdMachine.id,
       telegramUserId: userIdStr,
-      tierCode: tier.tierCode,
-      name: tier.name,
-      purchasePrice: tier.priceUsdt,
-      currency: 'USDT',
-      status: 'ACTIVE',
-      capacityGhs: tier.capacityGhs,
-      lifetimeEarnings: 0.0,
-      purchasedAt: new Date().toISOString(),
-      activatedAt: new Date().toISOString(),
+      tierCode: createdMachine.tierCode,
+      name: createdMachine.name,
+      purchasePrice: createdMachine.purchasePrice.toNumber(),
+      currency: createdMachine.currency,
+      status: createdMachine.status as any,
+      capacityGhs: createdMachine.capacityGhs.toNumber(),
+      lifetimeEarnings: createdMachine.lifetimeEarnings.toNumber(),
+      purchasedAt: createdMachine.purchasedAt.toISOString(),
+      activatedAt: createdMachine.activatedAt.toISOString(),
     };
 
-    const existing = this.userMachines.get(userIdStr) || [];
-    this.userMachines.set(userIdStr, [newMachine, ...existing]);
+    if (this.miningService) {
+      await this.miningService.recalculateUserMiningState(userIdStr);
+    }
 
     await this.notification.createNotification({
       userId: telegramUserId,
@@ -278,14 +350,15 @@ export class MachineService {
       telegramUserId,
       eventType: AuditEventType.TRANSACTION_COMPLETED,
       description: `Purchased machine ${tier.name} for $${tier.priceUsdt} USDT`,
-      metadata: { machineId: newMachine.id, tierCode: tier.tierCode, price: tier.priceUsdt },
+      metadata: { machineId: createdMachine.id, tierCode: tier.tierCode, price: tier.priceUsdt },
     });
 
     return {
       success: true,
       requiresFunding: false,
-      machine: newMachine,
+      machine: newMachineAsset,
       message: `Machine ${tier.name} purchased and activated successfully!`,
     };
   }
 }
+

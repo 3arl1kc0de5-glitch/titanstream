@@ -245,7 +245,7 @@ export const RouletteGame: React.FC<RouletteGameProps> = ({ onClose, showToast }
         } else if (selectedSector.type === 'USDT' || selectedSector.type === 'JACKPOT') {
           updateBalance({ usdtBalance: useWalletStore.getState().usdtBalance + selectedSector.value });
         } else if (selectedSector.type === 'SPEED') {
-          showToast(`Miner multiplier boosted to ${selectedSector.value}x!`, 'success');
+          showToast(`Stream multiplier boosted to ${selectedSector.value}x!`, 'success');
         }
 
         // Set cooldown for premium rewards

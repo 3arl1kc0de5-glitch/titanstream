@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { NotificationService } from '../notification/notification.service';
 import { FinancialOrchestratorService } from '../financial-orchestration/financial-orchestrator.service';
+import { MachineService } from '../machine/machine.service';
 import { FinancialOperationType } from '@prisma/client';
 import { AuditEventType } from '../../common/interfaces/user-state.enum';
 
@@ -83,6 +84,8 @@ export class PaymentOrderService {
     private readonly audit: AuditService,
     private readonly notification: NotificationService,
     private readonly orchestrator: FinancialOrchestratorService,
+    @Inject(forwardRef(() => MachineService))
+    private readonly machineService?: MachineService,
   ) {}
 
   getDestinationConfigs(): PaymentDestinationConfig[] {
@@ -231,6 +234,13 @@ export class PaymentOrderService {
       reference: orchestratorRef,
       metadata: { orderId: order.id, reference: order.reference, type: order.type, approvedBy: adminUserId || 'system_admin' },
     });
+
+    if (order.type === 'MACHINE_PURCHASE' && order.metadata?.targetTierCode) {
+      const targetTierCode = order.metadata.targetTierCode as string;
+      if (this.machineService) {
+        await this.machineService.fulfillMachineOwnershipAfterPayment(telegramUserId, targetTierCode, order.amount);
+      }
+    }
 
     order.status = 'COMPLETED';
     order.completedAt = new Date().toISOString();
