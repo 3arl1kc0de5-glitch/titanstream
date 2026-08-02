@@ -264,11 +264,17 @@ export const useMiningStore = create<MiningState>((set, get) => {
       displayTicker = setInterval(() => {
         const s = get();
 
+        // Passive background yield generation per tick (100ms)
+        const baseRate = s.activeCurrency === 'USDT' ? 0.00002 : 0.000005;
+        const passiveYield = (s.isActive && !s.isOverheated) ? (s.baseSpeedGhs * s.coolerMultiplier * baseRate * (TICK_MS / 1000)) : 0;
+        const nextUnclaimed = s.unclaimedBalance + passiveYield;
+
         // Ease the odometer-style displays toward authoritative targets
-        const unclDir = s.unclaimedBalance >= s.displayUnclaimed ? EASE_FLAT : EASE_DOWN;
+        const unclDir = nextUnclaimed >= s.displayUnclaimed ? EASE_FLAT : EASE_DOWN;
         const promoDir = s.lifetimePromotionalOutput >= s.displayPromoOutput ? EASE_FLAT : EASE_DOWN;
         set({
-          displayUnclaimed: s.displayUnclaimed + (s.unclaimedBalance - s.displayUnclaimed) * unclDir,
+          unclaimedBalance: nextUnclaimed,
+          displayUnclaimed: s.displayUnclaimed + (nextUnclaimed - s.displayUnclaimed) * unclDir,
           displayPromoOutput: s.displayPromoOutput + (s.lifetimePromotionalOutput - s.displayPromoOutput) * promoDir,
         });
 

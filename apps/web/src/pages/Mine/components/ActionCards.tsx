@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import { useNavigationStore } from '../../../store/useNavigationStore';
 import { useMiningStore } from '../../../store/useMiningStore';
 import { showToast } from '../../../components/Toast';
-import { CurrencyDisplay } from '../../../components/DualCurrencyDisplay';
 
 export const ActionCards: React.FC = () => {
   const { setActiveTab } = useNavigationStore();
@@ -85,12 +84,8 @@ export const ActionCards: React.FC = () => {
               <div className="text-sm font-black text-usdt-green font-sans flex items-center gap-1">
                 Receive Stream Output
               </div>
-              <div className="text-xs text-text-secondary mt-0.5 font-sans font-medium flex items-center gap-1">
-                <span>Accrued:</span>
-                <strong className="text-text-primary">
-                  <CurrencyDisplay amount={safeUnclaimed} size="sm" />
-                </strong>
-                <span>. Tap to add to balance.</span>
+              <div className="text-xs text-text-secondary mt-0.5 font-sans font-medium">
+                Transfer your claimable mining output to your wallet.
               </div>
             </div>
           </div>

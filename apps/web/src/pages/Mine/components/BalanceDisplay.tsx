@@ -1,17 +1,15 @@
 import React from 'react';
-import { useWalletStore } from '../../../store/useWalletStore';
 import { useMiningStore } from '../../../store/useMiningStore';
 import { useSettingsStore } from '../../../store/useSettingsStore';
 import { useCountryStore } from '../../../store/useCountryStore';
 import { formatAdaptiveCounter } from '../../../utils/format';
 
 export const BalanceDisplay: React.FC = () => {
-  const { usdtBalance, tonBalance } = useWalletStore();
   const { activeCurrency, baseSpeedGhs, displayMultiplier, displayUnclaimed } = useMiningStore();
   const { preferLocalCurrency } = useSettingsStore();
-  const { selectedCountry, getLocalAmount } = useCountryStore();
-  
-  const currentDisplay = (Number(activeCurrency === 'USDT' ? usdtBalance : tonBalance) || 0) + (Number(displayUnclaimed) || 0);
+  const { selectedCountry } = useCountryStore();
+
+  const currentDisplay = Math.max(0, Number(displayUnclaimed) || 0);
   const isUsdt = activeCurrency === 'USDT';
   const showLocal = preferLocalCurrency && !!selectedCountry && selectedCountry.code !== 'US';
 
@@ -37,7 +35,12 @@ export const BalanceDisplay: React.FC = () => {
   const computeUnits = ((Number(baseSpeedGhs) || 0) * (Number(displayMultiplier) || 1) * 10).toFixed(0);
 
   return (
-    <div className="flex flex-col items-center justify-center gap-2 my-2">
+    <div className="flex flex-col items-center justify-center gap-1.5 my-2">
+      {/* Label: Claimable Mining Output */}
+      <span className="text-[11px] font-extrabold uppercase tracking-widest text-text-secondary/80">
+        Claimable Mining Output
+      </span>
+
       {/* Live Odometer Ticker Balance with Text Gradient */}
       <div className="flex items-baseline gap-2 font-mono tracking-tight">
         <span
