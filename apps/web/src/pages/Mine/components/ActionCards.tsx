@@ -15,11 +15,34 @@ export const ActionCards: React.FC = () => {
   const handleClaim = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (safeUnclaimed <= 0) return;
-    const success = await claimMinedYield();
-    if (success) {
+    const result = await claimMinedYield();
+    if (result.success) {
       showToast(`Successfully received +${safeUnclaimed.toFixed(4)} ${activeCurrency} in your wallet.`, 'success');
     } else {
-      showToast('Action could not be completed. Please try again.', 'error');
+      const err = result.error;
+      const response = err?.response;
+      const status = response?.status;
+      const body = response?.data;
+      const backendError = body?.message || err?.message || 'Unknown error';
+      const stack = err?.stack || 'No stack trace';
+
+      console.error('[CLAIM FAILURE DIAGNOSTICS]', {
+        httpStatus: status,
+        responseBody: body,
+        backendError: backendError,
+        stackTrace: stack,
+        requestPayload: {
+          telegramUserId: window.Telegram?.WebApp?.initDataUnsafe?.user?.id,
+          activeCurrency,
+          amount: safeUnclaimed,
+        },
+      });
+
+      const userFriendlyMessage = typeof backendError === 'string'
+        ? backendError.replace('RULE_', '').replace(/_/g, ' ')
+        : 'Action could not be completed.';
+
+      showToast(`Action could not be completed: ${userFriendlyMessage}`, 'error');
     }
   };
 

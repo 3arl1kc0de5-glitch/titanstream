@@ -286,6 +286,7 @@ async function main() {
     { assetCode: 'USDT', name: 'Tether USD', symbol: 'USDT', decimals: 6 },
     { assetCode: 'USD', name: 'United States Dollar', symbol: '$', decimals: 2 },
     { assetCode: 'UGX', name: 'Ugandan Shilling', symbol: 'UGX', decimals: 0 },
+    { assetCode: 'TON', name: 'Toncoin', symbol: 'TON', decimals: 9 },
   ];
 
   for (const asset of assets) {

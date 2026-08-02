@@ -45,7 +45,7 @@ export interface MiningState {
   tap: () => number; // returns per-tap yield for particle feedback (-1 if tap failed)
   applyServerSession: (session: MiningStateResponse, opts?: { snapDisplay?: boolean }) => void;
   fetchMiningState: () => Promise<void>;
-  claimMinedYield: () => Promise<boolean>;
+  claimMinedYield: () => Promise<{ success: boolean; error?: any }>;
   startDisplayTicker: () => void;
   stopDisplayTicker: () => void;
   upgradeBaseSpeed: (amount: number) => void;
@@ -147,12 +147,12 @@ export const useMiningStore = create<MiningState>((set, get) => {
           if (res.data.session) {
             get().applyServerSession(res.data.session, { snapDisplay: true });
           }
-          return true;
+          return { success: true };
         }
-        return false;
+        return { success: false, error: new Error(res?.message || 'Server claim operation failed without explicit error code.') };
       } catch (err) {
         console.error('Failed to claim mining yield:', err);
-        return false;
+        return { success: false, error: err };
       }
     },
 

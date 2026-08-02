@@ -59,8 +59,11 @@ export class FinancialRulesService {
     ]);
 
     for (const rule of rules) {
-      if (rule.ruleType === FinancialRuleType.USER_READY && (!user || (user.state !== UserState.READY && !user.isReady))) {
-        throw new BadRequestException('RULE_USER_NOT_READY');
+      if (rule.ruleType === FinancialRuleType.USER_READY) {
+        const ALLOWED_STATES = ['READY', 'READY_FOR_PLATFORM', 'ELIGIBLE_USER', 'ACTIVE_USER'];
+        if (!user || (!ALLOWED_STATES.includes(user.state) && !user.isReady)) {
+          throw new BadRequestException('RULE_USER_NOT_READY');
+        }
       }
       if (rule.ruleType === FinancialRuleType.ACCOUNT_ACTIVE && (!account || account.status !== FinancialAccountStatus.ACTIVE)) {
         throw new BadRequestException('RULE_ACCOUNT_NOT_ACTIVE');
