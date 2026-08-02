@@ -114,11 +114,11 @@ export const TransactionHistoryView: React.FC<TransactionHistoryViewProps> = ({ 
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex items-center gap-1.5 p-1 rounded-xl bg-control-bg border border-white/10 text-xs">
+      <div className="flex items-center gap-1 p-1 rounded-xl bg-control-bg border border-white/10 text-[10px] sm:text-xs">
         {[
           { key: 'all', label: 'All Activity' },
-          { key: 'deposits', label: 'Completed Deposits' },
-          { key: 'settlements', label: 'Settlement Requests' },
+          { key: 'deposits', label: 'Deposits' },
+          { key: 'settlements', label: 'Settlements' },
         ].map((tab) => (
           <button
             key={tab.key}
@@ -126,7 +126,7 @@ export const TransactionHistoryView: React.FC<TransactionHistoryViewProps> = ({ 
               hapticFeedback.selectionChanged();
               setActiveTab(tab.key as any);
             }}
-            className={`flex-1 py-1.5 rounded-lg font-extrabold transition-colors ${
+            className={`flex-1 py-1.5 px-1 rounded-lg font-extrabold transition-colors whitespace-nowrap text-center ${
               activeTab === tab.key
                 ? 'bg-usdt-green text-app-bg shadow-sm'
                 : 'text-text-tertiary hover:text-text-primary'
@@ -167,12 +167,12 @@ export const TransactionHistoryView: React.FC<TransactionHistoryViewProps> = ({ 
             return (
               <div
                 key={item.id}
-                className="glass-panel p-3.5 rounded-2xl border border-white/10 hover:border-white/20 flex items-center justify-between transition-colors"
+                className="glass-panel p-3 rounded-2xl border border-white/10 hover:border-white/20 flex items-center justify-between gap-2.5 transition-colors"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
                   {/* Icon indicator */}
                   <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold shadow-sm ${
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold shrink-0 shadow-sm ${
                       isCompleted
                         ? 'bg-usdt-green/20 text-usdt-green border border-usdt-green/30'
                         : isPending
@@ -181,43 +181,41 @@ export const TransactionHistoryView: React.FC<TransactionHistoryViewProps> = ({ 
                     }`}
                   >
                     {isCompleted ? (
-                      <ArrowDownLeft size={18} />
+                      <ArrowDownLeft size={16} />
                     ) : isPending ? (
-                      <Clock size={18} />
+                      <Clock size={16} />
                     ) : (
-                      <AlertCircle size={18} />
+                      <AlertCircle size={16} />
                     )}
                   </div>
 
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-extrabold text-text-primary">
-                        {item.source === 'settlement' ? 'Funding Request' : 'Deposit Allocation'}
-                      </span>
-                      <span className="text-[10px] font-mono text-text-tertiary">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-extrabold text-text-primary truncate">
+                      {item.source === 'settlement' ? 'Funding Request' : 'Deposit Allocation'}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[10px] text-text-tertiary mt-0.5 font-mono">
+                      <span className="truncate max-w-[120px] sm:max-w-[180px]" title={item.reference}>
                         #{item.reference}
                       </span>
-                    </div>
-
-                    <div className="text-[11px] text-text-tertiary mt-0.5">
-                      {formatDate(item.date)}
+                      <span>•</span>
+                      <span className="shrink-0">{formatDate(item.date)}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Right Amount & Status Tag */}
-                <div className="text-right">
-                  <div className="text-sm font-mono font-extrabold text-text-primary">
+                <div className="text-right shrink-0">
+                  <div className="text-xs font-mono font-extrabold text-text-primary">
                     +{item.amount} {item.asset}
                   </div>
 
                   <span
-                    className={`inline-block text-[10px] font-extrabold px-2 py-0.5 rounded-full mt-0.5 ${
+                    className={`inline-block text-[9px] font-extrabold px-2 py-0.5 rounded-full mt-0.5 uppercase tracking-wider ${
                       isCompleted
-                        ? 'text-usdt-green bg-usdt-green/10'
+                        ? 'text-usdt-green bg-usdt-green/10 border border-usdt-green/20'
                         : isPending
-                        ? 'text-amber-300 bg-amber-500/10'
-                        : 'text-rose-400 bg-rose-500/10'
+                        ? 'text-amber-300 bg-amber-500/10 border border-amber-500/20'
+                        : 'text-rose-400 bg-rose-500/10 border border-rose-500/20'
                     }`}
                   >
                     {item.status.replace(/_/g, ' ')}
