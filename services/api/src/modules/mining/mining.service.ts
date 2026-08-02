@@ -386,6 +386,7 @@ export class MiningService {
     session.cooldownRemaining = 0;
     session.lastUpdatedAt = resetState.lastUpdatedAt;
     session.tapYieldPerTap = this.computeTapYield(session);
+    this.sessions.set(telegramUserId, session);
 
     return {
       success: true,
