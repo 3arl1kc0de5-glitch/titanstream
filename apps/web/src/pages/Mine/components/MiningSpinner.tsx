@@ -601,6 +601,8 @@ export const MiningSpinner: React.FC = () => {
                   isOverheated={isOverheated}
                   isLocked={isMiningLocked()}
                   onDiscoveryEvent={handleDiscoveryEvent}
+                  tierCode={activeSpinner.tierCode}
+                  tierIndex={activeSpinnerIdx}
                 />
               </div>
             </>
