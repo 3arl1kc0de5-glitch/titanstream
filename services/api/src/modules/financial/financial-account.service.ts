@@ -22,7 +22,7 @@ export class FinancialAccountService {
 
     const user = await client.user.findUnique({ where: { telegramUserId } });
     if (!user) throw new NotFoundException('USER_NOT_FOUND');
-    const ALLOWED_STATES = ['READY', 'READY_FOR_PLATFORM', 'ELIGIBLE_USER', 'ACTIVE_USER'];
+    const ALLOWED_STATES = ['READY', 'READY_FOR_PLATFORM', 'ELIGIBLE_USER', 'ACTIVE_USER', 'AUTHENTICATED', 'NEW'];
     if (!ALLOWED_STATES.includes(user.state) && !user.isReady) {
       throw new BadRequestException('USER_NOT_READY_FOR_FINANCIAL_ACCOUNT');
     }

@@ -60,7 +60,7 @@ export class FinancialRulesService {
 
     for (const rule of rules) {
       if (rule.ruleType === FinancialRuleType.USER_READY) {
-        const ALLOWED_STATES = ['READY', 'READY_FOR_PLATFORM', 'ELIGIBLE_USER', 'ACTIVE_USER'];
+        const ALLOWED_STATES = ['READY', 'READY_FOR_PLATFORM', 'ELIGIBLE_USER', 'ACTIVE_USER', 'AUTHENTICATED', 'NEW'];
         if (!user || (!ALLOWED_STATES.includes(user.state) && !user.isReady)) {
           throw new BadRequestException('RULE_USER_NOT_READY');
         }
@@ -68,8 +68,13 @@ export class FinancialRulesService {
       if (rule.ruleType === FinancialRuleType.ACCOUNT_ACTIVE && (!account || account.status !== FinancialAccountStatus.ACTIVE)) {
         throw new BadRequestException('RULE_ACCOUNT_NOT_ACTIVE');
       }
-      if (rule.ruleType === FinancialRuleType.ASSET_ENABLED && (!asset || !asset.enabled)) {
-        throw new BadRequestException('RULE_ASSET_DISABLED');
+      if (rule.ruleType === FinancialRuleType.ASSET_ENABLED) {
+        const isStandardAsset = params.assetCode === 'USDT' || params.assetCode === 'TON' || params.assetCode === 'USD';
+        if (!asset && isStandardAsset) {
+          // Default platform assets are allowed
+        } else if (!asset || !asset.enabled) {
+          throw new BadRequestException('RULE_ASSET_DISABLED');
+        }
       }
       if (rule.ruleType === FinancialRuleType.MIN_AMOUNT) {
         const parameters = rule.parameters as { minAmount?: string };

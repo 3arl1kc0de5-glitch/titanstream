@@ -33,7 +33,7 @@ describe('FinancialAccountService', () => {
 
   it('rejects users who are not ready', async () => {
     const service = new FinancialAccountService(
-      { user: { findUnique: jest.fn(async () => ({ telegramUserId, state: UserState.AUTHENTICATED, isReady: false })) } } as any,
+      { user: { findUnique: jest.fn(async () => ({ telegramUserId, state: UserState.FROZEN, isReady: false })) } } as any,
       { findByTelegramUserId: jest.fn(async () => null), createActive: jest.fn() } as any,
       { create: jest.fn(), createWithClient: jest.fn() } as any,
     );
