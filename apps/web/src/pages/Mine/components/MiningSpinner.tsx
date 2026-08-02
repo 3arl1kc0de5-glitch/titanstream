@@ -146,6 +146,7 @@ export const MiningSpinner: React.FC = () => {
 
   const isDailyLimitReached = tapsToday >= dailyTapLimit;
   const isWeeklyLimitReached = tapsThisWeek >= weeklyTapLimit;
+  const isMonthlyLimitReached = tapsThisMonth >= monthlyTapLimit;
   const reactorRef = React.useRef<QuantumLoopReactorRef | null>(null);
 
   // V2 AI Presence & Telemetry State
